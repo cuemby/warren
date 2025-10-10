@@ -214,6 +214,50 @@ func (c *Client) ListSecrets() ([]*proto.Secret, error) {
 	return resp.Secrets, nil
 }
 
+// CreateVolume creates a new volume
+func (c *Client) CreateVolume(name, driver string, options map[string]string) (*proto.Volume, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	resp, err := c.client.CreateVolume(ctx, &proto.CreateVolumeRequest{
+		Name:       name,
+		Driver:     driver,
+		DriverOpts: options,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Volume, nil
+}
+
+// GetVolumeByName retrieves a volume by name
+func (c *Client) GetVolumeByName(name string) (*proto.Volume, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	resp, err := c.client.GetVolumeByName(ctx, &proto.GetVolumeByNameRequest{
+		Name: name,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Volume, nil
+}
+
+// DeleteVolume deletes a volume
+func (c *Client) DeleteVolume(name string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	_, err := c.client.DeleteVolume(ctx, &proto.DeleteVolumeRequest{
+		Id: name,
+	})
+
+	return err
+}
+
 // ListVolumes lists all volumes
 func (c *Client) ListVolumes() ([]*proto.Volume, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)

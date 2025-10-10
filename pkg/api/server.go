@@ -521,6 +521,18 @@ func (s *Server) CreateVolume(ctx context.Context, req *proto.CreateVolumeReques
 	}, nil
 }
 
+// GetVolumeByName retrieves a volume by name
+func (s *Server) GetVolumeByName(ctx context.Context, req *proto.GetVolumeByNameRequest) (*proto.GetVolumeByNameResponse, error) {
+	volume, err := s.manager.GetVolumeByName(req.Name)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get volume: %v", err)
+	}
+
+	return &proto.GetVolumeByNameResponse{
+		Volume: volumeToProto(volume),
+	}, nil
+}
+
 // DeleteVolume deletes a volume
 func (s *Server) DeleteVolume(ctx context.Context, req *proto.DeleteVolumeRequest) (*proto.DeleteVolumeResponse, error) {
 	// Ensure we're the leader for write operations
@@ -805,6 +817,8 @@ func volumeToProto(v *types.Volume) *proto.Volume {
 		Name:       v.Name,
 		Driver:     v.Driver,
 		DriverOpts: v.Options,
+		NodeId:     v.NodeID,
+		MountPath:  v.MountPath,
 		Labels:     make(map[string]string), // Volume doesn't have labels in types
 		CreatedAt:  timestamppb.New(v.CreatedAt),
 	}
