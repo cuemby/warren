@@ -51,6 +51,7 @@ func init() {
 
 	// Add subcommands
 	rootCmd.AddCommand(clusterCmd)
+	rootCmd.AddCommand(managerCmd)
 	rootCmd.AddCommand(workerCmd)
 	rootCmd.AddCommand(serviceCmd)
 	rootCmd.AddCommand(nodeCmd)
@@ -157,8 +158,30 @@ var clusterJoinTokenCmd = &cobra.Command{
 			return fmt.Errorf("role must be 'worker' or 'manager'")
 		}
 
-		fmt.Printf("Generating join token for %s...\n", role)
-		fmt.Println("Implementation coming in Milestone 1!")
+		manager, _ := cmd.Flags().GetString("manager")
+
+		// Connect to manager
+		c, err := client.NewClient(manager)
+		if err != nil {
+			return fmt.Errorf("failed to connect to manager: %v", err)
+		}
+		defer c.Close()
+
+		// Generate token
+		token, err := c.GenerateJoinToken(role)
+		if err != nil {
+			return fmt.Errorf("failed to generate token: %v", err)
+		}
+
+		fmt.Printf("Join token for %s:\n\n", role)
+		fmt.Printf("    %s\n\n", token)
+		fmt.Println("This token expires in 24 hours.")
+		fmt.Printf("\nTo join a %s to the cluster, run:\n", role)
+		if role == "manager" {
+			fmt.Printf("    warren manager join --token %s --leader %s\n", token, manager)
+		} else {
+			fmt.Printf("    warren worker start --manager %s --token %s\n", manager, token)
+		}
 		return nil
 	},
 }
@@ -178,16 +201,56 @@ var clusterJoinCmd = &cobra.Command{
 	},
 }
 
+var clusterInfoCmd = &cobra.Command{
+	Use:   "info",
+	Short: "Display cluster information",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		manager, _ := cmd.Flags().GetString("manager")
+
+		// Connect to manager
+		c, err := client.NewClient(manager)
+		if err != nil {
+			return fmt.Errorf("failed to connect to manager: %v", err)
+		}
+		defer c.Close()
+
+		// Get cluster info
+		info, err := c.GetClusterInfo()
+		if err != nil {
+			return fmt.Errorf("failed to get cluster info: %v", err)
+		}
+
+		fmt.Println("Cluster Information:")
+		fmt.Printf("  Leader ID: %s\n", info.LeaderId)
+		fmt.Printf("  Leader Address: %s\n", info.LeaderAddr)
+		fmt.Printf("  Servers: %d\n", len(info.Servers))
+		fmt.Println()
+		fmt.Println("Raft Servers:")
+		for _, server := range info.Servers {
+			fmt.Printf("  - ID: %s\n", server.Id)
+			fmt.Printf("    Address: %s\n", server.Address)
+			fmt.Printf("    Suffrage: %s\n", server.Suffrage)
+			fmt.Println()
+		}
+		return nil
+	},
+}
+
 func init() {
 	clusterCmd.AddCommand(clusterInitCmd)
 	clusterCmd.AddCommand(clusterJoinTokenCmd)
 	clusterCmd.AddCommand(clusterJoinCmd)
+	clusterCmd.AddCommand(clusterInfoCmd)
 
 	// Flags for init command
 	clusterInitCmd.Flags().String("node-id", "manager-1", "Unique node ID")
 	clusterInitCmd.Flags().String("bind-addr", "127.0.0.1:7946", "Address for Raft communication")
 	clusterInitCmd.Flags().String("api-addr", "127.0.0.1:8080", "Address for gRPC API")
 	clusterInitCmd.Flags().String("data-dir", "./warren-data", "Data directory for cluster state")
+
+	// Flags for join-token and info commands
+	clusterJoinTokenCmd.Flags().String("manager", "127.0.0.1:8080", "Manager address")
+	clusterInfoCmd.Flags().String("manager", "127.0.0.1:8080", "Manager address")
 
 	// Flags for join command
 	clusterJoinCmd.Flags().String("token", "", "Join token from manager")
@@ -264,6 +327,113 @@ func init() {
 	workerStartCmd.Flags().String("data-dir", "./warren-worker-data", "Data directory")
 	workerStartCmd.Flags().Int("cpu", 4, "CPU cores")
 	workerStartCmd.Flags().Int("memory", 8, "Memory in GB")
+}
+
+// Manager commands
+var managerCmd = &cobra.Command{
+	Use:   "manager",
+	Short: "Manager node operations",
+}
+
+var managerJoinCmd = &cobra.Command{
+	Use:   "join",
+	Short: "Join this manager to an existing cluster",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		nodeID, _ := cmd.Flags().GetString("node-id")
+		bindAddr, _ := cmd.Flags().GetString("bind-addr")
+		apiAddr, _ := cmd.Flags().GetString("api-addr")
+		dataDir, _ := cmd.Flags().GetString("data-dir")
+		leader, _ := cmd.Flags().GetString("leader")
+		token, _ := cmd.Flags().GetString("token")
+
+		if token == "" {
+			return fmt.Errorf("--token is required")
+		}
+		if leader == "" {
+			return fmt.Errorf("--leader is required")
+		}
+
+		fmt.Println("Joining cluster as manager...")
+		fmt.Printf("  Node ID: %s\n", nodeID)
+		fmt.Printf("  Bind Address: %s\n", bindAddr)
+		fmt.Printf("  API Address: %s\n", apiAddr)
+		fmt.Printf("  Leader: %s\n", leader)
+		fmt.Println()
+
+		// Create manager
+		mgr, err := manager.NewManager(&manager.Config{
+			NodeID:   nodeID,
+			BindAddr: bindAddr,
+			DataDir:  dataDir,
+		})
+		if err != nil {
+			return fmt.Errorf("failed to create manager: %v", err)
+		}
+
+		// Join the cluster
+		if err := mgr.Join(leader, token); err != nil {
+			return fmt.Errorf("failed to join cluster: %v", err)
+		}
+
+		fmt.Println("✓ Successfully joined cluster")
+
+		// Start scheduler
+		sched := scheduler.NewScheduler(mgr)
+		sched.Start()
+		fmt.Println("✓ Scheduler started")
+
+		// Start reconciler
+		recon := reconciler.NewReconciler(mgr)
+		recon.Start()
+		fmt.Println("✓ Reconciler started")
+
+		// Start API server in background
+		apiServer := api.NewServer(mgr)
+		errCh := make(chan error, 1)
+		go func() {
+			if err := apiServer.Start(apiAddr); err != nil {
+				errCh <- fmt.Errorf("API server error: %v", err)
+			}
+		}()
+
+		fmt.Println()
+		fmt.Println("Manager is running. Press Ctrl+C to stop.")
+
+		// Wait for interrupt signal or API server error
+		sigCh := make(chan os.Signal, 1)
+		signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM)
+
+		select {
+		case <-sigCh:
+			fmt.Println("\nShutting down...")
+		case err := <-errCh:
+			fmt.Fprintf(os.Stderr, "\nError: %v\n", err)
+		}
+
+		// Shutdown
+		sched.Stop()
+		recon.Stop()
+		apiServer.Stop()
+		if err := mgr.Shutdown(); err != nil {
+			return fmt.Errorf("failed to shutdown: %v", err)
+		}
+
+		fmt.Println("✓ Shutdown complete")
+		return nil
+	},
+}
+
+func init() {
+	managerCmd.AddCommand(managerJoinCmd)
+
+	managerJoinCmd.Flags().String("node-id", "manager-2", "Unique node ID")
+	managerJoinCmd.Flags().String("bind-addr", "127.0.0.1:7947", "Address for Raft communication")
+	managerJoinCmd.Flags().String("api-addr", "127.0.0.1:8081", "Address for gRPC API")
+	managerJoinCmd.Flags().String("data-dir", "./warren-data-2", "Data directory for cluster state")
+	managerJoinCmd.Flags().String("leader", "", "Leader manager address")
+	managerJoinCmd.Flags().String("token", "", "Join token from leader")
+	managerJoinCmd.MarkFlagRequired("token")
+	managerJoinCmd.MarkFlagRequired("leader")
 }
 
 // Service commands

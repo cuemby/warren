@@ -183,3 +183,45 @@ func (c *Client) ListVolumes() ([]*proto.Volume, error) {
 
 	return resp.Volumes, nil
 }
+
+// GenerateJoinToken generates a join token for a worker or manager
+func (c *Client) GenerateJoinToken(role string) (string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	resp, err := c.client.GenerateJoinToken(ctx, &proto.GenerateJoinTokenRequest{
+		Role: role,
+	})
+	if err != nil {
+		return "", err
+	}
+
+	return resp.Token, nil
+}
+
+// GetClusterInfo returns information about the cluster
+func (c *Client) GetClusterInfo() (*proto.GetClusterInfoResponse, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	resp, err := c.client.GetClusterInfo(ctx, &proto.GetClusterInfoRequest{})
+	if err != nil {
+		return nil, err
+	}
+
+	return resp, nil
+}
+
+// JoinCluster joins a node to the cluster
+func (c *Client) JoinCluster(nodeID, bindAddr, token string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	_, err := c.client.JoinCluster(ctx, &proto.JoinClusterRequest{
+		NodeId:   nodeID,
+		BindAddr: bindAddr,
+		Token:    token,
+	})
+
+	return err
+}
