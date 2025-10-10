@@ -1,7 +1,7 @@
 # Warren API Documentation
 
 **Last Updated**: 2025-10-10
-**Implementation Status**: Milestone 1 Complete ✅
+**Implementation Status**: Milestones 0-5 Complete ✅
 **API Version**: v1
 **Protocol**: gRPC
 
