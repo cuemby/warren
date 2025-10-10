@@ -4,9 +4,11 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 
 	"github.com/cuemby/warren/pkg/api"
+	"github.com/cuemby/warren/pkg/client"
 	"github.com/cuemby/warren/pkg/manager"
 	"github.com/cuemby/warren/pkg/reconciler"
 	"github.com/cuemby/warren/pkg/scheduler"
@@ -278,12 +280,36 @@ var serviceCreateCmd = &cobra.Command{
 		name := args[0]
 		image, _ := cmd.Flags().GetString("image")
 		replicas, _ := cmd.Flags().GetInt("replicas")
+		manager, _ := cmd.Flags().GetString("manager")
+		envVars, _ := cmd.Flags().GetStringSlice("env")
 
-		fmt.Printf("Creating service '%s'\n", name)
-		fmt.Printf("  Image: %s\n", image)
-		fmt.Printf("  Replicas: %d\n", replicas)
-		fmt.Println()
-		fmt.Println("Implementation coming in Milestone 1!")
+		// Parse env vars
+		env := make(map[string]string)
+		for _, e := range envVars {
+			// Split on first = only
+			parts := splitEnv(e)
+			if len(parts) == 2 {
+				env[parts[0]] = parts[1]
+			}
+		}
+
+		// Connect to manager
+		c, err := client.NewClient(manager)
+		if err != nil {
+			return fmt.Errorf("failed to connect to manager: %v", err)
+		}
+		defer c.Close()
+
+		// Create service
+		service, err := c.CreateService(name, image, int32(replicas), env)
+		if err != nil {
+			return fmt.Errorf("failed to create service: %v", err)
+		}
+
+		fmt.Printf("✓ Service created: %s\n", service.Name)
+		fmt.Printf("  ID: %s\n", service.Id)
+		fmt.Printf("  Image: %s\n", service.Image)
+		fmt.Printf("  Replicas: %d\n", service.Replicas)
 		return nil
 	},
 }
@@ -292,8 +318,135 @@ var serviceListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List services",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		fmt.Println("Listing services...")
-		fmt.Println("Implementation coming in Milestone 1!")
+		manager, _ := cmd.Flags().GetString("manager")
+
+		// Connect to manager
+		c, err := client.NewClient(manager)
+		if err != nil {
+			return fmt.Errorf("failed to connect to manager: %v", err)
+		}
+		defer c.Close()
+
+		// List services
+		services, err := c.ListServices()
+		if err != nil {
+			return fmt.Errorf("failed to list services: %v", err)
+		}
+
+		if len(services) == 0 {
+			fmt.Println("No services found")
+			return nil
+		}
+
+		fmt.Printf("%-20s %-12s %-30s %s\n", "NAME", "REPLICAS", "IMAGE", "ID")
+		for _, svc := range services {
+			fmt.Printf("%-20s %-12d %-30s %s\n",
+				truncate(svc.Name, 20),
+				svc.Replicas,
+				truncate(svc.Image, 30),
+				svc.Id[:12])
+		}
+		return nil
+	},
+}
+
+var serviceInspectCmd = &cobra.Command{
+	Use:   "inspect NAME",
+	Short: "Inspect a service",
+	Args:  cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		name := args[0]
+		manager, _ := cmd.Flags().GetString("manager")
+
+		// Connect to manager
+		c, err := client.NewClient(manager)
+		if err != nil {
+			return fmt.Errorf("failed to connect to manager: %v", err)
+		}
+		defer c.Close()
+
+		// Get service
+		service, err := c.GetService(name)
+		if err != nil {
+			return fmt.Errorf("failed to get service: %v", err)
+		}
+
+		fmt.Printf("Service: %s\n", service.Name)
+		fmt.Printf("  ID: %s\n", service.Id)
+		fmt.Printf("  Image: %s\n", service.Image)
+		fmt.Printf("  Replicas: %d\n", service.Replicas)
+		fmt.Printf("  Mode: %s\n", service.Mode)
+		if len(service.Env) > 0 {
+			fmt.Println("  Environment:")
+			for k, v := range service.Env {
+				fmt.Printf("    %s=%s\n", k, v)
+			}
+		}
+		return nil
+	},
+}
+
+var serviceDeleteCmd = &cobra.Command{
+	Use:   "delete NAME",
+	Short: "Delete a service",
+	Args:  cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		name := args[0]
+		manager, _ := cmd.Flags().GetString("manager")
+
+		// Connect to manager
+		c, err := client.NewClient(manager)
+		if err != nil {
+			return fmt.Errorf("failed to connect to manager: %v", err)
+		}
+		defer c.Close()
+
+		// Get service to get ID
+		service, err := c.GetService(name)
+		if err != nil {
+			return fmt.Errorf("failed to find service: %v", err)
+		}
+
+		// Delete service
+		if err := c.DeleteService(service.Id); err != nil {
+			return fmt.Errorf("failed to delete service: %v", err)
+		}
+
+		fmt.Printf("✓ Service deleted: %s\n", name)
+		return nil
+	},
+}
+
+var serviceScaleCmd = &cobra.Command{
+	Use:   "scale NAME --replicas N",
+	Short: "Scale a service",
+	Args:  cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		name := args[0]
+		replicas, _ := cmd.Flags().GetInt("replicas")
+		manager, _ := cmd.Flags().GetString("manager")
+
+		// Connect to manager
+		c, err := client.NewClient(manager)
+		if err != nil {
+			return fmt.Errorf("failed to connect to manager: %v", err)
+		}
+		defer c.Close()
+
+		// Get service to get ID
+		service, err := c.GetService(name)
+		if err != nil {
+			return fmt.Errorf("failed to find service: %v", err)
+		}
+
+		// Update replicas
+		updated, err := c.UpdateService(service.Id, int32(replicas))
+		if err != nil {
+			return fmt.Errorf("failed to scale service: %v", err)
+		}
+
+		fmt.Printf("✓ Service scaled: %s\n", name)
+		fmt.Printf("  Replicas: %d → %d\n", service.Replicas, updated.Replicas)
 		return nil
 	},
 }
@@ -301,10 +454,22 @@ var serviceListCmd = &cobra.Command{
 func init() {
 	serviceCmd.AddCommand(serviceCreateCmd)
 	serviceCmd.AddCommand(serviceListCmd)
+	serviceCmd.AddCommand(serviceInspectCmd)
+	serviceCmd.AddCommand(serviceDeleteCmd)
+	serviceCmd.AddCommand(serviceScaleCmd)
+
+	// Common flag
+	for _, cmd := range []*cobra.Command{serviceCreateCmd, serviceListCmd, serviceInspectCmd, serviceDeleteCmd, serviceScaleCmd} {
+		cmd.Flags().String("manager", "127.0.0.1:8080", "Manager address")
+	}
 
 	serviceCreateCmd.Flags().String("image", "", "Container image")
 	serviceCreateCmd.Flags().Int("replicas", 1, "Number of replicas")
+	serviceCreateCmd.Flags().StringSlice("env", []string{}, "Environment variables (KEY=VALUE)")
 	serviceCreateCmd.MarkFlagRequired("image")
+
+	serviceScaleCmd.Flags().Int("replicas", 0, "Number of replicas")
+	serviceScaleCmd.MarkFlagRequired("replicas")
 }
 
 // Node commands
@@ -317,14 +482,42 @@ var nodeListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List nodes in the cluster",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		fmt.Println("Listing nodes...")
-		fmt.Println("Implementation coming in Milestone 1!")
+		manager, _ := cmd.Flags().GetString("manager")
+
+		// Connect to manager
+		c, err := client.NewClient(manager)
+		if err != nil {
+			return fmt.Errorf("failed to connect to manager: %v", err)
+		}
+		defer c.Close()
+
+		// List nodes
+		nodes, err := c.ListNodes()
+		if err != nil {
+			return fmt.Errorf("failed to list nodes: %v", err)
+		}
+
+		if len(nodes) == 0 {
+			fmt.Println("No nodes found")
+			return nil
+		}
+
+		fmt.Printf("%-15s %-10s %-15s %-10s\n", "ID", "ROLE", "STATUS", "CPU")
+		for _, node := range nodes {
+			fmt.Printf("%-15s %-10s %-15s %-10d\n",
+				truncate(node.Id, 15),
+				node.Role,
+				node.Status,
+				node.Resources.CpuCores)
+		}
 		return nil
 	},
 }
 
 func init() {
 	nodeCmd.AddCommand(nodeListCmd)
+
+	nodeListCmd.Flags().String("manager", "127.0.0.1:8080", "Manager address")
 }
 
 // Secret commands
@@ -365,4 +558,21 @@ var volumeListCmd = &cobra.Command{
 
 func init() {
 	volumeCmd.AddCommand(volumeListCmd)
+}
+
+// Helper functions
+
+func truncate(s string, max int) string {
+	if len(s) <= max {
+		return s
+	}
+	return s[:max-3] + "..."
+}
+
+func splitEnv(s string) []string {
+	idx := strings.Index(s, "=")
+	if idx == -1 {
+		return []string{s}
+	}
+	return []string{s[:idx], s[idx+1:]}
 }
