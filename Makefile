@@ -152,4 +152,17 @@ clean:
 check: fmt lint test
 	@echo "✓ All checks passed"
 
+## size: Check binary size
+size: build-release
+	@echo "Binary size check:"
+	@SIZE=$$(stat -f%z $(BUILD_DIR)/$(BINARY) 2>/dev/null || stat -c%s $(BUILD_DIR)/$(BINARY) 2>/dev/null); \
+	SIZE_MB=$$((SIZE / 1024 / 1024)); \
+	echo "  Current: $${SIZE_MB}MB"; \
+	if [ $$SIZE_MB -gt 100 ]; then \
+		echo "  ⚠️  WARNING: Binary exceeds 100MB target!"; \
+		exit 1; \
+	else \
+		echo "  ✓ Binary size OK (target: <100MB)"; \
+	fi
+
 .DEFAULT_GOAL := help
