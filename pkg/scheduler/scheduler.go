@@ -96,6 +96,81 @@ func (s *Scheduler) scheduleService(service *types.Service, nodes []*types.Node)
 		return fmt.Errorf("failed to list tasks: %v", err)
 	}
 
+	if service.Mode == types.ServiceModeGlobal {
+		return s.scheduleGlobalService(service, nodes, tasks)
+	}
+	return s.scheduleReplicatedService(service, nodes, tasks)
+}
+
+// scheduleGlobalService ensures one task per node for global services
+func (s *Scheduler) scheduleGlobalService(service *types.Service, nodes []*types.Node, tasks []*types.Task) error {
+	// Build map of active tasks by node
+	nodeTaskMap := make(map[string]*types.Task)
+	for _, task := range tasks {
+		if task.DesiredState == types.TaskStateRunning &&
+			(task.ActualState == types.TaskStatePending || task.ActualState == types.TaskStateRunning) {
+			nodeTaskMap[task.NodeID] = task
+		}
+	}
+
+	// Ensure each node has exactly one task
+	for _, node := range nodes {
+		if _, exists := nodeTaskMap[node.ID]; !exists {
+			// Create task for this node
+			task := &types.Task{
+				ID:            uuid.New().String(),
+				ServiceID:     service.ID,
+				ServiceName:   service.Name,
+				NodeID:        node.ID,
+				DesiredState:  types.TaskStateRunning,
+				ActualState:   types.TaskStatePending,
+				Image:         service.Image,
+				Env:           service.Env,
+				Mounts:        service.Volumes,
+				Secrets:       service.Secrets,
+				Resources:     service.Resources,
+				HealthCheck:   service.HealthCheck,
+				RestartPolicy: service.RestartPolicy,
+				CreatedAt:     time.Now(),
+			}
+
+			if err := s.manager.CreateTask(task); err != nil {
+				return fmt.Errorf("failed to create task: %v", err)
+			}
+
+			fmt.Printf("Created global task %s for service %s on node %s\n", task.ID, service.Name, node.ID)
+		}
+	}
+
+	// Remove tasks for nodes that no longer exist
+	for _, task := range tasks {
+		if task.DesiredState != types.TaskStateRunning {
+			continue
+		}
+
+		nodeExists := false
+		for _, node := range nodes {
+			if node.ID == task.NodeID {
+				nodeExists = true
+				break
+			}
+		}
+
+		if !nodeExists {
+			task.DesiredState = types.TaskStateShutdown
+			if err := s.manager.UpdateTask(task); err != nil {
+				fmt.Printf("Failed to shutdown task %s: %v\n", task.ID, err)
+				continue
+			}
+			fmt.Printf("Removed global task %s (node %s no longer exists)\n", task.ID, task.NodeID)
+		}
+	}
+
+	return nil
+}
+
+// scheduleReplicatedService handles replicated service scheduling
+func (s *Scheduler) scheduleReplicatedService(service *types.Service, nodes []*types.Node, tasks []*types.Task) error {
 	// Count running/pending tasks
 	activeTasks := 0
 	for _, task := range tasks {
@@ -105,16 +180,10 @@ func (s *Scheduler) scheduleService(service *types.Service, nodes []*types.Node)
 		}
 	}
 
-	// Calculate how many tasks we need
-	var desiredTasks int
-	if service.Mode == types.ServiceModeReplicated {
-		desiredTasks = service.Replicas
-	} else if service.Mode == types.ServiceModeGlobal {
-		desiredTasks = len(nodes)
-	}
+	desiredTasks := service.Replicas
+	tasksToCreate := desiredTasks - activeTasks
 
 	// Create missing tasks
-	tasksToCreate := desiredTasks - activeTasks
 	if tasksToCreate > 0 {
 		for i := 0; i < tasksToCreate; i++ {
 			// Check if service has volume requirements
