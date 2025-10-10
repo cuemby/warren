@@ -141,20 +141,22 @@ Warren development follows a milestone-based approach (not MVP-based). Each mile
 
 ### Phase 1.3: Worker Agent
 
-- [ ] **Worker agent basics**
-  - Implement heartbeat to manager (gRPC)
-  - Implement task watch (event stream from manager)
-  - Implement local state cache
+- [x] **Worker agent basics**
+  - Implemented worker registration and heartbeat (pkg/worker/worker.go)
+  - Task polling instead of event stream (simpler for MVP)
+  - Local state cache with task map
+  - CLI command: warren worker start
 
-- [ ] **Containerd runtime**
-  - Implement container lifecycle (pull, create, start, stop)
-  - Implement log streaming
+- [ ] **Containerd runtime** (Deferred to Phase 1.5)
+  - Currently simulates container execution
+  - TODO: Implement container lifecycle (pull, create, start, stop)
+  - TODO: Implement log streaming
   - Test: Start nginx container, curl localhost
 
-- [ ] **Health checking**
-  - Implement HTTP health probe
-  - Implement TCP health probe
-  - Report health status to manager
+- [ ] **Health checking** (Deferred to Phase 1.5)
+  - TODO: Implement HTTP health probe
+  - TODO: Implement TCP health probe
+  - TODO: Report health status to manager
   - Test: Unhealthy container removed from service
 
 ### Phase 1.4: Networking (Basic)
@@ -170,22 +172,33 @@ Warren development follows a milestone-based approach (not MVP-based). Each mile
   - Create iptables DNAT rules (round-robin to task IPs)
   - Test: Curl service VIP, hits different replicas
 
-### Phase 1.5: CLI
+### Phase 1.5: CLI & Integration Testing
 
-- [ ] **Cluster commands**
-  - `warren cluster init` - start manager
-  - `warren cluster join-token worker` - generate token
-  - `warren cluster join --token <token>` - join as worker
+- [x] **Cluster commands**
+  - ✓ `warren cluster init` - start manager (implemented)
+  - [ ] `warren cluster join-token worker` - generate token
+  - [ ] `warren cluster join --token <token>` - join as worker
 
-- [ ] **Service commands**
-  - `warren service create <name> --image <image> --replicas <n>`
-  - `warren service list`
-  - `warren service inspect <name>`
-  - `warren service delete <name>`
+- [x] **Worker commands**
+  - ✓ `warren worker start` - start worker and connect to manager
 
-- [ ] **Node commands**
-  - `warren node list`
-  - `warren node inspect <id>`
+- [ ] **Service commands** (via gRPC client)
+  - [ ] `warren service create <name> --image <image> --replicas <n>`
+  - [ ] `warren service list`
+  - [ ] `warren service inspect <name>`
+  - [ ] `warren service delete <name>`
+  - [ ] `warren service scale <name> --replicas <n>`
+
+- [ ] **Node commands** (via gRPC client)
+  - [ ] `warren node list`
+  - [ ] `warren node inspect <id>`
+
+- [ ] **Integration testing**
+  - [ ] End-to-end test: manager + worker + service
+  - [ ] Test: Create service → Tasks scheduled → Worker executes
+  - [ ] Test: Scale service up/down
+  - [ ] Test: Worker failure → Task rescheduled
+  - [ ] Test: Service deletion → All tasks cleaned up
 
 ### Milestone 1 Acceptance Criteria
 
