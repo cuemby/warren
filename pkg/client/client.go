@@ -158,7 +158,50 @@ func (c *Client) ListTasks(serviceID, nodeID string) ([]*proto.Task, error) {
 	return resp.Tasks, nil
 }
 
-// ListSecrets lists all secrets
+// CreateSecret creates a new secret
+func (c *Client) CreateSecret(name string, data []byte) (*proto.Secret, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	resp, err := c.client.CreateSecret(ctx, &proto.CreateSecretRequest{
+		Name: name,
+		Data: data,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Secret, nil
+}
+
+// GetSecretByName retrieves a secret by name (returns metadata only, no data)
+func (c *Client) GetSecretByName(name string) (*proto.Secret, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	resp, err := c.client.GetSecretByName(ctx, &proto.GetSecretByNameRequest{
+		Name: name,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Secret, nil
+}
+
+// DeleteSecret deletes a secret
+func (c *Client) DeleteSecret(name string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	_, err := c.client.DeleteSecret(ctx, &proto.DeleteSecretRequest{
+		Id: name,
+	})
+
+	return err
+}
+
+// ListSecrets lists all secrets (returns metadata only, no data)
 func (c *Client) ListSecrets() ([]*proto.Secret, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()

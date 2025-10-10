@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/cuemby/warren/pkg/client"
+	"github.com/cuemby/warren/pkg/security"
 	"github.com/cuemby/warren/pkg/storage"
 	"github.com/cuemby/warren/pkg/types"
 	"github.com/hashicorp/raft"
@@ -21,10 +22,11 @@ type Manager struct {
 	bindAddr string
 	dataDir  string
 
-	raft         *raft.Raft
-	fsm          *WarrenFSM
-	store        storage.Store
-	tokenManager *TokenManager
+	raft           *raft.Raft
+	fsm            *WarrenFSM
+	store          storage.Store
+	tokenManager   *TokenManager
+	secretsManager *security.SecretsManager
 }
 
 // Config holds configuration for creating a Manager
@@ -52,12 +54,20 @@ func NewManager(cfg *Config) (*Manager, error) {
 	// Create token manager
 	tokenManager := NewTokenManager()
 
+	// Create secrets manager with cluster-derived key
+	clusterKey := security.DeriveKeyFromClusterID(cfg.NodeID) // Using node ID as cluster ID for now
+	secretsManager, err := security.NewSecretsManager(clusterKey)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create secrets manager: %v", err)
+	}
+
 	m := &Manager{
-		nodeID:       cfg.NodeID,
-		bindAddr:     cfg.BindAddr,
-		dataDir:      cfg.DataDir,
-		fsm:          fsm,
-		store:        store,
+		nodeID:         cfg.NodeID,
+		bindAddr:       cfg.BindAddr,
+		dataDir:        cfg.DataDir,
+		fsm:            fsm,
+		store:          store,
+		secretsManager: secretsManager,
 		tokenManager: tokenManager,
 	}
 
@@ -418,7 +428,12 @@ func (m *Manager) DeleteTask(id string) error {
 	return m.Apply(cmd)
 }
 
-// CreateSecret creates a new secret
+// EncryptSecret encrypts plaintext secret data
+func (m *Manager) EncryptSecret(plaintext []byte) ([]byte, error) {
+	return m.secretsManager.EncryptSecret(plaintext)
+}
+
+// CreateSecret creates a new secret (data should already be encrypted)
 func (m *Manager) CreateSecret(secret *types.Secret) error {
 	data, err := json.Marshal(secret)
 	if err != nil {

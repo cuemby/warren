@@ -696,18 +696,174 @@ var secretCmd = &cobra.Command{
 	Short: "Manage secrets",
 }
 
+var secretCreateCmd = &cobra.Command{
+	Use:   "create NAME",
+	Short: "Create a new secret",
+	Long: `Create a new secret from a file or literal value.
+
+Examples:
+  # Create secret from file
+  warren secret create db-password --from-file ./password.txt
+
+  # Create secret from literal value
+  warren secret create api-key --from-literal "my-secret-key"
+
+  # Create secret from stdin
+  echo "my-secret" | warren secret create db-pass --from-stdin`,
+	Args: cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		name := args[0]
+		managerAddr, _ := cmd.Flags().GetString("manager")
+		fromFile, _ := cmd.Flags().GetString("from-file")
+		fromLiteral, _ := cmd.Flags().GetString("from-literal")
+		fromStdin, _ := cmd.Flags().GetBool("from-stdin")
+
+		// Determine data source
+		var data []byte
+		var err error
+
+		if fromFile != "" {
+			data, err = os.ReadFile(fromFile)
+			if err != nil {
+				return fmt.Errorf("failed to read file: %w", err)
+			}
+		} else if fromLiteral != "" {
+			data = []byte(fromLiteral)
+		} else if fromStdin {
+			data, err = os.ReadFile("/dev/stdin")
+			if err != nil {
+				return fmt.Errorf("failed to read stdin: %w", err)
+			}
+		} else {
+			return fmt.Errorf("must specify one of: --from-file, --from-literal, or --from-stdin")
+		}
+
+		// Create client and secret
+		c, err := client.NewClient(managerAddr)
+		if err != nil {
+			return fmt.Errorf("failed to connect to manager: %w", err)
+		}
+		defer c.Close()
+
+		secret, err := c.CreateSecret(name, data)
+		if err != nil {
+			return fmt.Errorf("failed to create secret: %w", err)
+		}
+
+		fmt.Printf("Secret created: %s\n", secret.Name)
+		fmt.Printf("  ID: %s\n", secret.Id)
+		return nil
+	},
+}
+
 var secretListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List secrets",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		fmt.Println("Listing secrets...")
-		fmt.Println("Implementation coming in Milestone 1!")
+		managerAddr, _ := cmd.Flags().GetString("manager")
+
+		c, err := client.NewClient(managerAddr)
+		if err != nil {
+			return fmt.Errorf("failed to connect to manager: %w", err)
+		}
+		defer c.Close()
+
+		secrets, err := c.ListSecrets()
+		if err != nil {
+			return fmt.Errorf("failed to list secrets: %w", err)
+		}
+
+		if len(secrets) == 0 {
+			fmt.Println("No secrets found")
+			return nil
+		}
+
+		fmt.Printf("%-20s %-40s %s\n", "NAME", "ID", "CREATED")
+		fmt.Println(strings.Repeat("-", 80))
+		for _, secret := range secrets {
+			createdAt := secret.CreatedAt.AsTime().Format("2006-01-02 15:04:05")
+			fmt.Printf("%-20s %-40s %s\n",
+				truncate(secret.Name, 20),
+				truncate(secret.Id, 40),
+				createdAt,
+			)
+		}
+
+		return nil
+	},
+}
+
+var secretInspectCmd = &cobra.Command{
+	Use:   "inspect NAME",
+	Short: "Display detailed information about a secret",
+	Args:  cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		name := args[0]
+		managerAddr, _ := cmd.Flags().GetString("manager")
+
+		c, err := client.NewClient(managerAddr)
+		if err != nil {
+			return fmt.Errorf("failed to connect to manager: %w", err)
+		}
+		defer c.Close()
+
+		secret, err := c.GetSecretByName(name)
+		if err != nil {
+			return fmt.Errorf("failed to get secret: %w", err)
+		}
+
+		fmt.Printf("Name: %s\n", secret.Name)
+		fmt.Printf("ID: %s\n", secret.Id)
+		fmt.Printf("Created: %s\n", secret.CreatedAt.AsTime().Format("2006-01-02 15:04:05"))
+		fmt.Printf("\nNote: Secret data is encrypted and not displayed for security.\n")
+
+		return nil
+	},
+}
+
+var secretDeleteCmd = &cobra.Command{
+	Use:   "delete NAME",
+	Short: "Delete a secret",
+	Args:  cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		name := args[0]
+		managerAddr, _ := cmd.Flags().GetString("manager")
+
+		c, err := client.NewClient(managerAddr)
+		if err != nil {
+			return fmt.Errorf("failed to connect to manager: %w", err)
+		}
+		defer c.Close()
+
+		if err := c.DeleteSecret(name); err != nil {
+			return fmt.Errorf("failed to delete secret: %w", err)
+		}
+
+		fmt.Printf("Secret deleted: %s\n", name)
 		return nil
 	},
 }
 
 func init() {
+	// secret create flags
+	secretCreateCmd.Flags().String("manager", "localhost:7946", "Manager address")
+	secretCreateCmd.Flags().String("from-file", "", "Read secret data from file")
+	secretCreateCmd.Flags().String("from-literal", "", "Use literal string as secret data")
+	secretCreateCmd.Flags().Bool("from-stdin", false, "Read secret data from stdin")
+
+	// secret list flags
+	secretListCmd.Flags().String("manager", "localhost:7946", "Manager address")
+
+	// secret inspect flags
+	secretInspectCmd.Flags().String("manager", "localhost:7946", "Manager address")
+
+	// secret delete flags
+	secretDeleteCmd.Flags().String("manager", "localhost:7946", "Manager address")
+
+	secretCmd.AddCommand(secretCreateCmd)
 	secretCmd.AddCommand(secretListCmd)
+	secretCmd.AddCommand(secretInspectCmd)
+	secretCmd.AddCommand(secretDeleteCmd)
 }
 
 // Volume commands

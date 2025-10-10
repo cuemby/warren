@@ -429,10 +429,16 @@ func (s *Server) CreateSecret(ctx context.Context, req *proto.CreateSecretReques
 		return nil, err
 	}
 
+	// Encrypt the secret data before storing
+	encryptedData, err := s.manager.EncryptSecret(req.Data)
+	if err != nil {
+		return nil, fmt.Errorf("failed to encrypt secret: %v", err)
+	}
+
 	secret := &types.Secret{
 		ID:        uuid.New().String(),
 		Name:      req.Name,
-		Data:      req.Data,
+		Data:      encryptedData,
 		CreatedAt: time.Now(),
 	}
 
@@ -442,6 +448,19 @@ func (s *Server) CreateSecret(ctx context.Context, req *proto.CreateSecretReques
 
 	return &proto.CreateSecretResponse{
 		Secret: secretToProto(secret),
+	}, nil
+}
+
+// GetSecretByName retrieves a secret by name (includes encrypted data for workers)
+func (s *Server) GetSecretByName(ctx context.Context, req *proto.GetSecretByNameRequest) (*proto.GetSecretByNameResponse, error) {
+	secret, err := s.manager.GetSecretByName(req.Name)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get secret: %v", err)
+	}
+
+	// Include encrypted data for workers to decrypt
+	return &proto.GetSecretByNameResponse{
+		Secret: secretToProtoWithData(secret),
 	}, nil
 }
 
@@ -767,7 +786,16 @@ func secretToProto(s *types.Secret) *proto.Secret {
 		Id:        s.ID,
 		Name:      s.Name,
 		CreatedAt: timestamppb.New(s.CreatedAt),
-		// Note: Data is never exposed via API
+		// Note: Data is not included for security (CLI listing)
+	}
+}
+
+func secretToProtoWithData(s *types.Secret) *proto.Secret {
+	return &proto.Secret{
+		Id:        s.ID,
+		Name:      s.Name,
+		CreatedAt: timestamppb.New(s.CreatedAt),
+		Data:      s.Data, // Include encrypted data for workers
 	}
 }
 
