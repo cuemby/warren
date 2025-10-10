@@ -1,0 +1,14 @@
+apiVersion: warren.io/v1
+kind: Service
+metadata:
+  name: nginx
+  labels:
+    app: web
+    tier: frontend
+spec:
+  image: nginx:latest
+  replicas: 3
+  mode: replicated
+  env:
+    LOG_LEVEL: info
+    ENVIRONMENT: production

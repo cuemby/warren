@@ -1,0 +1,24 @@
+# Example: Complete application stack with service, secret, and volume
+#
+# Apply with:
+#   warren apply -f complete-app.yaml
+#
+# Note: This is a single-document YAML. For multi-document support,
+# separate resources with '---' (coming in future release).
+
+apiVersion: warren.io/v1
+kind: Service
+metadata:
+  name: postgres
+  labels:
+    app: database
+    tier: backend
+spec:
+  image: postgres:15
+  replicas: 1
+  mode: replicated
+  env:
+    POSTGRES_DB: myapp
+    POSTGRES_USER: admin
+    # In production, use secrets for passwords!
+    POSTGRES_PASSWORD: changeme
