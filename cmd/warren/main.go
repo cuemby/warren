@@ -3,7 +3,10 @@ package main
 import (
 	"fmt"
 	"os"
+	"os/signal"
+	"syscall"
 
+	"github.com/cuemby/warren/pkg/manager"
 	"github.com/spf13/cobra"
 )
 
@@ -61,10 +64,46 @@ var clusterInitCmd = &cobra.Command{
 This command starts the Warren manager in single-node mode, which will
 automatically form a Raft quorum once additional managers join.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
+		nodeID, _ := cmd.Flags().GetString("node-id")
+		bindAddr, _ := cmd.Flags().GetString("bind-addr")
+		dataDir, _ := cmd.Flags().GetString("data-dir")
+
 		fmt.Println("Initializing Warren cluster...")
-		fmt.Println("This will start the manager process.")
+		fmt.Printf("  Node ID: %s\n", nodeID)
+		fmt.Printf("  Bind Address: %s\n", bindAddr)
+		fmt.Printf("  Data Directory: %s\n", dataDir)
 		fmt.Println()
-		fmt.Println("Implementation coming in Milestone 1!")
+
+		// Create manager
+		mgr, err := manager.NewManager(&manager.Config{
+			NodeID:   nodeID,
+			BindAddr: bindAddr,
+			DataDir:  dataDir,
+		})
+		if err != nil {
+			return fmt.Errorf("failed to create manager: %v", err)
+		}
+
+		// Bootstrap cluster
+		if err := mgr.Bootstrap(); err != nil {
+			return fmt.Errorf("failed to bootstrap cluster: %v", err)
+		}
+
+		fmt.Println("✓ Cluster initialized successfully")
+		fmt.Println()
+		fmt.Println("Manager is running. Press Ctrl+C to stop.")
+
+		// Wait for interrupt signal
+		sigCh := make(chan os.Signal, 1)
+		signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM)
+		<-sigCh
+
+		fmt.Println("\nShutting down...")
+		if err := mgr.Shutdown(); err != nil {
+			return fmt.Errorf("failed to shutdown: %v", err)
+		}
+
+		fmt.Println("✓ Shutdown complete")
 		return nil
 	},
 }
@@ -105,6 +144,12 @@ func init() {
 	clusterCmd.AddCommand(clusterJoinTokenCmd)
 	clusterCmd.AddCommand(clusterJoinCmd)
 
+	// Flags for init command
+	clusterInitCmd.Flags().String("node-id", "manager-1", "Unique node ID")
+	clusterInitCmd.Flags().String("bind-addr", "127.0.0.1:7946", "Address for Raft communication")
+	clusterInitCmd.Flags().String("data-dir", "./warren-data", "Data directory for cluster state")
+
+	// Flags for join command
 	clusterJoinCmd.Flags().String("token", "", "Join token from manager")
 }
 

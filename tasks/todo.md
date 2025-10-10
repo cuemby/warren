@@ -115,10 +115,11 @@ Warren development follows a milestone-based approach (not MVP-based). Each mile
 
 ### Phase 1.2: Manager - Single Node
 
-- [ ] **Raft integration (single-node mode)**
-  - Initialize Raft with BoltDB store
-  - Implement FSM (Finite State Machine) for cluster state
-  - Test: Apply commands, read state, snapshot/restore
+- [x] **Raft integration (single-node mode)**
+  - Initialized Raft with BoltDB store (pkg/manager/manager.go)
+  - Implemented FSM (pkg/manager/fsm.go) with Apply/Snapshot/Restore
+  - Wired up `warren cluster init` command with graceful shutdown
+  - Bootstrap creates single-node cluster successfully
 
 - [ ] **API Server**
   - Define gRPC protobuf schema (services, nodes, tasks)
