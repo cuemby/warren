@@ -6,6 +6,8 @@ import (
 	"sync"
 	"time"
 
+	specs "github.com/opencontainers/runtime-spec/specs-go"
+
 	"github.com/cuemby/warren/api/proto"
 	"github.com/cuemby/warren/pkg/runtime"
 	"github.com/cuemby/warren/pkg/types"
@@ -23,6 +25,7 @@ type Worker struct {
 	conn           *grpc.ClientConn
 	runtime        *runtime.ContainerdRuntime
 	secretsHandler *SecretsHandler
+	volumesHandler *VolumesHandler
 
 	tasks  map[string]*types.Task
 	taskMu sync.RWMutex
@@ -69,6 +72,13 @@ func NewWorker(cfg *Config) (*Worker, error) {
 			return nil, fmt.Errorf("failed to ensure secrets directory: %w", err)
 		}
 	}
+
+	// Initialize volumes handler
+	vh, err := NewVolumesHandler(w)
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialize volumes handler: %w", err)
+	}
+	w.volumesHandler = vh
 
 	return w, nil
 }
@@ -211,6 +221,16 @@ func (w *Worker) syncTasks() error {
 
 		// New task - start it
 		if !exists && protoTask.DesiredState == "running" {
+			// Convert proto volume mounts to types.VolumeMount
+			var mounts []*types.VolumeMount
+			for _, pv := range protoTask.Volumes {
+				mounts = append(mounts, &types.VolumeMount{
+					Source:   pv.Source,
+					Target:   pv.Target,
+					ReadOnly: pv.ReadOnly,
+				})
+			}
+
 			task := &types.Task{
 				ID:           protoTask.Id,
 				ServiceID:    protoTask.ServiceId,
@@ -220,6 +240,7 @@ func (w *Worker) syncTasks() error {
 				ActualState:  types.TaskStatePending,
 				Image:        protoTask.Image,
 				Secrets:      protoTask.Secrets,
+				Mounts:       mounts,
 			}
 
 			w.taskMu.Lock()
@@ -279,11 +300,35 @@ func (w *Worker) executeTask(task *types.Task) {
 		}()
 	}
 
-	// Create the container (with or without secrets)
+	// Prepare volumes if task has them
+	var volumeMounts []specs.Mount
+	if len(task.Mounts) > 0 && w.volumesHandler != nil {
+		fmt.Printf("Preparing %d volume(s) for task %s...\n", len(task.Mounts), task.ID)
+		var err error
+		volumeMounts, err = w.volumesHandler.PrepareVolumesForTask(task)
+		if err != nil {
+			w.taskMu.Lock()
+			task.ActualState = types.TaskStateFailed
+			task.Error = fmt.Sprintf("failed to prepare volumes: %v", err)
+			w.taskMu.Unlock()
+			fmt.Printf("Task %s failed to prepare volumes: %v\n", task.ID, err)
+			return
+		}
+		fmt.Printf("Volumes prepared: %d mount(s)\n", len(volumeMounts))
+
+		// Ensure cleanup on exit
+		defer func() {
+			if err := w.volumesHandler.CleanupVolumesForTask(task); err != nil {
+				fmt.Printf("Warning: failed to cleanup volumes for task %s: %v\n", task.ID, err)
+			}
+		}()
+	}
+
+	// Create the container with secrets and/or volumes
 	var containerID string
 	var err error
-	if secretsPath != "" {
-		containerID, err = w.runtime.CreateContainerWithSecrets(ctx, task, secretsPath)
+	if secretsPath != "" || len(volumeMounts) > 0 {
+		containerID, err = w.runtime.CreateContainerWithMounts(ctx, task, secretsPath, volumeMounts)
 	} else {
 		containerID, err = w.runtime.CreateContainer(ctx, task)
 	}

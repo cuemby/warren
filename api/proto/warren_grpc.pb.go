@@ -38,6 +38,7 @@ const (
 	WarrenAPI_DeleteSecret_FullMethodName      = "/warren.v1.WarrenAPI/DeleteSecret"
 	WarrenAPI_ListSecrets_FullMethodName       = "/warren.v1.WarrenAPI/ListSecrets"
 	WarrenAPI_CreateVolume_FullMethodName      = "/warren.v1.WarrenAPI/CreateVolume"
+	WarrenAPI_GetVolumeByName_FullMethodName   = "/warren.v1.WarrenAPI/GetVolumeByName"
 	WarrenAPI_DeleteVolume_FullMethodName      = "/warren.v1.WarrenAPI/DeleteVolume"
 	WarrenAPI_ListVolumes_FullMethodName       = "/warren.v1.WarrenAPI/ListVolumes"
 	WarrenAPI_GenerateJoinToken_FullMethodName = "/warren.v1.WarrenAPI/GenerateJoinToken"
@@ -76,6 +77,7 @@ type WarrenAPIClient interface {
 	ListSecrets(ctx context.Context, in *ListSecretsRequest, opts ...grpc.CallOption) (*ListSecretsResponse, error)
 	// Volume operations
 	CreateVolume(ctx context.Context, in *CreateVolumeRequest, opts ...grpc.CallOption) (*CreateVolumeResponse, error)
+	GetVolumeByName(ctx context.Context, in *GetVolumeByNameRequest, opts ...grpc.CallOption) (*GetVolumeByNameResponse, error)
 	DeleteVolume(ctx context.Context, in *DeleteVolumeRequest, opts ...grpc.CallOption) (*DeleteVolumeResponse, error)
 	ListVolumes(ctx context.Context, in *ListVolumesRequest, opts ...grpc.CallOption) (*ListVolumesResponse, error)
 	// Cluster operations
@@ -291,6 +293,16 @@ func (c *warrenAPIClient) CreateVolume(ctx context.Context, in *CreateVolumeRequ
 	return out, nil
 }
 
+func (c *warrenAPIClient) GetVolumeByName(ctx context.Context, in *GetVolumeByNameRequest, opts ...grpc.CallOption) (*GetVolumeByNameResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetVolumeByNameResponse)
+	err := c.cc.Invoke(ctx, WarrenAPI_GetVolumeByName_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *warrenAPIClient) DeleteVolume(ctx context.Context, in *DeleteVolumeRequest, opts ...grpc.CallOption) (*DeleteVolumeResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(DeleteVolumeResponse)
@@ -372,6 +384,7 @@ type WarrenAPIServer interface {
 	ListSecrets(context.Context, *ListSecretsRequest) (*ListSecretsResponse, error)
 	// Volume operations
 	CreateVolume(context.Context, *CreateVolumeRequest) (*CreateVolumeResponse, error)
+	GetVolumeByName(context.Context, *GetVolumeByNameRequest) (*GetVolumeByNameResponse, error)
 	DeleteVolume(context.Context, *DeleteVolumeRequest) (*DeleteVolumeResponse, error)
 	ListVolumes(context.Context, *ListVolumesRequest) (*ListVolumesResponse, error)
 	// Cluster operations
@@ -444,6 +457,9 @@ func (UnimplementedWarrenAPIServer) ListSecrets(context.Context, *ListSecretsReq
 }
 func (UnimplementedWarrenAPIServer) CreateVolume(context.Context, *CreateVolumeRequest) (*CreateVolumeResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateVolume not implemented")
+}
+func (UnimplementedWarrenAPIServer) GetVolumeByName(context.Context, *GetVolumeByNameRequest) (*GetVolumeByNameResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetVolumeByName not implemented")
 }
 func (UnimplementedWarrenAPIServer) DeleteVolume(context.Context, *DeleteVolumeRequest) (*DeleteVolumeResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteVolume not implemented")
@@ -816,6 +832,24 @@ func _WarrenAPI_CreateVolume_Handler(srv interface{}, ctx context.Context, dec f
 	return interceptor(ctx, in, info, handler)
 }
 
+func _WarrenAPI_GetVolumeByName_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetVolumeByNameRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WarrenAPIServer).GetVolumeByName(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WarrenAPI_GetVolumeByName_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WarrenAPIServer).GetVolumeByName(ctx, req.(*GetVolumeByNameRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _WarrenAPI_DeleteVolume_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(DeleteVolumeRequest)
 	if err := dec(in); err != nil {
@@ -984,6 +1018,10 @@ var WarrenAPI_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CreateVolume",
 			Handler:    _WarrenAPI_CreateVolume_Handler,
+		},
+		{
+			MethodName: "GetVolumeByName",
+			Handler:    _WarrenAPI_GetVolumeByName_Handler,
 		},
 		{
 			MethodName: "DeleteVolume",

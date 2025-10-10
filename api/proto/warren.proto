@@ -38,6 +38,7 @@ service WarrenAPI {
 
   // Volume operations
   rpc CreateVolume(CreateVolumeRequest) returns (CreateVolumeResponse);
+  rpc GetVolumeByName(GetVolumeByNameRequest) returns (GetVolumeByNameResponse);
   rpc DeleteVolume(DeleteVolumeRequest) returns (DeleteVolumeResponse);
   rpc ListVolumes(ListVolumesRequest) returns (ListVolumesResponse);
 
@@ -333,6 +334,8 @@ message Volume {
   map<string, string> driver_opts = 4;
   map<string, string> labels = 5;
   google.protobuf.Timestamp created_at = 6;
+  string node_id = 7; // Node affinity for local volumes
+  string mount_path = 8; // Host mount path
 }
 
 message CreateVolumeRequest {
@@ -352,6 +355,14 @@ message DeleteVolumeRequest {
 
 message DeleteVolumeResponse {
   string status = 1;
+}
+
+message GetVolumeByNameRequest {
+  string name = 1;
+}
+
+message GetVolumeByNameResponse {
+  Volume volume = 1;
 }
 
 message ListVolumesRequest {}
