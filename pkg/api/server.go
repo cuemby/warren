@@ -30,6 +30,19 @@ func NewServer(mgr *manager.Manager) *Server {
 	}
 }
 
+// ensureLeader checks if this node is the leader and returns an error if not
+// This should be called for all write operations
+func (s *Server) ensureLeader() error {
+	if !s.manager.IsLeader() {
+		leaderAddr := s.manager.LeaderAddr()
+		if leaderAddr == "" {
+			return fmt.Errorf("no leader elected yet")
+		}
+		return fmt.Errorf("not the leader, current leader is at: %s", leaderAddr)
+	}
+	return nil
+}
+
 // Start starts the gRPC server
 func (s *Server) Start(addr string) error {
 	lis, err := net.Listen("tcp", addr)
@@ -52,6 +65,11 @@ func (s *Server) Stop() {
 
 // RegisterNode registers a new node (worker or manager) with the cluster
 func (s *Server) RegisterNode(ctx context.Context, req *proto.RegisterNodeRequest) (*proto.RegisterNodeResponse, error) {
+	// Ensure we're the leader for write operations
+	if err := s.ensureLeader(); err != nil {
+		return nil, err
+	}
+
 	node := &types.Node{
 		ID:      req.Id,
 		Role:    types.NodeRole(req.Role),
@@ -164,6 +182,11 @@ func (s *Server) GetNode(ctx context.Context, req *proto.GetNodeRequest) (*proto
 
 // RemoveNode removes a node from the cluster
 func (s *Server) RemoveNode(ctx context.Context, req *proto.RemoveNodeRequest) (*proto.RemoveNodeResponse, error) {
+	// Ensure we're the leader for write operations
+	if err := s.ensureLeader(); err != nil {
+		return nil, err
+	}
+
 	if err := s.manager.DeleteNode(req.Id); err != nil {
 		return nil, fmt.Errorf("failed to remove node: %v", err)
 	}
@@ -175,6 +198,11 @@ func (s *Server) RemoveNode(ctx context.Context, req *proto.RemoveNodeRequest) (
 
 // CreateService creates a new service
 func (s *Server) CreateService(ctx context.Context, req *proto.CreateServiceRequest) (*proto.CreateServiceResponse, error) {
+	// Ensure we're the leader for write operations
+	if err := s.ensureLeader(); err != nil {
+		return nil, err
+	}
+
 	// Convert env map to slice
 	var envSlice []string
 	for k, v := range req.Env {
@@ -239,6 +267,11 @@ func (s *Server) CreateService(ctx context.Context, req *proto.CreateServiceRequ
 
 // UpdateService updates an existing service
 func (s *Server) UpdateService(ctx context.Context, req *proto.UpdateServiceRequest) (*proto.UpdateServiceResponse, error) {
+	// Ensure we're the leader for write operations
+	if err := s.ensureLeader(); err != nil {
+		return nil, err
+	}
+
 	service, err := s.manager.GetService(req.Id)
 	if err != nil {
 		return nil, fmt.Errorf("service not found: %v", err)
@@ -271,6 +304,11 @@ func (s *Server) UpdateService(ctx context.Context, req *proto.UpdateServiceRequ
 
 // DeleteService deletes a service
 func (s *Server) DeleteService(ctx context.Context, req *proto.DeleteServiceRequest) (*proto.DeleteServiceResponse, error) {
+	// Ensure we're the leader for write operations
+	if err := s.ensureLeader(); err != nil {
+		return nil, err
+	}
+
 	if err := s.manager.DeleteService(req.Id); err != nil {
 		return nil, fmt.Errorf("failed to delete service: %v", err)
 	}
@@ -386,6 +424,11 @@ func (s *Server) WatchTasks(req *proto.WatchTasksRequest, stream proto.WarrenAPI
 
 // CreateSecret creates a new secret
 func (s *Server) CreateSecret(ctx context.Context, req *proto.CreateSecretRequest) (*proto.CreateSecretResponse, error) {
+	// Ensure we're the leader for write operations
+	if err := s.ensureLeader(); err != nil {
+		return nil, err
+	}
+
 	secret := &types.Secret{
 		ID:        uuid.New().String(),
 		Name:      req.Name,
@@ -404,6 +447,11 @@ func (s *Server) CreateSecret(ctx context.Context, req *proto.CreateSecretReques
 
 // DeleteSecret deletes a secret
 func (s *Server) DeleteSecret(ctx context.Context, req *proto.DeleteSecretRequest) (*proto.DeleteSecretResponse, error) {
+	// Ensure we're the leader for write operations
+	if err := s.ensureLeader(); err != nil {
+		return nil, err
+	}
+
 	if err := s.manager.DeleteSecret(req.Id); err != nil {
 		return nil, fmt.Errorf("failed to delete secret: %v", err)
 	}
@@ -432,6 +480,11 @@ func (s *Server) ListSecrets(ctx context.Context, req *proto.ListSecretsRequest)
 
 // CreateVolume creates a new volume
 func (s *Server) CreateVolume(ctx context.Context, req *proto.CreateVolumeRequest) (*proto.CreateVolumeResponse, error) {
+	// Ensure we're the leader for write operations
+	if err := s.ensureLeader(); err != nil {
+		return nil, err
+	}
+
 	volume := &types.Volume{
 		ID:        uuid.New().String(),
 		Name:      req.Name,
@@ -451,6 +504,11 @@ func (s *Server) CreateVolume(ctx context.Context, req *proto.CreateVolumeReques
 
 // DeleteVolume deletes a volume
 func (s *Server) DeleteVolume(ctx context.Context, req *proto.DeleteVolumeRequest) (*proto.DeleteVolumeResponse, error) {
+	// Ensure we're the leader for write operations
+	if err := s.ensureLeader(); err != nil {
+		return nil, err
+	}
+
 	if err := s.manager.DeleteVolume(req.Id); err != nil {
 		return nil, fmt.Errorf("failed to delete volume: %v", err)
 	}
