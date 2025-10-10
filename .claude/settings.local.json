@@ -17,7 +17,10 @@
       "Bash(./bin/warren:*)",
       "Bash(go install:*)",
       "Bash(protoc:*)",
-      "Bash(go build:*)"
+      "Bash(go build:*)",
+      "Bash(systemctl status:*)",
+      "Bash(brew services:*)",
+      "Bash(docker:*)"
     ],
     "deny": [],
     "ask": []
