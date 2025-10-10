@@ -823,3 +823,9 @@ func volumeToProto(v *types.Volume) *proto.Volume {
 		CreatedAt:  timestamppb.New(v.CreatedAt),
 	}
 }
+
+// StreamEvents streams cluster events to the client
+// TODO: Complete implementation after protobuf regeneration
+func (s *Server) StreamEvents(req interface{}, stream interface{}) error {
+	return fmt.Errorf("event streaming not yet implemented")
+}

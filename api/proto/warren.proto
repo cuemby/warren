@@ -46,6 +46,9 @@ service WarrenAPI {
   rpc GenerateJoinToken(GenerateJoinTokenRequest) returns (GenerateJoinTokenResponse);
   rpc JoinCluster(JoinClusterRequest) returns (JoinClusterResponse);
   rpc GetClusterInfo(GetClusterInfoRequest) returns (GetClusterInfoResponse);
+
+  // Event streaming
+  rpc StreamEvents(StreamEventsRequest) returns (stream Event);
 }
 
 // Node messages
@@ -405,4 +408,17 @@ message ClusterServer {
   string id = 1;
   string address = 2;
   string suffrage = 3; // "Voter", "Nonvoter", "Staging"
+}
+
+// Event streaming messages
+message Event {
+  string id = 1;
+  string type = 2;
+  google.protobuf.Timestamp timestamp = 3;
+  string message = 4;
+  map<string, string> metadata = 5;
+}
+
+message StreamEventsRequest {
+  repeated string event_types = 1; // Filter by event types (empty = all events)
 }

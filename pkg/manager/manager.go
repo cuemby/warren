@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/cuemby/warren/pkg/client"
+	"github.com/cuemby/warren/pkg/events"
 	"github.com/cuemby/warren/pkg/security"
 	"github.com/cuemby/warren/pkg/storage"
 	"github.com/cuemby/warren/pkg/types"
@@ -27,6 +28,7 @@ type Manager struct {
 	store          storage.Store
 	tokenManager   *TokenManager
 	secretsManager *security.SecretsManager
+	eventBroker    *events.Broker
 }
 
 // Config holds configuration for creating a Manager
@@ -61,6 +63,10 @@ func NewManager(cfg *Config) (*Manager, error) {
 		return nil, fmt.Errorf("failed to create secrets manager: %v", err)
 	}
 
+	// Create event broker
+	eventBroker := events.NewBroker()
+	eventBroker.Start()
+
 	m := &Manager{
 		nodeID:         cfg.NodeID,
 		bindAddr:       cfg.BindAddr,
@@ -68,7 +74,8 @@ func NewManager(cfg *Config) (*Manager, error) {
 		fsm:            fsm,
 		store:          store,
 		secretsManager: secretsManager,
-		tokenManager: tokenManager,
+		tokenManager:   tokenManager,
+		eventBroker:    eventBroker,
 	}
 
 	return m, nil
@@ -280,6 +287,18 @@ func (m *Manager) GetRaftStats() map[string]interface{} {
 	stats["leader"] = string(m.raft.Leader())
 
 	return stats
+}
+
+// GetEventBroker returns the event broker
+func (m *Manager) GetEventBroker() *events.Broker {
+	return m.eventBroker
+}
+
+// PublishEvent publishes an event to all subscribers
+func (m *Manager) PublishEvent(event *events.Event) {
+	if m.eventBroker != nil {
+		m.eventBroker.Publish(event)
+	}
 }
 
 // Apply submits a command to the Raft cluster
@@ -610,6 +629,11 @@ func (m *Manager) ValidateJoinToken(token string) (string, error) {
 
 // Shutdown gracefully shuts down the manager
 func (m *Manager) Shutdown() error {
+	// Stop event broker first
+	if m.eventBroker != nil {
+		m.eventBroker.Stop()
+	}
+
 	if m.raft != nil {
 		future := m.raft.Shutdown()
 		if err := future.Error(); err != nil {
