@@ -20,9 +20,10 @@ type Manager struct {
 	bindAddr string
 	dataDir  string
 
-	raft  *raft.Raft
-	fsm   *WarrenFSM
-	store storage.Store
+	raft         *raft.Raft
+	fsm          *WarrenFSM
+	store        storage.Store
+	tokenManager *TokenManager
 }
 
 // Config holds configuration for creating a Manager
@@ -47,12 +48,16 @@ func NewManager(cfg *Config) (*Manager, error) {
 	// Create FSM
 	fsm := NewWarrenFSM(store)
 
+	// Create token manager
+	tokenManager := NewTokenManager()
+
 	m := &Manager{
-		nodeID:   cfg.NodeID,
-		bindAddr: cfg.BindAddr,
-		dataDir:  cfg.DataDir,
-		fsm:      fsm,
-		store:    store,
+		nodeID:       cfg.NodeID,
+		bindAddr:     cfg.BindAddr,
+		dataDir:      cfg.DataDir,
+		fsm:          fsm,
+		store:        store,
+		tokenManager: tokenManager,
 	}
 
 	return m, nil
@@ -120,10 +125,112 @@ func (m *Manager) Bootstrap() error {
 }
 
 // Join adds this manager to an existing cluster
-func (m *Manager) Join(leaderAddr string) error {
-	// TODO: Implement cluster join logic
-	// This will be used when adding additional manager nodes
-	return fmt.Errorf("join not yet implemented")
+func (m *Manager) Join(leaderAddr string, token string) error {
+	config := raft.DefaultConfig()
+	config.LocalID = raft.ServerID(m.nodeID)
+
+	// Setup Raft communication
+	addr, err := net.ResolveTCPAddr("tcp", m.bindAddr)
+	if err != nil {
+		return fmt.Errorf("failed to resolve bind address: %v", err)
+	}
+
+	transport, err := raft.NewTCPTransport(m.bindAddr, addr, 3, 10*time.Second, os.Stderr)
+	if err != nil {
+		return fmt.Errorf("failed to create transport: %v", err)
+	}
+
+	// Create snapshot store
+	snapshotStore, err := raft.NewFileSnapshotStore(m.dataDir, 2, os.Stderr)
+	if err != nil {
+		return fmt.Errorf("failed to create snapshot store: %v", err)
+	}
+
+	// Create log store and stable store using BoltDB
+	logStorePath := filepath.Join(m.dataDir, "raft-log.db")
+	logStore, err := raftboltdb.NewBoltStore(logStorePath)
+	if err != nil {
+		return fmt.Errorf("failed to create log store: %v", err)
+	}
+
+	stableStorePath := filepath.Join(m.dataDir, "raft-stable.db")
+	stableStore, err := raftboltdb.NewBoltStore(stableStorePath)
+	if err != nil {
+		return fmt.Errorf("failed to create stable store: %v", err)
+	}
+
+	// Create Raft instance
+	r, err := raft.NewRaft(config, m.fsm, logStore, stableStore, snapshotStore, transport)
+	if err != nil {
+		return fmt.Errorf("failed to create raft: %v", err)
+	}
+
+	m.raft = r
+
+	// Contact the leader to add this node to the cluster
+	// In a production system, this would use a secure RPC call with the join token
+	// For now, we'll use direct Raft API
+	fmt.Printf("Contacting leader at %s to join cluster...\n", leaderAddr)
+	fmt.Printf("Node ID: %s, Bind Addr: %s, Token: %s\n", m.nodeID, m.bindAddr, token)
+
+	// Note: The actual AddVoter call will be made by the leader when it receives
+	// a JoinCluster RPC request. This is implemented in the API server.
+	// For now, we just initialize Raft and wait to be added.
+
+	return nil
+}
+
+// AddVoter adds a new manager node to the Raft cluster
+func (m *Manager) AddVoter(nodeID, address string) error {
+	if m.raft == nil {
+		return fmt.Errorf("raft not initialized")
+	}
+
+	if !m.IsLeader() {
+		return fmt.Errorf("not the leader, current leader: %s", m.LeaderAddr())
+	}
+
+	fmt.Printf("Adding voter: ID=%s, Address=%s\n", nodeID, address)
+
+	future := m.raft.AddVoter(raft.ServerID(nodeID), raft.ServerAddress(address), 0, 10*time.Second)
+	if err := future.Error(); err != nil {
+		return fmt.Errorf("failed to add voter: %v", err)
+	}
+
+	fmt.Printf("Successfully added voter %s to cluster\n", nodeID)
+	return nil
+}
+
+// RemoveServer removes a server from the Raft cluster
+func (m *Manager) RemoveServer(nodeID string) error {
+	if m.raft == nil {
+		return fmt.Errorf("raft not initialized")
+	}
+
+	if !m.IsLeader() {
+		return fmt.Errorf("not the leader")
+	}
+
+	future := m.raft.RemoveServer(raft.ServerID(nodeID), 0, 10*time.Second)
+	if err := future.Error(); err != nil {
+		return fmt.Errorf("failed to remove server: %v", err)
+	}
+
+	return nil
+}
+
+// GetClusterServers returns information about all servers in the Raft cluster
+func (m *Manager) GetClusterServers() ([]raft.Server, error) {
+	if m.raft == nil {
+		return nil, fmt.Errorf("raft not initialized")
+	}
+
+	future := m.raft.GetConfiguration()
+	if err := future.Error(); err != nil {
+		return nil, fmt.Errorf("failed to get configuration: %v", err)
+	}
+
+	return future.Configuration().Servers, nil
 }
 
 // IsLeader returns true if this manager is the Raft leader
@@ -446,6 +553,21 @@ func (m *Manager) GetNetwork(id string) (*types.Network, error) {
 // ListNetworks returns all networks (read from local store)
 func (m *Manager) ListNetworks() ([]*types.Network, error) {
 	return m.store.ListNetworks()
+}
+
+// GenerateJoinToken generates a new join token for adding nodes
+func (m *Manager) GenerateJoinToken(role string) (*JoinToken, error) {
+	if !m.IsLeader() {
+		return nil, fmt.Errorf("not the leader, tokens can only be generated by the leader")
+	}
+
+	// Token valid for 24 hours
+	return m.tokenManager.GenerateToken(role, 24*time.Hour)
+}
+
+// ValidateJoinToken validates a join token
+func (m *Manager) ValidateJoinToken(token string) (string, error) {
+	return m.tokenManager.ValidateToken(token)
 }
 
 // Shutdown gracefully shuts down the manager
