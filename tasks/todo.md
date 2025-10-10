@@ -127,15 +127,17 @@ Warren development follows a milestone-based approach (not MVP-based). Each mile
   - Integrated API server with manager (starts on cluster init)
   - REST gateway deferred to later milestone
 
-- [ ] **Scheduler (basic)**
-  - Implement task creation from service spec
-  - Implement simple round-robin node selection
-  - Test: Service with 3 replicas creates 3 tasks
+- [x] **Scheduler (basic)**
+  - Implemented task creation from service spec (pkg/scheduler/scheduler.go)
+  - Simple round-robin node selection with load balancing
+  - Runs every 5 seconds, handles replicated and global modes
+  - Scales services up/down automatically
 
-- [ ] **Reconciler**
-  - Implement reconciliation loop (10s interval)
-  - Detect missing tasks, create replacements
-  - Test: Kill task, verify replacement scheduled
+- [x] **Reconciler**
+  - Implemented reconciliation loop (10s interval, pkg/reconciler/reconciler.go)
+  - Detects node failures (30s heartbeat timeout)
+  - Marks failed tasks for cleanup and replacement
+  - Reschedules tasks from down nodes
 
 ### Phase 1.3: Worker Agent
 
