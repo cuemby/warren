@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/cuemby/warren/pkg/client"
 	"github.com/cuemby/warren/pkg/storage"
 	"github.com/cuemby/warren/pkg/types"
 	"github.com/hashicorp/raft"
@@ -167,16 +168,23 @@ func (m *Manager) Join(leaderAddr string, token string) error {
 
 	m.raft = r
 
-	// Contact the leader to add this node to the cluster
-	// In a production system, this would use a secure RPC call with the join token
-	// For now, we'll use direct Raft API
+	// Contact the leader to add this node to the cluster via RPC
 	fmt.Printf("Contacting leader at %s to join cluster...\n", leaderAddr)
 	fmt.Printf("Node ID: %s, Bind Addr: %s, Token: %s\n", m.nodeID, m.bindAddr, token)
 
-	// Note: The actual AddVoter call will be made by the leader when it receives
-	// a JoinCluster RPC request. This is implemented in the API server.
-	// For now, we just initialize Raft and wait to be added.
+	// Create client to connect to leader
+	c, err := client.NewClient(leaderAddr)
+	if err != nil {
+		return fmt.Errorf("failed to connect to leader: %v", err)
+	}
+	defer c.Close()
 
+	// Send JoinCluster RPC to leader
+	if err := c.JoinCluster(m.nodeID, m.bindAddr, token); err != nil {
+		return fmt.Errorf("failed to join cluster via RPC: %v", err)
+	}
+
+	fmt.Println("✓ Successfully joined cluster")
 	return nil
 }
 

@@ -134,7 +134,7 @@ test_bootstrap_manager1() {
   vm_exec "$MANAGER_1" mkdir -p /tmp/warren-data-1
 
   # Start manager in background
-  vm_exec "$MANAGER_1" bash -c "cd /Users/ar4mirez/Developer/Work/cuemby/warren && nohup ./bin/warren-linux-arm64 cluster init \
+  vm_exec "$MANAGER_1" bash -c "nohup /Users/ar4mirez/Developer/Work/cuemby/warren/bin/warren-linux-arm64 cluster init \
     --node-id=manager-1 \
     --bind-addr=${MANAGER_1_RAFT} \
     --api-addr=${MANAGER_1_API} \
@@ -163,13 +163,23 @@ test_bootstrap_manager1() {
 test_generate_join_token() {
   log_step "Step 2: Generate manager join token"
 
-  # Generate token from manager-1
-  local token
-  token=$(vm_exec "$MANAGER_1" /Users/ar4mirez/Developer/Work/cuemby/warren/bin/warren-linux-arm64 cluster join-token manager \
-    --manager="${MANAGER_1_API}" | grep -oP '[a-f0-9]{64}' | head -1)
+  # Wait for leader election, then generate token
+  log_info "Waiting for leader election..."
+  local token=""
+  local retries=0
+  while [[ -z "$token" && $retries -lt 10 ]]; do
+    token=$(vm_exec "$MANAGER_1" /Users/ar4mirez/Developer/Work/cuemby/warren/bin/warren-linux-arm64 cluster join-token manager \
+      --manager="${MANAGER_1_API}" 2>/dev/null | grep -o '[a-f0-9]\{64\}' | head -1 || echo "")
+    if [[ -z "$token" ]]; then
+      sleep 2
+      retries=$((retries + 1))
+      echo -n "."
+    fi
+  done
+  echo
 
   if [[ -z "$token" ]]; then
-    log_error "Failed to generate join token"
+    log_error "Failed to generate join token after $retries retries"
     return 1
   fi
 
@@ -197,7 +207,7 @@ test_join_manager2() {
   vm_exec "$MANAGER_2" mkdir -p /tmp/warren-data-2
 
   # Start manager-2 in background
-  vm_exec "$MANAGER_2" bash -c "cd /Users/ar4mirez/Developer/Work/cuemby/warren && nohup ./bin/warren-linux-arm64 manager join \
+  vm_exec "$MANAGER_2" bash -c "nohup /Users/ar4mirez/Developer/Work/cuemby/warren/bin/warren-linux-arm64 manager join \
     --node-id=manager-2 \
     --bind-addr=${MANAGER_2_RAFT} \
     --api-addr=${MANAGER_2_API} \
@@ -242,7 +252,7 @@ test_join_manager3() {
   vm_exec "$MANAGER_3" mkdir -p /tmp/warren-data-3
 
   # Start manager-3 in background
-  vm_exec "$MANAGER_3" bash -c "cd /Users/ar4mirez/Developer/Work/cuemby/warren && nohup ./bin/warren-linux-arm64 manager join \
+  vm_exec "$MANAGER_3" bash -c "nohup /Users/ar4mirez/Developer/Work/cuemby/warren/bin/warren-linux-arm64 manager join \
     --node-id=manager-3 \
     --bind-addr=${MANAGER_3_RAFT} \
     --api-addr=${MANAGER_3_API} \
@@ -284,9 +294,9 @@ test_verify_cluster() {
 
   echo "$cluster_info"
 
-  # Verify 3 servers
+  # Verify 3 servers (count only "  - ID:" lines, not "Leader ID:")
   local server_count
-  server_count=$(echo "$cluster_info" | grep -c "ID:" || echo "0")
+  server_count=$(echo "$cluster_info" | grep -c "  - ID:" || echo "0")
 
   if [[ "$server_count" -ne 3 ]]; then
     log_error "Expected 3 servers, found $server_count"
@@ -317,7 +327,7 @@ test_start_workers() {
   vm_exec "$WORKER_1" rm -rf /tmp/warren-worker-1
   vm_exec "$WORKER_1" mkdir -p /tmp/warren-worker-1
 
-  vm_exec "$WORKER_1" bash -c "cd /Users/ar4mirez/Developer/Work/cuemby/warren && nohup ./bin/warren-linux-arm64 worker start \
+  vm_exec "$WORKER_1" bash -c "nohup /Users/ar4mirez/Developer/Work/cuemby/warren/bin/warren-linux-arm64 worker start \
     --node-id=worker-1 \
     --manager=${MANAGER_1_API} \
     --data-dir=/tmp/warren-worker-1 \
@@ -337,7 +347,7 @@ test_start_workers() {
   vm_exec "$WORKER_2" rm -rf /tmp/warren-worker-2
   vm_exec "$WORKER_2" mkdir -p /tmp/warren-worker-2
 
-  vm_exec "$WORKER_2" bash -c "cd /Users/ar4mirez/Developer/Work/cuemby/warren && nohup ./bin/warren-linux-arm64 worker start \
+  vm_exec "$WORKER_2" bash -c "nohup /Users/ar4mirez/Developer/Work/cuemby/warren/bin/warren-linux-arm64 worker start \
     --node-id=worker-2 \
     --manager=${MANAGER_1_API} \
     --data-dir=/tmp/warren-worker-2 \
