@@ -11,6 +11,7 @@ import (
 	"github.com/containerd/containerd/cio"
 	"github.com/containerd/containerd/namespaces"
 	"github.com/containerd/containerd/oci"
+	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/cuemby/warren/pkg/types"
 )
 
@@ -80,6 +81,49 @@ func (r *ContainerdRuntime) CreateContainer(ctx context.Context, task *types.Tas
 	opts := []oci.SpecOpts{
 		oci.WithImageConfig(image),
 		oci.WithEnv(task.Env),
+	}
+
+	// Create the container
+	container, err := r.client.NewContainer(
+		ctx,
+		task.ID,
+		containerd.WithImage(image),
+		containerd.WithNewSnapshot(task.ID+"-snapshot", image),
+		containerd.WithNewSpec(opts...),
+	)
+	if err != nil {
+		return "", fmt.Errorf("failed to create container: %w", err)
+	}
+
+	return container.ID(), nil
+}
+
+// CreateContainerWithSecrets creates a container with secret tmpfs mounts
+func (r *ContainerdRuntime) CreateContainerWithSecrets(ctx context.Context, task *types.Task, secretsPath string) (string, error) {
+	ctx = namespaces.WithNamespace(ctx, r.namespace)
+
+	// Get the image
+	image, err := r.client.GetImage(ctx, task.Image)
+	if err != nil {
+		return "", fmt.Errorf("failed to get image %s: %w", task.Image, err)
+	}
+
+	// Create container spec with environment variables and secrets mount
+	opts := []oci.SpecOpts{
+		oci.WithImageConfig(image),
+		oci.WithEnv(task.Env),
+	}
+
+	// Add bind mount for secrets if provided
+	if secretsPath != "" {
+		opts = append(opts, oci.WithMounts([]specs.Mount{
+			{
+				Source:      secretsPath,
+				Destination: "/run/secrets",
+				Type:        "bind",
+				Options:     []string{"ro", "bind"}, // Read-only bind mount
+			},
+		}))
 	}
 
 	// Create the container

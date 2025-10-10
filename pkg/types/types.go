@@ -180,6 +180,7 @@ type Task struct {
 	Env           []string
 	Ports         []*PortMapping
 	Mounts        []*VolumeMount
+	Secrets       []string // Secret names to mount
 	HealthCheck   *HealthCheck
 	RestartPolicy *RestartPolicy
 	Resources     *ResourceRequirements

@@ -19,9 +19,10 @@ type Worker struct {
 	managerAddr string
 	dataDir     string
 
-	client  proto.WarrenAPIClient
-	conn    *grpc.ClientConn
-	runtime *runtime.ContainerdRuntime
+	client         proto.WarrenAPIClient
+	conn           *grpc.ClientConn
+	runtime        *runtime.ContainerdRuntime
+	secretsHandler *SecretsHandler
 
 	tasks  map[string]*types.Task
 	taskMu sync.RWMutex
@@ -31,10 +32,11 @@ type Worker struct {
 
 // Config holds worker configuration
 type Config struct {
-	NodeID      string
-	ManagerAddr string
-	DataDir     string
-	Resources   *types.NodeResources
+	NodeID        string
+	ManagerAddr   string
+	DataDir       string
+	Resources     *types.NodeResources
+	EncryptionKey []byte // Cluster-wide encryption key for secrets
 }
 
 // NewWorker creates a new worker instance
@@ -52,6 +54,20 @@ func NewWorker(cfg *Config) (*Worker, error) {
 		runtime:     rt,
 		tasks:       make(map[string]*types.Task),
 		stopCh:      make(chan struct{}),
+	}
+
+	// Initialize secrets handler if encryption key provided
+	if len(cfg.EncryptionKey) > 0 {
+		sh, err := NewSecretsHandler(w, cfg.EncryptionKey)
+		if err != nil {
+			return nil, fmt.Errorf("failed to initialize secrets handler: %w", err)
+		}
+		w.secretsHandler = sh
+
+		// Ensure secrets base directory exists
+		if err := EnsureSecretsBaseDir(); err != nil {
+			return nil, fmt.Errorf("failed to ensure secrets directory: %w", err)
+		}
 	}
 
 	return w, nil
@@ -203,6 +219,7 @@ func (w *Worker) syncTasks() error {
 				DesiredState: types.TaskState(protoTask.DesiredState),
 				ActualState:  types.TaskStatePending,
 				Image:        protoTask.Image,
+				Secrets:      protoTask.Secrets,
 			}
 
 			w.taskMu.Lock()
@@ -238,8 +255,39 @@ func (w *Worker) executeTask(task *types.Task) {
 	}
 	fmt.Printf("Image %s pulled successfully\n", task.Image)
 
-	// Create the container
-	containerID, err := w.runtime.CreateContainer(ctx, task)
+	// Mount secrets if task has them
+	var secretsPath string
+	if len(task.Secrets) > 0 && w.secretsHandler != nil {
+		fmt.Printf("Mounting %d secret(s) for task %s...\n", len(task.Secrets), task.ID)
+		var err error
+		secretsPath, err = w.secretsHandler.MountSecretsForTask(task)
+		if err != nil {
+			w.taskMu.Lock()
+			task.ActualState = types.TaskStateFailed
+			task.Error = fmt.Sprintf("failed to mount secrets: %v", err)
+			w.taskMu.Unlock()
+			fmt.Printf("Task %s failed to mount secrets: %v\n", task.ID, err)
+			return
+		}
+		fmt.Printf("Secrets mounted at %s\n", secretsPath)
+
+		// Ensure cleanup on exit
+		defer func() {
+			if err := w.secretsHandler.CleanupSecretsForTask(task.ID); err != nil {
+				fmt.Printf("Warning: failed to cleanup secrets for task %s: %v\n", task.ID, err)
+			}
+		}()
+	}
+
+	// Create the container (with or without secrets)
+	var containerID string
+	var err error
+	if secretsPath != "" {
+		containerID, err = w.runtime.CreateContainerWithSecrets(ctx, task, secretsPath)
+	} else {
+		containerID, err = w.runtime.CreateContainer(ctx, task)
+	}
+
 	if err != nil {
 		w.taskMu.Lock()
 		task.ActualState = types.TaskStateFailed
@@ -323,6 +371,15 @@ func (w *Worker) stopTask(task *types.Task) {
 		// Delete the container
 		if err := w.runtime.DeleteContainer(ctx, task.ContainerID); err != nil {
 			fmt.Printf("Failed to delete container %s: %v\n", task.ContainerID, err)
+		}
+	}
+
+	// Cleanup secrets if task had any
+	if len(task.Secrets) > 0 && w.secretsHandler != nil {
+		if err := w.secretsHandler.CleanupSecretsForTask(task.ID); err != nil {
+			fmt.Printf("Warning: failed to cleanup secrets for task %s: %v\n", task.ID, err)
+		} else {
+			fmt.Printf("Secrets cleaned up for task %s\n", task.ID)
 		}
 	}
 

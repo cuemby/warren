@@ -32,6 +32,7 @@ service WarrenAPI {
 
   // Secret operations
   rpc CreateSecret(CreateSecretRequest) returns (CreateSecretResponse);
+  rpc GetSecretByName(GetSecretByNameRequest) returns (GetSecretByNameResponse);
   rpc DeleteSecret(DeleteSecretRequest) returns (DeleteSecretResponse);
   rpc ListSecrets(ListSecretsRequest) returns (ListSecretsResponse);
 
@@ -244,6 +245,7 @@ message Task {
   google.protobuf.Timestamp created_at = 15;
   google.protobuf.Timestamp updated_at = 16;
   string error = 17;
+  repeated string secrets = 18; // Secret names to mount
 }
 
 message UpdateTaskStatusRequest {
@@ -289,6 +291,7 @@ message Secret {
   string id = 1;
   string name = 2;
   google.protobuf.Timestamp created_at = 3;
+  bytes data = 4; // Encrypted data (only included in worker retrieval)
 }
 
 message CreateSecretRequest {
@@ -306,6 +309,14 @@ message DeleteSecretRequest {
 
 message DeleteSecretResponse {
   string status = 1;
+}
+
+message GetSecretByNameRequest {
+  string name = 1;
+}
+
+message GetSecretByNameResponse {
+  Secret secret = 1;
 }
 
 message ListSecretsRequest {}

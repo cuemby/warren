@@ -34,6 +34,7 @@ const (
 	WarrenAPI_GetTask_FullMethodName           = "/warren.v1.WarrenAPI/GetTask"
 	WarrenAPI_WatchTasks_FullMethodName        = "/warren.v1.WarrenAPI/WatchTasks"
 	WarrenAPI_CreateSecret_FullMethodName      = "/warren.v1.WarrenAPI/CreateSecret"
+	WarrenAPI_GetSecretByName_FullMethodName   = "/warren.v1.WarrenAPI/GetSecretByName"
 	WarrenAPI_DeleteSecret_FullMethodName      = "/warren.v1.WarrenAPI/DeleteSecret"
 	WarrenAPI_ListSecrets_FullMethodName       = "/warren.v1.WarrenAPI/ListSecrets"
 	WarrenAPI_CreateVolume_FullMethodName      = "/warren.v1.WarrenAPI/CreateVolume"
@@ -70,6 +71,7 @@ type WarrenAPIClient interface {
 	WatchTasks(ctx context.Context, in *WatchTasksRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[TaskEvent], error)
 	// Secret operations
 	CreateSecret(ctx context.Context, in *CreateSecretRequest, opts ...grpc.CallOption) (*CreateSecretResponse, error)
+	GetSecretByName(ctx context.Context, in *GetSecretByNameRequest, opts ...grpc.CallOption) (*GetSecretByNameResponse, error)
 	DeleteSecret(ctx context.Context, in *DeleteSecretRequest, opts ...grpc.CallOption) (*DeleteSecretResponse, error)
 	ListSecrets(ctx context.Context, in *ListSecretsRequest, opts ...grpc.CallOption) (*ListSecretsResponse, error)
 	// Volume operations
@@ -249,6 +251,16 @@ func (c *warrenAPIClient) CreateSecret(ctx context.Context, in *CreateSecretRequ
 	return out, nil
 }
 
+func (c *warrenAPIClient) GetSecretByName(ctx context.Context, in *GetSecretByNameRequest, opts ...grpc.CallOption) (*GetSecretByNameResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetSecretByNameResponse)
+	err := c.cc.Invoke(ctx, WarrenAPI_GetSecretByName_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *warrenAPIClient) DeleteSecret(ctx context.Context, in *DeleteSecretRequest, opts ...grpc.CallOption) (*DeleteSecretResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(DeleteSecretResponse)
@@ -355,6 +367,7 @@ type WarrenAPIServer interface {
 	WatchTasks(*WatchTasksRequest, grpc.ServerStreamingServer[TaskEvent]) error
 	// Secret operations
 	CreateSecret(context.Context, *CreateSecretRequest) (*CreateSecretResponse, error)
+	GetSecretByName(context.Context, *GetSecretByNameRequest) (*GetSecretByNameResponse, error)
 	DeleteSecret(context.Context, *DeleteSecretRequest) (*DeleteSecretResponse, error)
 	ListSecrets(context.Context, *ListSecretsRequest) (*ListSecretsResponse, error)
 	// Volume operations
@@ -419,6 +432,9 @@ func (UnimplementedWarrenAPIServer) WatchTasks(*WatchTasksRequest, grpc.ServerSt
 }
 func (UnimplementedWarrenAPIServer) CreateSecret(context.Context, *CreateSecretRequest) (*CreateSecretResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateSecret not implemented")
+}
+func (UnimplementedWarrenAPIServer) GetSecretByName(context.Context, *GetSecretByNameRequest) (*GetSecretByNameResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetSecretByName not implemented")
 }
 func (UnimplementedWarrenAPIServer) DeleteSecret(context.Context, *DeleteSecretRequest) (*DeleteSecretResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteSecret not implemented")
@@ -728,6 +744,24 @@ func _WarrenAPI_CreateSecret_Handler(srv interface{}, ctx context.Context, dec f
 	return interceptor(ctx, in, info, handler)
 }
 
+func _WarrenAPI_GetSecretByName_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetSecretByNameRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WarrenAPIServer).GetSecretByName(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WarrenAPI_GetSecretByName_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WarrenAPIServer).GetSecretByName(ctx, req.(*GetSecretByNameRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _WarrenAPI_DeleteSecret_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(DeleteSecretRequest)
 	if err := dec(in); err != nil {
@@ -934,6 +968,10 @@ var WarrenAPI_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CreateSecret",
 			Handler:    _WarrenAPI_CreateSecret_Handler,
+		},
+		{
+			MethodName: "GetSecretByName",
+			Handler:    _WarrenAPI_GetSecretByName_Handler,
 		},
 		{
 			MethodName: "DeleteSecret",
