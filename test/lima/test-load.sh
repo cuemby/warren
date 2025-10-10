@@ -37,6 +37,7 @@ REPLICAS_PER_SERVICE=3
 ENABLE_PROFILE=false
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 WARREN_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+WARREN_BIN="${WARREN_ROOT}/bin/warren-linux-arm64"
 
 # Test results
 START_TIME=""
@@ -167,7 +168,7 @@ check_workers() {
 
   # Check how many are registered with the cluster
   local registered_workers
-  registered_workers=$(limactl shell warren-manager-1 sudo /tmp/lima/warren/bin/warren node list 2>/dev/null | grep -c "worker" || true)
+  registered_workers=$(limactl shell warren-manager-1 sudo $WARREN_BIN node list 2>/dev/null | grep -c "worker" || true)
 
   if [[ $registered_workers -gt 0 ]]; then
     log_success "$registered_workers worker(s) registered with cluster"
@@ -205,8 +206,8 @@ monitor_cluster() {
     local manager_mem=$(capture_memory "warren-manager-1" "warren")
 
     # Get cluster stats from API
-    local services=$(limactl shell warren-manager-1 sudo /tmp/lima/warren/bin/warren service list 2>/dev/null | tail -n +2 | wc -l || echo "0")
-    local nodes=$(limactl shell warren-manager-1 sudo /tmp/lima/warren/bin/warren node list 2>/dev/null | tail -n +2 | wc -l || echo "0")
+    local services=$(limactl shell warren-manager-1 sudo $WARREN_BIN service list 2>/dev/null | tail -n +2 | wc -l || echo "0")
+    local nodes=$(limactl shell warren-manager-1 sudo $WARREN_BIN node list 2>/dev/null | tail -n +2 | wc -l || echo "0")
 
     # For tasks, we'd need to add a task list command or query the API
     local tasks=$((services * REPLICAS_PER_SERVICE))
@@ -231,7 +232,7 @@ create_services_batch() {
   local failed=0
 
   for i in $(seq "$start_idx" "$end_idx"); do
-    if ! limactl shell warren-manager-1 sudo /tmp/lima/warren/bin/warren service create \
+    if ! limactl shell warren-manager-1 sudo $WARREN_BIN service create \
       "load-test-$i" \
       --image nginx:latest \
       --replicas "$REPLICAS_PER_SERVICE" \
@@ -301,7 +302,7 @@ wait_for_scheduling() {
 
   # Show current cluster state
   log_info "Cluster state:"
-  limactl shell warren-manager-1 sudo /tmp/lima/warren/bin/warren service list 2>/dev/null | tail -5 || true
+  limactl shell warren-manager-1 sudo $WARREN_BIN service list 2>/dev/null | tail -5 || true
 }
 
 # Measure API latency
@@ -315,7 +316,7 @@ measure_api_latency() {
 
   for i in $(seq 1 "$num_requests"); do
     local start=$(date +%s%N)
-    limactl shell warren-manager-1 sudo /tmp/lima/warren/bin/warren service list --manager localhost:8080 &> /dev/null || true
+    limactl shell warren-manager-1 sudo $WARREN_BIN service list --manager localhost:8080 &> /dev/null || true
     local end=$(date +%s%N)
     local latency_ms=$(( (end - start) / 1000000 ))
     latencies+=("$latency_ms")
@@ -401,7 +402,7 @@ cleanup_services() {
   local failed=0
 
   for i in $(seq 1 "$NUM_SERVICES"); do
-    if limactl shell warren-manager-1 sudo /tmp/lima/warren/bin/warren service delete "load-test-$i" --manager localhost:8080 &> /dev/null; then
+    if limactl shell warren-manager-1 sudo $WARREN_BIN service delete "load-test-$i" --manager localhost:8080 &> /dev/null; then
       ((deleted++))
     else
       ((failed++))
@@ -425,7 +426,7 @@ cleanup_services() {
   # Verify cleanup - check that no load-test services remain
   log_info "Verifying cleanup..."
   local remaining
-  remaining=$(limactl shell warren-manager-1 sudo /tmp/lima/warren/bin/warren service list 2>/dev/null | grep -c "load-test-" || true)
+  remaining=$(limactl shell warren-manager-1 sudo $WARREN_BIN service list 2>/dev/null | grep -c "load-test-" || true)
 
   if [[ $remaining -eq 0 ]]; then
     log_success "All test services removed successfully"
@@ -434,12 +435,12 @@ cleanup_services() {
     log_info "Attempting forced cleanup..."
 
     # Try to delete remaining services one more time
-    limactl shell warren-manager-1 sudo /tmp/lima/warren/bin/warren service list 2>/dev/null | grep "load-test-" | awk '{print $1}' | while read -r svc; do
-      limactl shell warren-manager-1 sudo /tmp/lima/warren/bin/warren service delete "$svc" --manager localhost:8080 &> /dev/null || true
+    limactl shell warren-manager-1 sudo $WARREN_BIN service list 2>/dev/null | grep "load-test-" | awk '{print $1}' | while read -r svc; do
+      limactl shell warren-manager-1 sudo $WARREN_BIN service delete "$svc" --manager localhost:8080 &> /dev/null || true
     done
 
     # Final check
-    remaining=$(limactl shell warren-manager-1 sudo /tmp/lima/warren/bin/warren service list 2>/dev/null | grep -c "load-test-" || true)
+    remaining=$(limactl shell warren-manager-1 sudo $WARREN_BIN service list 2>/dev/null | grep -c "load-test-" || true)
     if [[ $remaining -eq 0 ]]; then
       log_success "Forced cleanup successful"
     else
