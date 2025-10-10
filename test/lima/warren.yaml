@@ -1,0 +1,172 @@
+# Lima VM template for Warren testing
+# This template creates Ubuntu VMs with containerd for testing Warren's multi-manager cluster
+
+# VM type: qemu (cross-platform, works on Intel and Apple Silicon)
+vmType: "qemu"
+
+# OS: Ubuntu 22.04 LTS (jammy)
+images:
+  - location: "https://cloud-images.ubuntu.com/releases/22.04/release/ubuntu-22.04-server-cloudimg-amd64.img"
+    arch: "x86_64"
+  - location: "https://cloud-images.ubuntu.com/releases/22.04/release/ubuntu-22.04-server-cloudimg-arm64.img"
+    arch: "aarch64"
+
+# CPUs: 2 cores per VM (enough for manager+scheduler+reconciler)
+cpus: 2
+
+# Memory: 2GB per VM (manager needs ~256MB, leave headroom for containers)
+memory: "2GiB"
+
+# Disk: 20GB (enough for OS + container images)
+disk: "20GiB"
+
+# Mounts: Share the Warren workspace for easy binary access
+mounts:
+  - location: "~/Developer/Work/cuemby/warren"
+    writable: false
+  # Mount the bin directory as writable so we can build directly
+  - location: "~/Developer/Work/cuemby/warren/bin"
+    writable: true
+
+# SSH: Enable SSH for easy access
+ssh:
+  localPort: 0  # Auto-assign port
+  loadDotSSHPubKeys: true
+
+# Firmware: Use EFI for better compatibility
+firmware:
+  legacyBIOS: false
+
+# Network: user-v2 for VM-to-VM communication
+# VMs will be accessible via lima-<NAME>.internal hostnames
+networks:
+  - lima: user-v2
+
+# DNS: Use systemd-resolved for .internal domain resolution
+dns:
+  - 192.168.104.1  # Lima user-v2 gateway
+
+# Containerd: Enable and configure containerd
+containerd:
+  system: true  # Use system containerd
+  user: false   # Don't need user containerd
+
+# Provision: Install dependencies and configure system
+provision:
+  - mode: system
+    script: |
+      #!/bin/bash
+      set -eux -o pipefail
+
+      # Update package list
+      apt-get update
+
+      # Install required packages
+      apt-get install -y \
+        curl \
+        wget \
+        git \
+        make \
+        net-tools \
+        dnsutils \
+        iputils-ping \
+        jq \
+        vim
+
+      # Install containerd if not present
+      if ! command -v containerd &> /dev/null; then
+        apt-get install -y containerd
+      fi
+
+      # Ensure containerd is running
+      systemctl enable containerd
+      systemctl start containerd
+
+      # Configure containerd to use systemd cgroup driver
+      mkdir -p /etc/containerd
+      containerd config default > /etc/containerd/config.toml
+      sed -i 's/SystemdCgroup = false/SystemdCgroup = true/' /etc/containerd/config.toml
+      systemctl restart containerd
+
+      # Add ubuntu user to containerd access (via root group for socket)
+      # Warren will run as ubuntu user but access containerd socket
+
+      # Install Go (for potential on-VM builds)
+      GO_VERSION="1.22.0"
+      if ! command -v go &> /dev/null; then
+        wget -q https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz
+        tar -C /usr/local -xzf go${GO_VERSION}.linux-amd64.tar.gz
+        rm go${GO_VERSION}.linux-amd64.tar.gz
+      fi
+
+      # Configure systemd-resolved for mDNS (.internal domains)
+      mkdir -p /etc/systemd/resolved.conf.d
+      cat > /etc/systemd/resolved.conf.d/lima.conf <<EOF
+      [Resolve]
+      MulticastDNS=yes
+      LLMNR=yes
+      EOF
+      systemctl restart systemd-resolved
+
+      # Verify containerd is working
+      ctr version || echo "Warning: containerd not responding"
+
+      echo "✓ Warren test VM provisioned successfully"
+
+  - mode: user
+    script: |
+      #!/bin/bash
+      set -eux -o pipefail
+
+      # Add Go to PATH for user
+      echo 'export PATH=$PATH:/usr/local/go/bin' >> ~/.bashrc
+
+      # Create a symlink to the Warren workspace for convenience
+      ln -sf /tmp/lima/warren ~/warren || true
+
+      echo "✓ User environment configured"
+
+# Probe scripts: Health checks
+probes:
+  - description: "containerd to be running"
+    script: |
+      #!/bin/bash
+      set -eux -o pipefail
+      if ! timeout 30s bash -c "until systemctl is-active containerd; do sleep 1; done"; then
+        echo >&2 "containerd is not running"
+        exit 1
+      fi
+    hint: |
+      containerd failed to start. Check the logs with:
+      sudo journalctl -u containerd
+
+  - description: "user-v2 network to be ready"
+    script: |
+      #!/bin/bash
+      set -eux -o pipefail
+      # Check that we can reach the gateway
+      if ! ping -c 1 192.168.104.1 &> /dev/null; then
+        echo >&2 "Cannot reach user-v2 gateway"
+        exit 1
+      fi
+    hint: |
+      user-v2 network is not ready. This is required for VM-to-VM communication.
+
+# Message to display after successful start
+message: |
+  ✓ Warren test VM is ready!
+
+  VM Info:
+  - OS: Ubuntu 22.04 LTS
+  - Containerd: Installed and running
+  - Network: user-v2 (VM-to-VM via .internal hostnames)
+  - Workspace: ~/warren (shared from host)
+
+  To access this VM:
+    limactl shell <VM_NAME>
+
+  To run Warren:
+    cd ~/warren
+    sudo ./bin/warren cluster init  # (or manager/worker commands)
+
+  Note: Warren needs sudo to access containerd socket (/run/containerd/containerd.sock)
