@@ -73,7 +73,7 @@ get_cluster_info() {
   local manager_api="$1"
   local vm="$2"
 
-  vm_exec "$vm" /tmp/lima/warren/bin/warren cluster info --manager="$manager_api" 2>/dev/null || echo ""
+  vm_exec "$vm" /Users/ar4mirez/Developer/Work/cuemby/warren/bin/warren-linux-arm64 cluster info --manager="$manager_api" 2>/dev/null || echo ""
 }
 
 # Get leader ID from cluster info
@@ -242,7 +242,7 @@ test_cluster_operation() {
   # Test 1: List services
   log_info "Test 1: List services"
   local services
-  services=$(vm_exec "$vm" /tmp/lima/warren/bin/warren service list --manager="$api" 2>&1 || echo "FAILED")
+  services=$(vm_exec "$vm" /Users/ar4mirez/Developer/Work/cuemby/warren/bin/warren-linux-arm64 service list --manager="$api" 2>&1 || echo "FAILED")
 
   if echo "$services" | grep -q "FAILED"; then
     log_error "Failed to list services"
@@ -252,7 +252,7 @@ test_cluster_operation() {
 
   # Test 2: Create new service
   log_info "Test 2: Create new service (after failover)"
-  if vm_exec "$vm" /tmp/lima/warren/bin/warren service create test-failover \
+  if vm_exec "$vm" /Users/ar4mirez/Developer/Work/cuemby/warren/bin/warren-linux-arm64 service create test-failover \
     --image=nginx:alpine \
     --replicas=1 \
     --manager="$api" 2>&1; then
@@ -265,7 +265,7 @@ test_cluster_operation() {
   # Test 3: List nodes
   log_info "Test 3: List nodes"
   local nodes
-  nodes=$(vm_exec "$vm" /tmp/lima/warren/bin/warren node list --manager="$api" 2>&1 || echo "FAILED")
+  nodes=$(vm_exec "$vm" /Users/ar4mirez/Developer/Work/cuemby/warren/bin/warren-linux-arm64 node list --manager="$api" 2>&1 || echo "FAILED")
 
   if echo "$nodes" | grep -q "FAILED"; then
     log_error "Failed to list nodes"
@@ -276,7 +276,7 @@ test_cluster_operation() {
   # Test 4: Check cluster info
   log_info "Test 4: Check cluster info"
   local cluster_info
-  cluster_info=$(vm_exec "$vm" /tmp/lima/warren/bin/warren cluster info --manager="$api" 2>&1 || echo "FAILED")
+  cluster_info=$(vm_exec "$vm" /Users/ar4mirez/Developer/Work/cuemby/warren/bin/warren-linux-arm64 cluster info --manager="$api" 2>&1 || echo "FAILED")
 
   if echo "$cluster_info" | grep -q "FAILED"; then
     log_error "Failed to get cluster info"
@@ -308,7 +308,7 @@ test_restart_leader() {
 
   # Restart as follower
   local node_num="${leader_id##*-}"
-  vm_exec "$vm" bash -c "cd /tmp/lima/warren && nohup ./bin/warren cluster init \
+  vm_exec "$vm" bash -c "cd /Users/ar4mirez/Developer/Work/cuemby/warren && nohup ./bin/warren-linux-arm64 cluster init \
     --node-id=${leader_id} \
     --bind-addr=${raft} \
     --api-addr=${api} \

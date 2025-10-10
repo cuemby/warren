@@ -130,7 +130,7 @@ test_bootstrap_manager1() {
   sleep 2
 
   # Start manager in background
-  vm_exec "$MANAGER_1" bash -c "cd /tmp/lima/warren && nohup ./bin/warren cluster init \
+  vm_exec "$MANAGER_1" bash -c "cd /Users/ar4mirez/Developer/Work/cuemby/warren && nohup ./bin/warren-linux-arm64 cluster init \
     --node-id=manager-1 \
     --bind-addr=${MANAGER_1_RAFT} \
     --api-addr=${MANAGER_1_API} \
@@ -150,7 +150,7 @@ test_generate_join_token() {
 
   # Generate token from manager-1
   local token
-  token=$(vm_exec "$MANAGER_1" /tmp/lima/warren/bin/warren cluster join-token manager \
+  token=$(vm_exec "$MANAGER_1" /Users/ar4mirez/Developer/Work/cuemby/warren/bin/warren-linux-arm64 cluster join-token manager \
     --manager="${MANAGER_1_API}" | grep -oP '[a-f0-9]{64}' | head -1)
 
   if [[ -z "$token" ]]; then
@@ -178,7 +178,7 @@ test_join_manager2() {
   sleep 2
 
   # Start manager-2 in background
-  vm_exec "$MANAGER_2" bash -c "cd /tmp/lima/warren && nohup ./bin/warren manager join \
+  vm_exec "$MANAGER_2" bash -c "cd /Users/ar4mirez/Developer/Work/cuemby/warren && nohup ./bin/warren-linux-arm64 manager join \
     --node-id=manager-2 \
     --bind-addr=${MANAGER_2_RAFT} \
     --api-addr=${MANAGER_2_API} \
@@ -208,7 +208,7 @@ test_join_manager3() {
   sleep 2
 
   # Start manager-3 in background
-  vm_exec "$MANAGER_3" bash -c "cd /tmp/lima/warren && nohup ./bin/warren manager join \
+  vm_exec "$MANAGER_3" bash -c "cd /Users/ar4mirez/Developer/Work/cuemby/warren && nohup ./bin/warren-linux-arm64 manager join \
     --node-id=manager-3 \
     --bind-addr=${MANAGER_3_RAFT} \
     --api-addr=${MANAGER_3_API} \
@@ -235,7 +235,7 @@ test_verify_cluster() {
   # Get cluster info from manager-1
   log_info "Checking cluster info from manager-1..."
   local cluster_info
-  cluster_info=$(vm_exec "$MANAGER_1" /tmp/lima/warren/bin/warren cluster info --manager="${MANAGER_1_API}")
+  cluster_info=$(vm_exec "$MANAGER_1" /Users/ar4mirez/Developer/Work/cuemby/warren/bin/warren-linux-arm64 cluster info --manager="${MANAGER_1_API}")
 
   echo "$cluster_info"
 
@@ -268,7 +268,7 @@ test_start_workers() {
   vm_exec "$WORKER_1" pkill -9 warren || true
   sleep 2
 
-  vm_exec "$WORKER_1" bash -c "cd /tmp/lima/warren && nohup ./bin/warren worker start \
+  vm_exec "$WORKER_1" bash -c "cd /Users/ar4mirez/Developer/Work/cuemby/warren && nohup ./bin/warren-linux-arm64 worker start \
     --node-id=worker-1 \
     --manager=${MANAGER_1_API} \
     --data-dir=/tmp/warren-worker-1 \
@@ -284,7 +284,7 @@ test_start_workers() {
   vm_exec "$WORKER_2" pkill -9 warren || true
   sleep 2
 
-  vm_exec "$WORKER_2" bash -c "cd /tmp/lima/warren && nohup ./bin/warren worker start \
+  vm_exec "$WORKER_2" bash -c "cd /Users/ar4mirez/Developer/Work/cuemby/warren && nohup ./bin/warren-linux-arm64 worker start \
     --node-id=worker-2 \
     --manager=${MANAGER_1_API} \
     --data-dir=/tmp/warren-worker-2 \
@@ -301,7 +301,7 @@ test_start_workers() {
 
   # Verify workers registered
   local nodes
-  nodes=$(vm_exec "$MANAGER_1" /tmp/lima/warren/bin/warren node list --manager="${MANAGER_1_API}")
+  nodes=$(vm_exec "$MANAGER_1" /Users/ar4mirez/Developer/Work/cuemby/warren/bin/warren-linux-arm64 node list --manager="${MANAGER_1_API}")
   echo "$nodes"
 
   if ! echo "$nodes" | grep -q "worker-1"; then
@@ -323,7 +323,7 @@ test_deploy_service() {
 
   log_info "Creating nginx service with 2 replicas..."
 
-  vm_exec "$MANAGER_1" /tmp/lima/warren/bin/warren service create nginx-test \
+  vm_exec "$MANAGER_1" /Users/ar4mirez/Developer/Work/cuemby/warren/bin/warren-linux-arm64 service create nginx-test \
     --image=nginx:alpine \
     --replicas=2 \
     --manager="${MANAGER_1_API}"
@@ -336,7 +336,7 @@ test_deploy_service() {
 
   # Check service status
   local service_info
-  service_info=$(vm_exec "$MANAGER_1" /tmp/lima/warren/bin/warren service list --manager="${MANAGER_1_API}")
+  service_info=$(vm_exec "$MANAGER_1" /Users/ar4mirez/Developer/Work/cuemby/warren/bin/warren-linux-arm64 service list --manager="${MANAGER_1_API}")
   echo "$service_info"
 
   if ! echo "$service_info" | grep -q "nginx-test"; then
