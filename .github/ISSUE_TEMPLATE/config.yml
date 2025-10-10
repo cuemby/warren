@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Question or Discussion
+    url: https://github.com/cuemby/warren/discussions
+    about: Please use GitHub Discussions for questions and general discussions
+  - name: Security Vulnerability
+    url: https://github.com/cuemby/warren/security/policy
+    about: Please report security vulnerabilities privately
