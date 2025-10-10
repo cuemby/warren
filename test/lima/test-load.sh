@@ -44,6 +44,21 @@ END_TIME=""
 TOTAL_SERVICES=0
 TOTAL_TASKS=0
 FAILURES=0
+TEST_RUNNING=false
+
+# Trap handler for cleanup on interrupt
+cleanup_on_exit() {
+  if [[ "$TEST_RUNNING" == "true" ]]; then
+    echo
+    log_warning "Test interrupted! Starting cleanup..."
+    cleanup_services
+    log_info "Cleanup complete. Exiting."
+  fi
+  exit 1
+}
+
+# Set trap for SIGINT and SIGTERM
+trap cleanup_on_exit INT TERM
 
 # Parse arguments
 while [[ $# -gt 0 ]]; do
@@ -383,10 +398,13 @@ cleanup_services() {
 
   local cleanup_start=$SECONDS
   local deleted=0
+  local failed=0
 
   for i in $(seq 1 "$NUM_SERVICES"); do
     if limactl shell warren-manager-1 sudo /tmp/lima/warren/bin/warren service delete "load-test-$i" --manager localhost:8080 &> /dev/null; then
       ((deleted++))
+    else
+      ((failed++))
     fi
 
     # Show progress every 50 services
@@ -399,6 +417,35 @@ cleanup_services() {
 
   log_success "Cleanup complete in ${cleanup_duration}s"
   log_info "  Services deleted: $deleted / $NUM_SERVICES"
+
+  if [[ $failed -gt 0 ]]; then
+    log_warning "  Failed deletions: $failed"
+  fi
+
+  # Verify cleanup - check that no load-test services remain
+  log_info "Verifying cleanup..."
+  local remaining
+  remaining=$(limactl shell warren-manager-1 sudo /tmp/lima/warren/bin/warren service list 2>/dev/null | grep -c "load-test-" || true)
+
+  if [[ $remaining -eq 0 ]]; then
+    log_success "All test services removed successfully"
+  else
+    log_warning "$remaining load-test services still present"
+    log_info "Attempting forced cleanup..."
+
+    # Try to delete remaining services one more time
+    limactl shell warren-manager-1 sudo /tmp/lima/warren/bin/warren service list 2>/dev/null | grep "load-test-" | awk '{print $1}' | while read -r svc; do
+      limactl shell warren-manager-1 sudo /tmp/lima/warren/bin/warren service delete "$svc" --manager localhost:8080 &> /dev/null || true
+    done
+
+    # Final check
+    remaining=$(limactl shell warren-manager-1 sudo /tmp/lima/warren/bin/warren service list 2>/dev/null | grep -c "load-test-" || true)
+    if [[ $remaining -eq 0 ]]; then
+      log_success "Forced cleanup successful"
+    else
+      log_error "Unable to remove $remaining services. Manual cleanup required."
+    fi
+  fi
 }
 
 # Generate test report
@@ -461,6 +508,9 @@ main() {
   check_manager
   check_workers
 
+  # Set flag so trap knows to cleanup
+  TEST_RUNNING=true
+
   # Run load test
   create_test_services
   wait_for_scheduling
@@ -475,6 +525,9 @@ main() {
 
   # Cleanup
   cleanup_services
+
+  # Clear flag - cleanup complete
+  TEST_RUNNING=false
 
   # Report
   generate_report
