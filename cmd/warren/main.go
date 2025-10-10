@@ -8,6 +8,8 @@ import (
 
 	"github.com/cuemby/warren/pkg/api"
 	"github.com/cuemby/warren/pkg/manager"
+	"github.com/cuemby/warren/pkg/reconciler"
+	"github.com/cuemby/warren/pkg/scheduler"
 	"github.com/spf13/cobra"
 )
 
@@ -94,6 +96,16 @@ automatically form a Raft quorum once additional managers join.`,
 
 		fmt.Println("✓ Cluster initialized successfully")
 
+		// Start scheduler
+		sched := scheduler.NewScheduler(mgr)
+		sched.Start()
+		fmt.Println("✓ Scheduler started")
+
+		// Start reconciler
+		recon := reconciler.NewReconciler(mgr)
+		recon.Start()
+		fmt.Println("✓ Reconciler started")
+
 		// Start API server in background
 		apiServer := api.NewServer(mgr)
 		errCh := make(chan error, 1)
@@ -118,6 +130,8 @@ automatically form a Raft quorum once additional managers join.`,
 		}
 
 		// Shutdown
+		sched.Stop()
+		recon.Stop()
 		apiServer.Stop()
 		if err := mgr.Shutdown(); err != nil {
 			return fmt.Errorf("failed to shutdown: %v", err)
