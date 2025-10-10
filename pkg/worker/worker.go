@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/cuemby/warren/api/proto"
+	"github.com/cuemby/warren/pkg/runtime"
 	"github.com/cuemby/warren/pkg/types"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -18,8 +19,9 @@ type Worker struct {
 	managerAddr string
 	dataDir     string
 
-	client proto.WarrenAPIClient
-	conn   *grpc.ClientConn
+	client  proto.WarrenAPIClient
+	conn    *grpc.ClientConn
+	runtime *runtime.ContainerdRuntime
 
 	tasks  map[string]*types.Task
 	taskMu sync.RWMutex
@@ -37,10 +39,17 @@ type Config struct {
 
 // NewWorker creates a new worker instance
 func NewWorker(cfg *Config) (*Worker, error) {
+	// Initialize containerd runtime
+	rt, err := runtime.NewContainerdRuntime("")
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialize containerd runtime: %w", err)
+	}
+
 	w := &Worker{
 		nodeID:      cfg.NodeID,
 		managerAddr: cfg.ManagerAddr,
 		dataDir:     cfg.DataDir,
+		runtime:     rt,
 		tasks:       make(map[string]*types.Task),
 		stopCh:      make(chan struct{}),
 	}
@@ -95,6 +104,10 @@ func (w *Worker) Stop() error {
 
 	if w.conn != nil {
 		w.conn.Close()
+	}
+
+	if w.runtime != nil {
+		w.runtime.Close()
 	}
 
 	return nil
@@ -208,23 +221,55 @@ func (w *Worker) syncTasks() error {
 	return nil
 }
 
-// executeTask executes a single task (simulated for now)
+// executeTask executes a single task using containerd
 func (w *Worker) executeTask(task *types.Task) {
+	ctx := context.Background()
 	fmt.Printf("Starting task %s (service: %s, image: %s)\n", task.ID, task.ServiceName, task.Image)
+
+	// Pull the image first
+	fmt.Printf("Pulling image %s...\n", task.Image)
+	if err := w.runtime.PullImage(ctx, task.Image); err != nil {
+		w.taskMu.Lock()
+		task.ActualState = types.TaskStateFailed
+		task.Error = fmt.Sprintf("failed to pull image: %v", err)
+		w.taskMu.Unlock()
+		fmt.Printf("Task %s failed to pull image: %v\n", task.ID, err)
+		return
+	}
+	fmt.Printf("Image %s pulled successfully\n", task.Image)
+
+	// Create the container
+	containerID, err := w.runtime.CreateContainer(ctx, task)
+	if err != nil {
+		w.taskMu.Lock()
+		task.ActualState = types.TaskStateFailed
+		task.Error = fmt.Sprintf("failed to create container: %v", err)
+		w.taskMu.Unlock()
+		fmt.Printf("Task %s failed to create container: %v\n", task.ID, err)
+		return
+	}
+	fmt.Printf("Container %s created\n", containerID)
+
+	// Start the container
+	if err := w.runtime.StartContainer(ctx, containerID); err != nil {
+		w.taskMu.Lock()
+		task.ActualState = types.TaskStateFailed
+		task.Error = fmt.Sprintf("failed to start container: %v", err)
+		w.taskMu.Unlock()
+		fmt.Printf("Task %s failed to start container: %v\n", task.ID, err)
+		return
+	}
 
 	// Update task state to running
 	w.taskMu.Lock()
 	task.ActualState = types.TaskStateRunning
-	task.ContainerID = fmt.Sprintf("container-%s", task.ID[:8])
+	task.ContainerID = containerID
 	task.StartedAt = time.Now()
 	w.taskMu.Unlock()
+	fmt.Printf("Task %s is running (container: %s)\n", task.ID, containerID)
 
-	// Simulate container execution
-	// TODO: Replace with actual containerd integration
-	fmt.Printf("Task %s is running (simulated)\n", task.ID)
-
-	// Keep task running until stopped
-	ticker := time.NewTicker(10 * time.Second)
+	// Monitor container status
+	ticker := time.NewTicker(5 * time.Second)
 	defer ticker.Stop()
 
 	for {
@@ -239,16 +284,24 @@ func (w *Worker) executeTask(task *types.Task) {
 				return
 			}
 
-			// Simulate random failures (10% chance every 10 seconds)
-			// TODO: Remove this simulation
-			// if rand.Intn(10) == 0 {
-			// 	w.taskMu.Lock()
-			// 	task.ActualState = types.TaskStateFailed
-			// 	task.Error = "Simulated failure"
-			// 	w.taskMu.Unlock()
-			// 	fmt.Printf("Task %s failed (simulated)\n", task.ID)
-			// 	return
-			// }
+			// Check container status
+			status, err := w.runtime.GetContainerStatus(ctx, containerID)
+			if err != nil {
+				fmt.Printf("Failed to get container status: %v\n", err)
+				continue
+			}
+
+			// Update task state if container failed
+			if status == types.TaskStateFailed || status == types.TaskStateComplete {
+				w.taskMu.Lock()
+				task.ActualState = status
+				if status == types.TaskStateFailed {
+					task.Error = "container exited unexpectedly"
+				}
+				w.taskMu.Unlock()
+				fmt.Printf("Task %s container stopped (status: %s)\n", task.ID, status)
+				return
+			}
 
 		case <-w.stopCh:
 			return
@@ -258,14 +311,25 @@ func (w *Worker) executeTask(task *types.Task) {
 
 // stopTask stops a running task
 func (w *Worker) stopTask(task *types.Task) {
-	fmt.Printf("Stopping task %s\n", task.ID)
+	ctx := context.Background()
+	fmt.Printf("Stopping task %s (container: %s)\n", task.ID, task.ContainerID)
+
+	// Stop the container
+	if task.ContainerID != "" {
+		if err := w.runtime.StopContainer(ctx, task.ContainerID, 10*time.Second); err != nil {
+			fmt.Printf("Failed to stop container %s: %v\n", task.ContainerID, err)
+		}
+
+		// Delete the container
+		if err := w.runtime.DeleteContainer(ctx, task.ContainerID); err != nil {
+			fmt.Printf("Failed to delete container %s: %v\n", task.ContainerID, err)
+		}
+	}
 
 	w.taskMu.Lock()
 	task.ActualState = types.TaskStateComplete
 	task.FinishedAt = time.Now()
 	w.taskMu.Unlock()
-
-	// TODO: Actually stop container via containerd
 
 	// Remove from local task map after reporting
 	time.Sleep(2 * time.Second)
