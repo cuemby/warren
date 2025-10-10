@@ -5,14 +5,17 @@ import (
 	"sync"
 	"time"
 
+	"github.com/cuemby/warren/pkg/log"
 	"github.com/cuemby/warren/pkg/manager"
 	"github.com/cuemby/warren/pkg/types"
 	"github.com/google/uuid"
+	"github.com/rs/zerolog"
 )
 
 // Scheduler assigns tasks to nodes based on resource availability
 type Scheduler struct {
 	manager *manager.Manager
+	logger  zerolog.Logger
 	mu      sync.RWMutex
 	stopCh  chan struct{}
 }
@@ -21,6 +24,7 @@ type Scheduler struct {
 func NewScheduler(mgr *manager.Manager) *Scheduler {
 	return &Scheduler{
 		manager: mgr,
+		logger:  log.WithComponent("scheduler"),
 		stopCh:  make(chan struct{}),
 	}
 }
@@ -138,7 +142,11 @@ func (s *Scheduler) scheduleGlobalService(service *types.Service, nodes []*types
 				return fmt.Errorf("failed to create task: %v", err)
 			}
 
-			fmt.Printf("Created global task %s for service %s on node %s\n", task.ID, service.Name, node.ID)
+			s.logger.Info().
+				Str("task_id", task.ID).
+				Str("service_name", service.Name).
+				Str("node_id", node.ID).
+				Msg("Created global task")
 		}
 	}
 
@@ -159,10 +167,13 @@ func (s *Scheduler) scheduleGlobalService(service *types.Service, nodes []*types
 		if !nodeExists {
 			task.DesiredState = types.TaskStateShutdown
 			if err := s.manager.UpdateTask(task); err != nil {
-				fmt.Printf("Failed to shutdown task %s: %v\n", task.ID, err)
+				s.logger.Error().Err(err).Str("task_id", task.ID).Msg("Failed to shutdown task")
 				continue
 			}
-			fmt.Printf("Removed global task %s (node %s no longer exists)\n", task.ID, task.NodeID)
+			s.logger.Info().
+				Str("task_id", task.ID).
+				Str("node_id", task.NodeID).
+				Msg("Removed global task (node no longer exists)")
 		}
 	}
 
@@ -216,7 +227,11 @@ func (s *Scheduler) scheduleReplicatedService(service *types.Service, nodes []*t
 				return fmt.Errorf("failed to create task: %v", err)
 			}
 
-			fmt.Printf("Created task %s for service %s on node %s\n", task.ID, service.Name, node.ID)
+			s.logger.Info().
+				Str("task_id", task.ID).
+				Str("service_name", service.Name).
+				Str("node_id", node.ID).
+				Msg("Created task")
 		}
 	}
 
@@ -231,7 +246,7 @@ func (s *Scheduler) scheduleReplicatedService(service *types.Service, nodes []*t
 			if task.DesiredState == types.TaskStateRunning {
 				task.DesiredState = types.TaskStateShutdown
 				if err := s.manager.UpdateTask(task); err != nil {
-					fmt.Printf("Failed to shutdown task %s: %v\n", task.ID, err)
+					s.logger.Error().Err(err).Str("task_id", task.ID).Msg("Failed to shutdown task")
 					continue
 				}
 				removed++

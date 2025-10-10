@@ -10,6 +10,7 @@ import (
 
 	"github.com/cuemby/warren/pkg/api"
 	"github.com/cuemby/warren/pkg/client"
+	"github.com/cuemby/warren/pkg/log"
 	"github.com/cuemby/warren/pkg/manager"
 	"github.com/cuemby/warren/pkg/metrics"
 	"github.com/cuemby/warren/pkg/reconciler"
@@ -51,6 +52,13 @@ func init() {
 		Version, Commit, BuildTime,
 	))
 
+	// Global flags
+	rootCmd.PersistentFlags().String("log-level", "info", "Log level (debug, info, warn, error)")
+	rootCmd.PersistentFlags().Bool("log-json", false, "Output logs in JSON format")
+
+	// Initialize logging before command execution
+	cobra.OnInitialize(initLogging)
+
 	// Add subcommands
 	rootCmd.AddCommand(clusterCmd)
 	rootCmd.AddCommand(managerCmd)
@@ -59,6 +67,16 @@ func init() {
 	rootCmd.AddCommand(nodeCmd)
 	rootCmd.AddCommand(secretCmd)
 	rootCmd.AddCommand(volumeCmd)
+}
+
+func initLogging() {
+	logLevel, _ := rootCmd.PersistentFlags().GetString("log-level")
+	logJSON, _ := rootCmd.PersistentFlags().GetBool("log-json")
+
+	log.Init(log.Config{
+		Level:      log.Level(logLevel),
+		JSONOutput: logJSON,
+	})
 }
 
 // Cluster commands
