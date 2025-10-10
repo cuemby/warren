@@ -1,9 +1,9 @@
 # Warren Development Plan - Milestone Breakdown
 
 **Project**: Warren Container Orchestrator
-**Last Updated**: 2025-10-09
-**Status**: Planning Complete, Ready for Implementation
-**Related Docs**: [PRD](../specs/prd.md) | [Tech Spec](../specs/tech.md)
+**Last Updated**: 2025-10-10
+**Status**: M0-M3 Complete, M4 In Progress
+**Related Docs**: [PRD](../specs/prd.md) | [Tech Spec](../specs/tech.md) | [Backlog](backlog.md)
 
 ---
 
@@ -671,14 +671,17 @@ Note: Real container execution (containerd) and worker join tokens deferred to M
 - 19812b5 - Global service scheduling
 - eed0f8b - Deployment strategy foundation
 
-**Deferred to M4**:
+**Deferred Features**:
 
-- [ ] Blue/green deployment implementation
-- [ ] Canary deployment with weighted routing
-- [ ] Advanced health checks and rollback
-- [ ] Docker Compose compatibility (YAML parsing)
-- [ ] Distributed volume drivers (NFS, Ceph)
-- [ ] Secret rotation automation
+See [backlog.md](backlog.md) for details on deferred features:
+
+- Blue/green deployment implementation
+- Canary deployment with weighted routing
+- Advanced health checks and rollback
+- Docker Compose compatibility
+- Distributed volume drivers (NFS, Ceph)
+- Secret rotation automation
+- End-to-end integration tests
 
 ---
 
@@ -1050,7 +1053,7 @@ Note: Real container execution (containerd) and worker join tokens deferred to M
 - **Milestone 1**: ✅ **COMPLETE** (2025-10-10)
 - **Milestone 2**: ✅ **COMPLETE** (2025-10-10)
 - **Milestone 3**: ✅ **COMPLETE** (2025-10-10)
-- **Milestone 4**: 🔲 Not Started
+- **Milestone 4**: 🎯 **MAJOR FEATURES COMPLETE** (2025-10-10) - Remaining: optimization & testing
 - **Milestone 5**: 🔲 Not Started
 
 ### Legend
