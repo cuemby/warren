@@ -872,18 +872,176 @@ var volumeCmd = &cobra.Command{
 	Short: "Manage volumes",
 }
 
+var volumeCreateCmd = &cobra.Command{
+	Use:   "create NAME",
+	Short: "Create a new volume",
+	Long: `Create a new volume with specified driver.
+
+Examples:
+  # Create local volume
+  warren volume create my-data --driver local
+
+  # Create volume with options
+  warren volume create my-data --driver local --opt size=10GB`,
+	Args: cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		name := args[0]
+		managerAddr, _ := cmd.Flags().GetString("manager")
+		driver, _ := cmd.Flags().GetString("driver")
+		opts, _ := cmd.Flags().GetStringToString("opt")
+
+		// Create client and volume
+		c, err := client.NewClient(managerAddr)
+		if err != nil {
+			return fmt.Errorf("failed to connect to manager: %w", err)
+		}
+		defer c.Close()
+
+		volume, err := c.CreateVolume(name, driver, opts)
+		if err != nil {
+			return fmt.Errorf("failed to create volume: %w", err)
+		}
+
+		fmt.Printf("Volume created: %s\n", volume.Name)
+		fmt.Printf("  ID: %s\n", volume.Id)
+		fmt.Printf("  Driver: %s\n", volume.Driver)
+		return nil
+	},
+}
+
 var volumeListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List volumes",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		fmt.Println("Listing volumes...")
-		fmt.Println("Implementation coming in Milestone 1!")
+		managerAddr, _ := cmd.Flags().GetString("manager")
+
+		c, err := client.NewClient(managerAddr)
+		if err != nil {
+			return fmt.Errorf("failed to connect to manager: %w", err)
+		}
+		defer c.Close()
+
+		volumes, err := c.ListVolumes()
+		if err != nil {
+			return fmt.Errorf("failed to list volumes: %w", err)
+		}
+
+		if len(volumes) == 0 {
+			fmt.Println("No volumes found")
+			return nil
+		}
+
+		fmt.Printf("%-20s %-40s %-10s %-15s %s\n", "NAME", "ID", "DRIVER", "NODE", "CREATED")
+		fmt.Println(strings.Repeat("-", 100))
+		for _, volume := range volumes {
+			createdAt := volume.CreatedAt.AsTime().Format("2006-01-02 15:04:05")
+			nodeID := volume.NodeId
+			if nodeID == "" {
+				nodeID = "<none>"
+			}
+			fmt.Printf("%-20s %-40s %-10s %-15s %s\n",
+				truncate(volume.Name, 20),
+				truncate(volume.Id, 40),
+				volume.Driver,
+				truncate(nodeID, 15),
+				createdAt,
+			)
+		}
+
+		return nil
+	},
+}
+
+var volumeInspectCmd = &cobra.Command{
+	Use:   "inspect NAME",
+	Short: "Display detailed information about a volume",
+	Args:  cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		name := args[0]
+		managerAddr, _ := cmd.Flags().GetString("manager")
+
+		c, err := client.NewClient(managerAddr)
+		if err != nil {
+			return fmt.Errorf("failed to connect to manager: %w", err)
+		}
+		defer c.Close()
+
+		volume, err := c.GetVolumeByName(name)
+		if err != nil {
+			return fmt.Errorf("failed to get volume: %w", err)
+		}
+
+		fmt.Printf("Name: %s\n", volume.Name)
+		fmt.Printf("ID: %s\n", volume.Id)
+		fmt.Printf("Driver: %s\n", volume.Driver)
+		if volume.NodeId != "" {
+			fmt.Printf("Node: %s\n", volume.NodeId)
+		}
+		if volume.MountPath != "" {
+			fmt.Printf("Mount Path: %s\n", volume.MountPath)
+		}
+		fmt.Printf("Created: %s\n", volume.CreatedAt.AsTime().Format("2006-01-02 15:04:05"))
+
+		if len(volume.DriverOpts) > 0 {
+			fmt.Println("\nDriver Options:")
+			for k, v := range volume.DriverOpts {
+				fmt.Printf("  %s: %s\n", k, v)
+			}
+		}
+
+		if len(volume.Labels) > 0 {
+			fmt.Println("\nLabels:")
+			for k, v := range volume.Labels {
+				fmt.Printf("  %s: %s\n", k, v)
+			}
+		}
+
+		return nil
+	},
+}
+
+var volumeDeleteCmd = &cobra.Command{
+	Use:   "delete NAME",
+	Short: "Delete a volume",
+	Args:  cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		name := args[0]
+		managerAddr, _ := cmd.Flags().GetString("manager")
+
+		c, err := client.NewClient(managerAddr)
+		if err != nil {
+			return fmt.Errorf("failed to connect to manager: %w", err)
+		}
+		defer c.Close()
+
+		if err := c.DeleteVolume(name); err != nil {
+			return fmt.Errorf("failed to delete volume: %w", err)
+		}
+
+		fmt.Printf("Volume deleted: %s\n", name)
 		return nil
 	},
 }
 
 func init() {
+	// volume create flags
+	volumeCreateCmd.Flags().String("manager", "localhost:7946", "Manager address")
+	volumeCreateCmd.Flags().String("driver", "local", "Volume driver (local)")
+	volumeCreateCmd.Flags().StringToString("opt", map[string]string{}, "Driver-specific options")
+
+	// volume list flags
+	volumeListCmd.Flags().String("manager", "localhost:7946", "Manager address")
+
+	// volume inspect flags
+	volumeInspectCmd.Flags().String("manager", "localhost:7946", "Manager address")
+
+	// volume delete flags
+	volumeDeleteCmd.Flags().String("manager", "localhost:7946", "Manager address")
+
+	volumeCmd.AddCommand(volumeCreateCmd)
 	volumeCmd.AddCommand(volumeListCmd)
+	volumeCmd.AddCommand(volumeInspectCmd)
+	volumeCmd.AddCommand(volumeDeleteCmd)
 }
 
 // Helper functions
