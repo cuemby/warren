@@ -42,9 +42,9 @@ firmware:
 networks:
   - lima: user-v2
 
-# DNS: Use systemd-resolved for .internal domain resolution
-dns:
-  - 192.168.104.1  # Lima user-v2 gateway
+# Host resolver: Use Lima's built-in DNS resolution
+hostResolver:
+  enabled: true
 
 # Containerd: Enable and configure containerd
 containerd:
