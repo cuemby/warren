@@ -14,7 +14,9 @@
       "Bash(go mod init:*)",
       "Bash(go get:*)",
       "Bash(make:*)",
-      "Bash(./bin/warren:*)"
+      "Bash(./bin/warren:*)",
+      "Bash(go install:*)",
+      "Bash(protoc:*)"
     ],
     "deny": [],
     "ask": []

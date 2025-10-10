@@ -1,4 +1,4 @@
-.PHONY: build clean test lint fmt help install dev
+.PHONY: build clean test lint fmt help install dev proto
 
 # Build variables
 VERSION ?= dev
@@ -13,6 +13,10 @@ RELEASE_LDFLAGS := $(LDFLAGS) -s -w
 BINARY := warren
 BUILD_DIR := bin
 
+# Protobuf
+PROTO_DIR := api/proto
+PROTO_OUT := api/proto
+
 ## help: Display this help message
 help:
 	@echo "Warren - Container Orchestrator"
@@ -22,6 +26,21 @@ help:
 	@echo ""
 	@echo "Targets:"
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+
+## proto: Generate Go code from protobuf definitions
+proto:
+	@echo "Generating protobuf code..."
+	@if ! command -v protoc >/dev/null 2>&1; then \
+		echo "Error: protoc not found. Install with:"; \
+		echo "  brew install protobuf  # macOS"; \
+		echo "  sudo apt install protobuf-compiler  # Ubuntu"; \
+		exit 1; \
+	fi
+	@mkdir -p $(PROTO_OUT)
+	protoc --go_out=$(PROTO_OUT) --go_opt=paths=source_relative \
+		--go-grpc_out=$(PROTO_OUT) --go-grpc_opt=paths=source_relative \
+		$(PROTO_DIR)/warren.proto
+	@echo "✓ Protobuf code generated"
 
 ## build: Build Warren binary
 build:

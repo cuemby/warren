@@ -6,6 +6,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/cuemby/warren/pkg/api"
 	"github.com/cuemby/warren/pkg/manager"
 	"github.com/spf13/cobra"
 )
@@ -66,11 +67,13 @@ automatically form a Raft quorum once additional managers join.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		nodeID, _ := cmd.Flags().GetString("node-id")
 		bindAddr, _ := cmd.Flags().GetString("bind-addr")
+		apiAddr, _ := cmd.Flags().GetString("api-addr")
 		dataDir, _ := cmd.Flags().GetString("data-dir")
 
 		fmt.Println("Initializing Warren cluster...")
 		fmt.Printf("  Node ID: %s\n", nodeID)
-		fmt.Printf("  Bind Address: %s\n", bindAddr)
+		fmt.Printf("  Raft Address: %s\n", bindAddr)
+		fmt.Printf("  API Address: %s\n", apiAddr)
 		fmt.Printf("  Data Directory: %s\n", dataDir)
 		fmt.Println()
 
@@ -90,15 +93,32 @@ automatically form a Raft quorum once additional managers join.`,
 		}
 
 		fmt.Println("✓ Cluster initialized successfully")
+
+		// Start API server in background
+		apiServer := api.NewServer(mgr)
+		errCh := make(chan error, 1)
+		go func() {
+			if err := apiServer.Start(apiAddr); err != nil {
+				errCh <- fmt.Errorf("API server error: %v", err)
+			}
+		}()
+
 		fmt.Println()
 		fmt.Println("Manager is running. Press Ctrl+C to stop.")
 
-		// Wait for interrupt signal
+		// Wait for interrupt signal or API server error
 		sigCh := make(chan os.Signal, 1)
 		signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM)
-		<-sigCh
 
-		fmt.Println("\nShutting down...")
+		select {
+		case <-sigCh:
+			fmt.Println("\nShutting down...")
+		case err := <-errCh:
+			fmt.Fprintf(os.Stderr, "\nError: %v\n", err)
+		}
+
+		// Shutdown
+		apiServer.Stop()
 		if err := mgr.Shutdown(); err != nil {
 			return fmt.Errorf("failed to shutdown: %v", err)
 		}
@@ -147,6 +167,7 @@ func init() {
 	// Flags for init command
 	clusterInitCmd.Flags().String("node-id", "manager-1", "Unique node ID")
 	clusterInitCmd.Flags().String("bind-addr", "127.0.0.1:7946", "Address for Raft communication")
+	clusterInitCmd.Flags().String("api-addr", "127.0.0.1:8080", "Address for gRPC API")
 	clusterInitCmd.Flags().String("data-dir", "./warren-data", "Data directory for cluster state")
 
 	// Flags for join command

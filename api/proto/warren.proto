@@ -1,0 +1,345 @@
+syntax = "proto3";
+
+package warren.v1;
+
+option go_package = "github.com/cuemby/warren/api/proto";
+
+import "google/protobuf/timestamp.proto";
+
+// WarrenAPI defines the manager API for workers and CLI
+service WarrenAPI {
+  // Node operations
+  rpc RegisterNode(RegisterNodeRequest) returns (RegisterNodeResponse);
+  rpc Heartbeat(HeartbeatRequest) returns (HeartbeatResponse);
+  rpc ListNodes(ListNodesRequest) returns (ListNodesResponse);
+  rpc GetNode(GetNodeRequest) returns (GetNodeResponse);
+  rpc RemoveNode(RemoveNodeRequest) returns (RemoveNodeResponse);
+
+  // Service operations
+  rpc CreateService(CreateServiceRequest) returns (CreateServiceResponse);
+  rpc UpdateService(UpdateServiceRequest) returns (UpdateServiceResponse);
+  rpc DeleteService(DeleteServiceRequest) returns (DeleteServiceResponse);
+  rpc GetService(GetServiceRequest) returns (GetServiceResponse);
+  rpc ListServices(ListServicesRequest) returns (ListServicesResponse);
+
+  // Task operations
+  rpc UpdateTaskStatus(UpdateTaskStatusRequest) returns (UpdateTaskStatusResponse);
+  rpc ListTasks(ListTasksRequest) returns (ListTasksResponse);
+  rpc GetTask(GetTaskRequest) returns (GetTaskResponse);
+
+  // Task assignment stream (worker watches for assigned tasks)
+  rpc WatchTasks(WatchTasksRequest) returns (stream TaskEvent);
+
+  // Secret operations
+  rpc CreateSecret(CreateSecretRequest) returns (CreateSecretResponse);
+  rpc DeleteSecret(DeleteSecretRequest) returns (DeleteSecretResponse);
+  rpc ListSecrets(ListSecretsRequest) returns (ListSecretsResponse);
+
+  // Volume operations
+  rpc CreateVolume(CreateVolumeRequest) returns (CreateVolumeResponse);
+  rpc DeleteVolume(DeleteVolumeRequest) returns (DeleteVolumeResponse);
+  rpc ListVolumes(ListVolumesRequest) returns (ListVolumesResponse);
+}
+
+// Node messages
+message Node {
+  string id = 1;
+  string role = 2; // "manager" or "worker"
+  string address = 3;
+  string overlay_ip = 4;
+  NodeResources resources = 5;
+  string status = 6; // "ready", "down", "unknown"
+  google.protobuf.Timestamp last_heartbeat = 7;
+  google.protobuf.Timestamp created_at = 8;
+  map<string, string> labels = 9;
+}
+
+message NodeResources {
+  int64 cpu_cores = 1;
+  int64 memory_bytes = 2;
+  int64 disk_bytes = 3;
+}
+
+message RegisterNodeRequest {
+  string id = 1;
+  string role = 2;
+  string address = 3;
+  NodeResources resources = 4;
+  map<string, string> labels = 5;
+}
+
+message RegisterNodeResponse {
+  Node node = 1;
+  string overlay_ip = 2;
+}
+
+message HeartbeatRequest {
+  string node_id = 1;
+  NodeResources available_resources = 2;
+  repeated TaskStatus task_statuses = 3;
+}
+
+message HeartbeatResponse {
+  string status = 1;
+}
+
+message TaskStatus {
+  string task_id = 1;
+  string actual_state = 2; // "running", "failed", "stopped"
+  string container_id = 3;
+  string error = 4;
+}
+
+message ListNodesRequest {
+  string role_filter = 1; // optional: "manager" or "worker"
+}
+
+message ListNodesResponse {
+  repeated Node nodes = 1;
+}
+
+message GetNodeRequest {
+  string id = 1;
+}
+
+message GetNodeResponse {
+  Node node = 1;
+}
+
+message RemoveNodeRequest {
+  string id = 1;
+}
+
+message RemoveNodeResponse {
+  string status = 1;
+}
+
+// Service messages
+message Service {
+  string id = 1;
+  string name = 2;
+  string image = 3;
+  int32 replicas = 4;
+  string mode = 5; // "replicated" or "global"
+  string deploy_strategy = 6; // "rolling", "blue-green", "canary"
+  UpdateConfig update_config = 7;
+  HealthCheck health_check = 8;
+  RestartPolicy restart_policy = 9;
+  ResourceRequirements resources = 10;
+  repeated string networks = 11;
+  repeated VolumeMount volumes = 12;
+  map<string, string> env = 13;
+  repeated string command = 14;
+  google.protobuf.Timestamp created_at = 15;
+  google.protobuf.Timestamp updated_at = 16;
+}
+
+message UpdateConfig {
+  int32 parallelism = 1;
+  int32 delay_seconds = 2;
+  string failure_action = 3; // "pause", "continue", "rollback"
+}
+
+message HealthCheck {
+  string type = 1; // "http", "tcp", "exec"
+  string endpoint = 2;
+  int32 interval_seconds = 3;
+  int32 timeout_seconds = 4;
+  int32 retries = 5;
+}
+
+message RestartPolicy {
+  string condition = 1; // "none", "on-failure", "any"
+  int32 max_attempts = 2;
+  int32 delay_seconds = 3;
+}
+
+message ResourceRequirements {
+  int64 cpu_shares = 1;
+  int64 memory_bytes = 2;
+  int64 memory_reservation_bytes = 3;
+}
+
+message VolumeMount {
+  string source = 1;
+  string target = 2;
+  bool read_only = 3;
+}
+
+message CreateServiceRequest {
+  string name = 1;
+  string image = 2;
+  int32 replicas = 3;
+  string mode = 4;
+  string deploy_strategy = 5;
+  UpdateConfig update_config = 6;
+  HealthCheck health_check = 7;
+  RestartPolicy restart_policy = 8;
+  ResourceRequirements resources = 9;
+  repeated string networks = 10;
+  repeated VolumeMount volumes = 11;
+  map<string, string> env = 12;
+  repeated string command = 13;
+}
+
+message CreateServiceResponse {
+  Service service = 1;
+}
+
+message UpdateServiceRequest {
+  string id = 1;
+  int32 replicas = 2;
+  string image = 3;
+  map<string, string> env = 4;
+}
+
+message UpdateServiceResponse {
+  Service service = 1;
+}
+
+message DeleteServiceRequest {
+  string id = 1;
+}
+
+message DeleteServiceResponse {
+  string status = 1;
+}
+
+message GetServiceRequest {
+  string id = 1;
+  string name = 2; // can query by name or id
+}
+
+message GetServiceResponse {
+  Service service = 1;
+}
+
+message ListServicesRequest {}
+
+message ListServicesResponse {
+  repeated Service services = 1;
+}
+
+// Task messages
+message Task {
+  string id = 1;
+  string service_id = 2;
+  string service_name = 3;
+  string node_id = 4;
+  string container_id = 5;
+  string desired_state = 6; // "running", "shutdown"
+  string actual_state = 7; // "pending", "running", "failed", "stopped"
+  string image = 8;
+  repeated string command = 9;
+  map<string, string> env = 10;
+  ResourceRequirements resources = 11;
+  repeated VolumeMount volumes = 12;
+  HealthCheck health_check = 13;
+  RestartPolicy restart_policy = 14;
+  google.protobuf.Timestamp created_at = 15;
+  google.protobuf.Timestamp updated_at = 16;
+  string error = 17;
+}
+
+message UpdateTaskStatusRequest {
+  string task_id = 1;
+  string node_id = 2;
+  string actual_state = 3;
+  string container_id = 4;
+  string error = 5;
+}
+
+message UpdateTaskStatusResponse {
+  string status = 1;
+}
+
+message ListTasksRequest {
+  string service_id = 1; // optional filter
+  string node_id = 2; // optional filter
+}
+
+message ListTasksResponse {
+  repeated Task tasks = 1;
+}
+
+message GetTaskRequest {
+  string id = 1;
+}
+
+message GetTaskResponse {
+  Task task = 1;
+}
+
+message WatchTasksRequest {
+  string node_id = 1;
+}
+
+message TaskEvent {
+  string type = 1; // "add", "update", "delete"
+  Task task = 2;
+}
+
+// Secret messages
+message Secret {
+  string id = 1;
+  string name = 2;
+  google.protobuf.Timestamp created_at = 3;
+}
+
+message CreateSecretRequest {
+  string name = 1;
+  bytes data = 2;
+}
+
+message CreateSecretResponse {
+  Secret secret = 1;
+}
+
+message DeleteSecretRequest {
+  string id = 1;
+}
+
+message DeleteSecretResponse {
+  string status = 1;
+}
+
+message ListSecretsRequest {}
+
+message ListSecretsResponse {
+  repeated Secret secrets = 1;
+}
+
+// Volume messages
+message Volume {
+  string id = 1;
+  string name = 2;
+  string driver = 3;
+  map<string, string> driver_opts = 4;
+  map<string, string> labels = 5;
+  google.protobuf.Timestamp created_at = 6;
+}
+
+message CreateVolumeRequest {
+  string name = 1;
+  string driver = 2;
+  map<string, string> driver_opts = 3;
+  map<string, string> labels = 4;
+}
+
+message CreateVolumeResponse {
+  Volume volume = 1;
+}
+
+message DeleteVolumeRequest {
+  string id = 1;
+}
+
+message DeleteVolumeResponse {
+  string status = 1;
+}
+
+message ListVolumesRequest {}
+
+message ListVolumesResponse {
+  repeated Volume volumes = 1;
+}
