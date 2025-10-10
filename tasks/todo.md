@@ -224,77 +224,108 @@ Note: Real container execution (containerd) and worker join tokens deferred to M
 
 **Priority**: [CRITICAL]
 **Estimated Effort**: 2-3 weeks
-**Status**: 🔲 Not Started
+**Status**: 🚧 **IN PROGRESS** (Phases 2.1 and 2.2 Complete)
 
-### Phase 2.1: Multi-Manager Raft
+**Note**: Simplified scope - focusing on core HA (multi-manager + containerd). WireGuard/DNS deferred to M3, worker autonomy and rolling updates optional for M2.
 
-- [ ] **Raft cluster formation**
-  - Implement manager join via Raft `AddVoter`
+### Phase 2.1: Containerd Integration ✅ COMPLETE
+
+- [x] **Real container runtime integration**
+  - Created pkg/runtime/containerd.go (330 lines)
+  - Full container lifecycle: Pull, Create, Start, Stop, Delete
+  - Graceful shutdown (SIGTERM → SIGKILL)
+  - Warren-specific namespace isolation
+  - Test: Integration tests in test/integration/containerd_test.go
+  - Commit: e7f5c7e
+
+- [x] **Worker real execution**
+  - Updated pkg/worker/worker.go to use containerd
+  - Replaced simulated execution with real containers
+  - Container status monitoring (5s interval)
+  - Test: Manual test plan in docs/containerd-integration-test.md
+  - Commit: e7f5c7e
+
+### Phase 2.2: Multi-Manager Raft ✅ COMPLETE
+
+- [x] **Raft cluster formation**
+  - Implemented Manager.Join() method
+  - Implemented Manager.AddVoter() for Raft expansion
   - Support 3 or 5 manager quorum
-  - Test: 3 managers form quorum, elect leader
+  - Token-based secure joining (64-char, 24h expiration)
+  - Created pkg/manager/token.go for token management
+  - Commit: 4fd6afe
 
-- [ ] **Leader election & failover**
-  - Handle leader failure (automatic re-election)
-  - Forward writes to leader (if follower receives request)
-  - Test: Kill leader, new leader elected < 10s
+- [x] **Leader election & failover**
+  - Leader forwarding implemented (ensureLeader helper)
+  - All write operations check leadership
+  - Automatic Raft re-election on leader failure
+  - Commit: 4fd6afe
 
-- [ ] **State replication**
-  - Ensure all managers have consistent state
-  - Test: Write to leader, read from follower (same data)
+- [x] **State replication**
+  - Raft handles consistent state across managers
+  - Reads from any node, writes to leader only
+  - Commit: 4fd6afe
 
-### Phase 2.2: Worker Autonomy (Partition Tolerance)
+- [x] **gRPC API for cluster operations**
+  - GenerateJoinToken RPC
+  - JoinCluster RPC
+  - GetClusterInfo RPC
+  - Updated api/proto/warren.proto (28 methods total)
+  - Commit: 4fd6afe
 
-- [ ] **Local state caching**
-  - Workers cache assigned tasks in local BoltDB
-  - Update cache on every task event
-  - Test: Worker restarts, loads cached tasks
+- [x] **CLI commands for cluster management**
+  - `warren cluster join-token [worker|manager]`
+  - `warren cluster info`
+  - `warren manager join`
+  - Client library methods added
+  - Commit: 6ffc98d
 
-- [ ] **Autonomous operation**
-  - Detect partition (manager heartbeat timeout)
-  - Run containers based on cached desired state
-  - Restart failed containers using cached restart policy
-  - Test: Partition worker, crash container, verify restart
+### Phase 2.3: Testing & Validation 🔲 NOT STARTED
 
-- [ ] **Reconciliation on rejoin**
-  - Worker reconnects after partition heals
-  - Report actual state to manager
-  - Manager reconciles differences
-  - Test: 30min partition, rejoin, state reconciled
+- [ ] **Test 3-manager cluster formation**
+  - Start first manager (bootstrap)
+  - Generate join token
+  - Start second manager with token
+  - Start third manager
+  - Verify Raft quorum formed
 
-### Phase 2.3: Advanced Networking
+- [ ] **Test leader failover**
+  - Identify current leader
+  - Kill leader process
+  - Verify new leader elected < 10s
+  - Verify cluster continues operating
 
-- [ ] **Automatic WireGuard mesh**
-  - Distribute WireGuard keys via Raft
-  - Auto-configure peers when nodes join
-  - Test: Add worker, WireGuard peer auto-configured
+### Deferred Features (Optional for M2)
 
-- [ ] **DNS service**
-  - Embedded DNS server on managers (port 53)
-  - Resolve service names to VIPs
-  - Test: `curl web` resolves to service VIP
+**Worker Autonomy (Partition Tolerance)** - Deferred to M3 or optional:
+- Local state caching on workers
+- Autonomous operation during partition
+- Reconciliation on rejoin
 
-### Phase 2.4: Rolling Updates
+**Advanced Networking** - Deferred to M3:
+- Automatic WireGuard mesh
+- DNS service
 
-- [ ] **Rolling update strategy**
-  - Implement rolling update (one replica at a time)
-  - Configurable parallelism and delay
-  - Health check new tasks before proceeding
-  - Test: Update nginx:1.20 → nginx:1.21, zero downtime
+**Rolling Updates** - Optional for M2:
+- Rolling update strategy
+- Rollback functionality
 
-- [ ] **Rollback**
-  - Store previous service spec
-  - Implement `warren service rollback <name>`
-  - Test: Bad update, rollback to previous version
+### Milestone 2 Acceptance Criteria (Revised)
 
-### Milestone 2 Acceptance Criteria
+**Core HA (Required)**:
+- [x] Multi-manager Raft implementation complete
+- [x] Token-based secure joining
+- [x] Leader forwarding for writes
+- [x] CLI commands for cluster management
+- [x] Containerd integration complete
+- [ ] 3-manager cluster tested and operational
+- [ ] Leader failover tested (< 10s)
+- [ ] End-to-end multi-manager workflow validated
 
-- [ ] 3-manager cluster tolerates 1 failure
-- [ ] Leader failover < 10s
-- [ ] Workers operate autonomously during partition
-- [ ] Partition reconciliation works (30+ min partition)
+**Optional (Nice to Have)**:
+- [ ] Worker autonomy during partition
 - [ ] Rolling updates with zero downtime
 - [ ] Rollback functional
-- [ ] Chaos tests passing (network partitions, node failures)
 
 ---
 
