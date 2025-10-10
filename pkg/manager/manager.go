@@ -86,6 +86,23 @@ func (m *Manager) Bootstrap() error {
 	config := raft.DefaultConfig()
 	config.LocalID = raft.ServerID(m.nodeID)
 
+	// Tune Raft timeouts for faster failover (target: <10s)
+	// Hashicorp Raft defaults are conservative for WAN deployments
+	// We're optimizing for edge/LAN with lower latency expectations
+	//
+	// Defaults: HeartbeatTimeout=1s, ElectionTimeout=1s, LeaderLeaseTimeout=500ms
+	// For <10s failover, we need faster detection and election
+	config.HeartbeatTimeout = 500 * time.Millisecond   // Reduced from 1s - faster failure detection
+	config.ElectionTimeout = 500 * time.Millisecond    // Reduced from 1s - faster elections
+	config.CommitTimeout = 50 * time.Millisecond        // Keep default - not critical for failover
+	config.LeaderLeaseTimeout = 250 * time.Millisecond  // Reduced from 500ms - faster lease timeout
+
+	// These settings mean:
+	// - Leader sends heartbeats every ~250ms (HeartbeatTimeout/2)
+	// - Followers wait 500ms without heartbeat before election
+	// - Election completes in ~500ms-1s
+	// - Total failover time: ~2-3s (well under 10s target)
+
 	// Setup Raft communication
 	addr, err := net.ResolveTCPAddr("tcp", m.bindAddr)
 	if err != nil {
@@ -146,6 +163,13 @@ func (m *Manager) Bootstrap() error {
 func (m *Manager) Join(leaderAddr string, token string) error {
 	config := raft.DefaultConfig()
 	config.LocalID = raft.ServerID(m.nodeID)
+
+	// Tune Raft timeouts for faster failover (target: <10s)
+	// Same configuration as Bootstrap for consistency across cluster
+	config.HeartbeatTimeout = 500 * time.Millisecond   // Reduced from 1s - faster failure detection
+	config.ElectionTimeout = 500 * time.Millisecond    // Reduced from 1s - faster elections
+	config.CommitTimeout = 50 * time.Millisecond        // Keep default - not critical for failover
+	config.LeaderLeaseTimeout = 250 * time.Millisecond  // Reduced from 500ms - faster lease timeout
 
 	// Setup Raft communication
 	addr, err := net.ResolveTCPAddr("tcp", m.bindAddr)
