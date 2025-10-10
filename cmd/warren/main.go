@@ -10,6 +10,8 @@ import (
 	"github.com/cuemby/warren/pkg/manager"
 	"github.com/cuemby/warren/pkg/reconciler"
 	"github.com/cuemby/warren/pkg/scheduler"
+	"github.com/cuemby/warren/pkg/types"
+	"github.com/cuemby/warren/pkg/worker"
 	"github.com/spf13/cobra"
 )
 
@@ -47,6 +49,7 @@ func init() {
 
 	// Add subcommands
 	rootCmd.AddCommand(clusterCmd)
+	rootCmd.AddCommand(workerCmd)
 	rootCmd.AddCommand(serviceCmd)
 	rootCmd.AddCommand(nodeCmd)
 	rootCmd.AddCommand(secretCmd)
@@ -186,6 +189,79 @@ func init() {
 
 	// Flags for join command
 	clusterJoinCmd.Flags().String("token", "", "Join token from manager")
+}
+
+// Worker commands
+var workerCmd = &cobra.Command{
+	Use:   "worker",
+	Short: "Worker node operations",
+}
+
+var workerStartCmd = &cobra.Command{
+	Use:   "start",
+	Short: "Start a worker node",
+	Long:  `Start a Warren worker node and connect to the manager.`,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		nodeID, _ := cmd.Flags().GetString("node-id")
+		managerAddr, _ := cmd.Flags().GetString("manager")
+		dataDir, _ := cmd.Flags().GetString("data-dir")
+		cpuCores, _ := cmd.Flags().GetInt("cpu")
+		memoryGB, _ := cmd.Flags().GetInt("memory")
+
+		fmt.Println("Starting Warren worker...")
+		fmt.Printf("  Node ID: %s\n", nodeID)
+		fmt.Printf("  Manager: %s\n", managerAddr)
+		fmt.Printf("  Data Directory: %s\n", dataDir)
+		fmt.Printf("  Resources: %d cores, %d GB memory\n", cpuCores, memoryGB)
+		fmt.Println()
+
+		// Create worker
+		w, err := worker.NewWorker(&worker.Config{
+			NodeID:      nodeID,
+			ManagerAddr: managerAddr,
+			DataDir:     dataDir,
+		})
+		if err != nil {
+			return fmt.Errorf("failed to create worker: %v", err)
+		}
+
+		// Start worker
+		resources := &types.NodeResources{
+			CPUCores:    cpuCores,
+			MemoryBytes: int64(memoryGB) * 1024 * 1024 * 1024,
+			DiskBytes:   100 * 1024 * 1024 * 1024, // 100GB default
+		}
+
+		if err := w.Start(resources); err != nil {
+			return fmt.Errorf("failed to start worker: %v", err)
+		}
+
+		fmt.Println()
+		fmt.Println("Worker is running. Press Ctrl+C to stop.")
+
+		// Wait for interrupt
+		sigCh := make(chan os.Signal, 1)
+		signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM)
+		<-sigCh
+
+		fmt.Println("\nShutting down...")
+		if err := w.Stop(); err != nil {
+			return fmt.Errorf("failed to stop worker: %v", err)
+		}
+
+		fmt.Println("✓ Shutdown complete")
+		return nil
+	},
+}
+
+func init() {
+	workerCmd.AddCommand(workerStartCmd)
+
+	workerStartCmd.Flags().String("node-id", "worker-1", "Unique node ID")
+	workerStartCmd.Flags().String("manager", "127.0.0.1:8080", "Manager gRPC address")
+	workerStartCmd.Flags().String("data-dir", "./warren-worker-data", "Data directory")
+	workerStartCmd.Flags().Int("cpu", 4, "CPU cores")
+	workerStartCmd.Flags().Int("memory", 8, "Memory in GB")
 }
 
 // Service commands
