@@ -36,6 +36,7 @@ type ContainerdManager struct {
 	binaryPath   string
 	cmd          *exec.Cmd
 	useExternal  bool
+	limaManager  interface{ Stop(context.Context) error } // For macOS Lima VM lifecycle
 	logger       zerolog.Logger
 }
 
@@ -117,6 +118,20 @@ func (cm *ContainerdManager) Start(ctx context.Context) error {
 
 // Stop stops the embedded containerd daemon
 func (cm *ContainerdManager) Stop() error {
+	// If we're managing a Lima VM, stop it
+	if cm.limaManager != nil {
+		cm.logger.Info().Msg("Stopping Lima VM with containerd")
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+		if err := cm.limaManager.Stop(ctx); err != nil {
+			cm.logger.Error().Msg(fmt.Sprintf("Failed to stop Lima VM: %v", err))
+			return err
+		}
+		cm.logger.Info().Msg("Lima VM stopped")
+		return nil
+	}
+
+	// For external containerd or no process running
 	if cm.useExternal || cm.cmd == nil || cm.cmd.Process == nil {
 		return nil
 	}
@@ -304,7 +319,15 @@ func (lw *logWriter) Write(p []byte) (n int, err error) {
 }
 
 // EnsureContainerd ensures containerd is available (starts embedded if not using external)
+// On macOS: Uses Lima VM with containerd
+// On Linux: Uses embedded containerd binary
 func EnsureContainerd(ctx context.Context, dataDir string, useExternal bool) (*ContainerdManager, error) {
+	// On macOS, we need to use Lima VM (unless user wants external containerd)
+	if runtime.GOOS == "darwin" && !useExternal {
+		return EnsureContainerdMacOS(ctx, dataDir)
+	}
+
+	// On Linux or when using external containerd
 	manager, err := NewContainerdManager(dataDir, useExternal)
 	if err != nil {
 		return nil, err
@@ -313,6 +336,44 @@ func EnsureContainerd(ctx context.Context, dataDir string, useExternal bool) (*C
 	if err := manager.Start(ctx); err != nil {
 		return nil, err
 	}
+
+	return manager, nil
+}
+
+// EnsureContainerdMacOS starts Lima VM with containerd on macOS
+func EnsureContainerdMacOS(ctx context.Context, dataDir string) (*ContainerdManager, error) {
+	logger := zerolog.New(os.Stdout).With().
+		Str("component", "lima-containerd").
+		Timestamp().
+		Logger()
+
+	logger.Info().Msg("Starting Lima VM for containerd on macOS")
+
+	// Start Lima VM with containerd
+	limaManager, err := EnsureLima(ctx, dataDir)
+	if err != nil {
+		return nil, fmt.Errorf("failed to start Lima VM: %w", err)
+	}
+
+	// Get containerd socket path from Lima VM
+	socketPath := limaManager.GetSocketPath()
+	if socketPath == "" {
+		return nil, fmt.Errorf("failed to get containerd socket path from Lima VM")
+	}
+
+	logger.Info().Msgf("Using containerd socket at %s", socketPath)
+
+	// Create containerd manager using Lima socket
+	manager := &ContainerdManager{
+		dataDir:     dataDir,
+		socketPath:  socketPath,
+		useExternal: false, // We're managing the VM, so it's not "external"
+		limaManager: limaManager, // Store reference for lifecycle management
+		logger:      logger,
+	}
+
+	// Note: We don't call manager.Start() here because Lima already started containerd
+	// The VM is running and containerd is ready
 
 	return manager, nil
 }

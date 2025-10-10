@@ -20,7 +20,10 @@ Warren is a distributed container orchestration system built in Go, combining Ra
 - **Networking**: WireGuard overlay mesh
 - **Storage**: BoltDB-backed Raft log
 - **Packaging**: Single static binary < 100MB
-- **Target Platforms**: Linux (primary), macOS, Windows (WSL2), ARM64
+- **Target Platforms**:
+  - Linux (AMD64/ARM64) - embedded containerd
+  - macOS (Intel/Apple Silicon) - Lima VM integration
+  - Windows (WSL2) - future support
 
 ---
 
@@ -1659,6 +1662,49 @@ install: build
 	cp bin/warren /usr/local/bin/warren
 	ln -sf /usr/local/bin/warren /usr/local/bin/wrn
 ```
+
+### Platform-Specific Implementations
+
+**macOS Support via Lima VM**:
+
+Warren provides seamless container orchestration on macOS using [Lima VM](https://lima-vm.io). Since containers require Linux kernel features (cgroups, namespaces), Warren automatically manages a lightweight Linux VM:
+
+**Implementation**:
+- **VM Manager**: `pkg/embedded/lima.go` (build tag: `// +build darwin`)
+- **Base OS**: Alpine Linux 3.19 (minimal footprint)
+- **Container Runtime**: containerd pre-installed in VM
+- **Lifecycle**: Automatic VM creation, start, and graceful shutdown
+- **Resource Usage**: 2 CPU, 2GB RAM, 20GB disk (configurable)
+
+**Architecture**:
+```
+macOS Host
+  ├── Warren Binary (arm64/amd64)
+  └── Lima VM Manager
+       └── Alpine Linux VM
+            ├── containerd daemon
+            ├── Warren containers
+            └── Socket: ~/.lima/warren/sock/containerd.sock
+```
+
+**User Experience**:
+```bash
+# Install Lima (one-time)
+brew install lima
+
+# Warren handles VM automatically
+sudo warren cluster init
+# ✓ Lima VM started with containerd (socket: ~/.lima/warren/sock/containerd.sock)
+```
+
+**Linux Support**:
+
+Warren embeds containerd binaries for Linux platforms (AMD64/ARM64):
+
+- **Binary Embedding**: `//go:embed binaries/*` in `pkg/embedded/containerd.go`
+- **Download Script**: `scripts/download-containerd.sh` fetches official binaries
+- **Extraction**: On first run, extracts to `/var/lib/warren/bin/containerd`
+- **Lifecycle**: Full process management (start, monitor, graceful shutdown)
 
 ### Binary Size Optimization
 

@@ -57,6 +57,22 @@ make build
 sudo make install
 ```
 
+### macOS Support
+
+Warren uses [Lima VM](https://lima-vm.io) to provide seamless container orchestration on macOS:
+
+```bash
+# Install Lima (if not already installed)
+brew install lima
+
+# Warren will automatically manage Lima VM
+sudo warren cluster init
+
+# Lima VM starts automatically, no manual setup needed!
+```
+
+Warren automatically creates and manages a lightweight Linux VM (Alpine-based) with containerd. The Lima VM is stopped gracefully when Warren shuts down.
+
 ### Deploy Your First Service
 
 ```bash

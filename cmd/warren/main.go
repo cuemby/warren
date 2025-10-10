@@ -7,6 +7,7 @@ import (
 	_ "net/http/pprof" // Import pprof for profiling endpoints
 	"os"
 	"os/signal"
+	"runtime"
 	"strings"
 	"syscall"
 
@@ -125,7 +126,12 @@ automatically form a Raft quorum once additional managers join.`,
 		defer containerdMgr.Stop()
 
 		if !useExternal {
-			fmt.Printf("✓ Embedded containerd started (socket: %s)\n", containerdMgr.GetSocketPath())
+			socketPath := containerdMgr.GetSocketPath()
+			if runtime.GOOS == "darwin" {
+				fmt.Printf("✓ Lima VM started with containerd (socket: %s)\n", socketPath)
+			} else {
+				fmt.Printf("✓ Embedded containerd started (socket: %s)\n", socketPath)
+			}
 		}
 
 		// Create manager
@@ -364,7 +370,12 @@ var workerStartCmd = &cobra.Command{
 		defer containerdMgr.Stop()
 
 		if !useExternal {
-			fmt.Printf("✓ Embedded containerd started (socket: %s)\n", containerdMgr.GetSocketPath())
+			socketPath := containerdMgr.GetSocketPath()
+			if runtime.GOOS == "darwin" {
+				fmt.Printf("✓ Lima VM started with containerd (socket: %s)\n", socketPath)
+			} else {
+				fmt.Printf("✓ Embedded containerd started (socket: %s)\n", socketPath)
+			}
 		}
 
 		// Create worker

@@ -36,6 +36,9 @@ Warren is a **production-ready container orchestration system** for edge computi
 - ✅ gRPC API with 28+ methods
 - ✅ Complete CLI with YAML apply
 - ✅ Multi-platform builds (Linux/macOS, AMD64/ARM64)
+- ✅ **Platform Support**:
+  - ✅ Linux: Embedded containerd binaries (AMD64/ARM64)
+  - ✅ macOS: Lima VM integration with Alpine Linux + containerd
 - ✅ Comprehensive documentation and CI/CD
 
 **Future Enhancements (M6+)**:
@@ -81,6 +84,10 @@ warren/
 │   │
 │   ├── runtime/
 │   │   └── containerd.go              # ✅ Containerd integration (pull, create, start, stop, delete)
+│   │
+│   ├── embedded/
+│   │   ├── containerd.go              # ✅ Embedded containerd manager (Linux)
+│   │   └── lima.go                    # ✅ Lima VM manager (macOS, build tag: darwin)
 │   │
 │   ├── security/
 │   │   ├── secrets.go                 # ✅ AES-256-GCM encryption/decryption
