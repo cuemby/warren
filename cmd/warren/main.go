@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"net/http"
+	_ "net/http/pprof" // Import pprof for profiling endpoints
 	"os"
 	"os/signal"
 	"strings"
@@ -139,6 +140,8 @@ automatically form a Raft quorum once additional managers join.`,
 
 		// Start metrics HTTP server in background
 		metricsAddr := "127.0.0.1:9090"
+		pprofEnabled, _ := cmd.Flags().GetBool("enable-pprof")
+
 		go func() {
 			http.Handle("/metrics", metrics.Handler())
 			if err := http.ListenAndServe(metricsAddr, nil); err != nil {
@@ -146,6 +149,13 @@ automatically form a Raft quorum once additional managers join.`,
 			}
 		}()
 		fmt.Printf("✓ Metrics endpoint: http://%s/metrics\n", metricsAddr)
+
+		if pprofEnabled {
+			fmt.Printf("✓ Profiling endpoints enabled at http://%s/debug/pprof/\n", metricsAddr)
+			fmt.Printf("  - Heap profile: http://%s/debug/pprof/heap\n", metricsAddr)
+			fmt.Printf("  - CPU profile: http://%s/debug/pprof/profile\n", metricsAddr)
+			fmt.Printf("  - Goroutines: http://%s/debug/pprof/goroutine\n", metricsAddr)
+		}
 
 		// Start API server in background
 		apiServer := api.NewServer(mgr)
@@ -283,6 +293,7 @@ func init() {
 	clusterInitCmd.Flags().String("bind-addr", "127.0.0.1:7946", "Address for Raft communication")
 	clusterInitCmd.Flags().String("api-addr", "127.0.0.1:8080", "Address for gRPC API")
 	clusterInitCmd.Flags().String("data-dir", "./warren-data", "Data directory for cluster state")
+	clusterInitCmd.Flags().Bool("enable-pprof", false, "Enable pprof profiling endpoints on metrics server")
 
 	// Flags for join-token and info commands
 	clusterJoinTokenCmd.Flags().String("manager", "127.0.0.1:8080", "Manager address")
@@ -337,6 +348,21 @@ var workerStartCmd = &cobra.Command{
 			return fmt.Errorf("failed to start worker: %v", err)
 		}
 
+		// Start pprof server if enabled
+		pprofEnabled, _ := cmd.Flags().GetBool("enable-pprof")
+		if pprofEnabled {
+			pprofAddr := "127.0.0.1:6060"
+			go func() {
+				if err := http.ListenAndServe(pprofAddr, nil); err != nil {
+					fmt.Printf("Profiling server error: %v\n", err)
+				}
+			}()
+			fmt.Printf("✓ Profiling endpoints enabled at http://%s/debug/pprof/\n", pprofAddr)
+			fmt.Printf("  - Heap profile: http://%s/debug/pprof/heap\n", pprofAddr)
+			fmt.Printf("  - CPU profile: http://%s/debug/pprof/profile\n", pprofAddr)
+			fmt.Printf("  - Goroutines: http://%s/debug/pprof/goroutine\n", pprofAddr)
+		}
+
 		fmt.Println()
 		fmt.Println("Worker is running. Press Ctrl+C to stop.")
 
@@ -363,6 +389,7 @@ func init() {
 	workerStartCmd.Flags().String("data-dir", "./warren-worker-data", "Data directory")
 	workerStartCmd.Flags().Int("cpu", 4, "CPU cores")
 	workerStartCmd.Flags().Int("memory", 8, "Memory in GB")
+	workerStartCmd.Flags().Bool("enable-pprof", false, "Enable pprof profiling endpoints")
 }
 
 // Manager commands
@@ -430,6 +457,8 @@ var managerJoinCmd = &cobra.Command{
 
 		// Start metrics HTTP server in background
 		metricsAddr := "127.0.0.1:9090"
+		pprofEnabled, _ := cmd.Flags().GetBool("enable-pprof")
+
 		go func() {
 			http.Handle("/metrics", metrics.Handler())
 			if err := http.ListenAndServe(metricsAddr, nil); err != nil {
@@ -437,6 +466,13 @@ var managerJoinCmd = &cobra.Command{
 			}
 		}()
 		fmt.Printf("✓ Metrics endpoint: http://%s/metrics\n", metricsAddr)
+
+		if pprofEnabled {
+			fmt.Printf("✓ Profiling endpoints enabled at http://%s/debug/pprof/\n", metricsAddr)
+			fmt.Printf("  - Heap profile: http://%s/debug/pprof/heap\n", metricsAddr)
+			fmt.Printf("  - CPU profile: http://%s/debug/pprof/profile\n", metricsAddr)
+			fmt.Printf("  - Goroutines: http://%s/debug/pprof/goroutine\n", metricsAddr)
+		}
 
 		// Start API server in background
 		apiServer := api.NewServer(mgr)
@@ -484,6 +520,7 @@ func init() {
 	managerJoinCmd.Flags().String("data-dir", "./warren-data-2", "Data directory for cluster state")
 	managerJoinCmd.Flags().String("leader", "", "Leader manager address")
 	managerJoinCmd.Flags().String("token", "", "Join token from leader")
+	managerJoinCmd.Flags().Bool("enable-pprof", false, "Enable pprof profiling endpoints on metrics server")
 	managerJoinCmd.MarkFlagRequired("token")
 	managerJoinCmd.MarkFlagRequired("leader")
 }
