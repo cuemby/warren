@@ -99,10 +99,21 @@ warren service update web --replicas 5
 
 ## 📚 Documentation
 
+**Getting Started:**
+- [Quick Start Guide](docs/quickstart.md) - 5-minute tutorial ⭐
+- [API Reference](docs/api-reference.md) - Complete gRPC API docs
+- [Developer Guide](docs/developer-guide.md) - Architecture deep-dive
+
+**Planning & Specs:**
 - [Product Requirements](specs/prd.md) - Product vision and features
-- [Technical Specification](specs/tech.md) - Architecture deep-dive
+- [Technical Specification](specs/tech.md) - Technical design
 - [Development Plan](tasks/todo.md) - Milestone roadmap
 - [Architecture Decisions](docs/adr/) - ADRs for key technical choices
+
+**POCs & Validation:**
+- [Raft POC](poc/raft/) - Consensus validation
+- [Containerd POC](poc/containerd/) - Runtime validation
+- [WireGuard POC](poc/wireguard/) - Networking validation
 
 ## 🛠️ Development
 
@@ -154,11 +165,15 @@ warren/
 - [x] POCs (Raft, containerd, WireGuard)
 - [x] Architecture Decision Records
 
-### Milestone 1: Core Orchestration 🔄
-- [ ] Single-manager cluster
-- [ ] Basic scheduler
-- [ ] Worker agent
-- [ ] CLI (cluster, service, node commands)
+### Milestone 1: Core Orchestration ✅ **COMPLETE**
+- [x] Single-manager cluster with Raft consensus
+- [x] Task scheduler (round-robin, 5s interval)
+- [x] Reconciler (failure detection, 10s interval)
+- [x] Worker agent with heartbeat
+- [x] gRPC API (25+ methods)
+- [x] Full CLI (cluster, service, node commands)
+- [x] Integration tests
+- [x] Comprehensive documentation
 
 ### Milestone 2: High Availability
 - [ ] Multi-manager Raft cluster
@@ -210,5 +225,31 @@ Built with:
 
 ---
 
-**Status**: Alpha - Milestone 1 in progress
+## 🎉 Milestone 1 Achievements
+
+Warren now has a **fully functional orchestration system**:
+
+- ✅ **3,900+ lines of production code** across 16 files
+- ✅ **Manager** with Raft consensus and BoltDB storage
+- ✅ **Scheduler** creating and assigning tasks (5s interval)
+- ✅ **Reconciler** detecting failures and triggering recovery (10s interval)
+- ✅ **Worker** with heartbeat and task execution
+- ✅ **gRPC API** with 25+ methods
+- ✅ **Complete CLI** for all operations
+- ✅ **Integration tests** validating end-to-end workflows
+- ✅ **2,200+ lines of documentation** (Quick Start, API Reference, Developer Guide)
+
+**Try it now:**
+```bash
+git clone https://github.com/cuemby/warren.git
+cd warren
+make build
+./bin/warren cluster init  # Start manager
+./bin/warren worker start  # Start worker (new terminal)
+./bin/warren service create nginx --image nginx:latest --replicas 3
+```
+
+---
+
+**Status**: Alpha - **Milestone 1 COMPLETE** 🎉
 **Maintained by**: [Cuemby](https://cuemby.com) 🐰
