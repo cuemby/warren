@@ -1,0 +1,212 @@
+package main
+
+import (
+	"fmt"
+	"os"
+
+	"github.com/spf13/cobra"
+)
+
+var (
+	// Version information (set via ldflags during build)
+	Version   = "dev"
+	Commit    = "unknown"
+	BuildTime = "unknown"
+)
+
+func main() {
+	if err := rootCmd.Execute(); err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		os.Exit(1)
+	}
+}
+
+var rootCmd = &cobra.Command{
+	Use:   "warren",
+	Short: "Warren - Simple yet powerful container orchestrator",
+	Long: `Warren is a container orchestration platform that combines
+the simplicity of Docker Swarm with the features of Kubernetes,
+delivered as a single binary with zero external dependencies.
+
+Built for edge computing with telco-grade reliability.`,
+	Version: Version,
+}
+
+func init() {
+	// Set version template
+	rootCmd.SetVersionTemplate(fmt.Sprintf(
+		"Warren version %s\nCommit: %s\nBuilt: %s\n",
+		Version, Commit, BuildTime,
+	))
+
+	// Add subcommands
+	rootCmd.AddCommand(clusterCmd)
+	rootCmd.AddCommand(serviceCmd)
+	rootCmd.AddCommand(nodeCmd)
+	rootCmd.AddCommand(secretCmd)
+	rootCmd.AddCommand(volumeCmd)
+}
+
+// Cluster commands
+var clusterCmd = &cobra.Command{
+	Use:   "cluster",
+	Short: "Manage Warren cluster",
+}
+
+var clusterInitCmd = &cobra.Command{
+	Use:   "init",
+	Short: "Initialize a new Warren cluster",
+	Long: `Initialize a new Warren cluster with this node as the first manager.
+
+This command starts the Warren manager in single-node mode, which will
+automatically form a Raft quorum once additional managers join.`,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		fmt.Println("Initializing Warren cluster...")
+		fmt.Println("This will start the manager process.")
+		fmt.Println()
+		fmt.Println("Implementation coming in Milestone 1!")
+		return nil
+	},
+}
+
+var clusterJoinTokenCmd = &cobra.Command{
+	Use:   "join-token [worker|manager]",
+	Short: "Generate a join token for workers or managers",
+	Args:  cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		role := args[0]
+		if role != "worker" && role != "manager" {
+			return fmt.Errorf("role must be 'worker' or 'manager'")
+		}
+
+		fmt.Printf("Generating join token for %s...\n", role)
+		fmt.Println("Implementation coming in Milestone 1!")
+		return nil
+	},
+}
+
+var clusterJoinCmd = &cobra.Command{
+	Use:   "join --token TOKEN",
+	Short: "Join this node to an existing cluster",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		token, _ := cmd.Flags().GetString("token")
+		if token == "" {
+			return fmt.Errorf("--token is required")
+		}
+
+		fmt.Println("Joining cluster...")
+		fmt.Println("Implementation coming in Milestone 1!")
+		return nil
+	},
+}
+
+func init() {
+	clusterCmd.AddCommand(clusterInitCmd)
+	clusterCmd.AddCommand(clusterJoinTokenCmd)
+	clusterCmd.AddCommand(clusterJoinCmd)
+
+	clusterJoinCmd.Flags().String("token", "", "Join token from manager")
+}
+
+// Service commands
+var serviceCmd = &cobra.Command{
+	Use:   "service",
+	Short: "Manage services",
+}
+
+var serviceCreateCmd = &cobra.Command{
+	Use:   "create NAME",
+	Short: "Create a new service",
+	Args:  cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		name := args[0]
+		image, _ := cmd.Flags().GetString("image")
+		replicas, _ := cmd.Flags().GetInt("replicas")
+
+		fmt.Printf("Creating service '%s'\n", name)
+		fmt.Printf("  Image: %s\n", image)
+		fmt.Printf("  Replicas: %d\n", replicas)
+		fmt.Println()
+		fmt.Println("Implementation coming in Milestone 1!")
+		return nil
+	},
+}
+
+var serviceListCmd = &cobra.Command{
+	Use:   "list",
+	Short: "List services",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		fmt.Println("Listing services...")
+		fmt.Println("Implementation coming in Milestone 1!")
+		return nil
+	},
+}
+
+func init() {
+	serviceCmd.AddCommand(serviceCreateCmd)
+	serviceCmd.AddCommand(serviceListCmd)
+
+	serviceCreateCmd.Flags().String("image", "", "Container image")
+	serviceCreateCmd.Flags().Int("replicas", 1, "Number of replicas")
+	serviceCreateCmd.MarkFlagRequired("image")
+}
+
+// Node commands
+var nodeCmd = &cobra.Command{
+	Use:   "node",
+	Short: "Manage nodes",
+}
+
+var nodeListCmd = &cobra.Command{
+	Use:   "list",
+	Short: "List nodes in the cluster",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		fmt.Println("Listing nodes...")
+		fmt.Println("Implementation coming in Milestone 1!")
+		return nil
+	},
+}
+
+func init() {
+	nodeCmd.AddCommand(nodeListCmd)
+}
+
+// Secret commands
+var secretCmd = &cobra.Command{
+	Use:   "secret",
+	Short: "Manage secrets",
+}
+
+var secretListCmd = &cobra.Command{
+	Use:   "list",
+	Short: "List secrets",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		fmt.Println("Listing secrets...")
+		fmt.Println("Implementation coming in Milestone 1!")
+		return nil
+	},
+}
+
+func init() {
+	secretCmd.AddCommand(secretListCmd)
+}
+
+// Volume commands
+var volumeCmd = &cobra.Command{
+	Use:   "volume",
+	Short: "Manage volumes",
+}
+
+var volumeListCmd = &cobra.Command{
+	Use:   "list",
+	Short: "List volumes",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		fmt.Println("Listing volumes...")
+		fmt.Println("Implementation coming in Milestone 1!")
+		return nil
+	},
+}
+
+func init() {
+	volumeCmd.AddCommand(volumeListCmd)
+}
