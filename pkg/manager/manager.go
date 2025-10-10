@@ -267,6 +267,21 @@ func (m *Manager) LeaderAddr() string {
 	return string(m.raft.Leader())
 }
 
+// GetRaftStats returns Raft statistics
+func (m *Manager) GetRaftStats() map[string]interface{} {
+	if m.raft == nil {
+		return nil
+	}
+
+	stats := make(map[string]interface{})
+	stats["state"] = m.raft.State().String()
+	stats["last_log_index"] = m.raft.LastIndex()
+	stats["applied_index"] = m.raft.AppliedIndex()
+	stats["leader"] = string(m.raft.Leader())
+
+	return stats
+}
+
 // Apply submits a command to the Raft cluster
 func (m *Manager) Apply(cmd Command) error {
 	if m.raft == nil {

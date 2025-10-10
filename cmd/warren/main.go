@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"net/http"
 	"os"
 	"os/signal"
 	"strings"
@@ -10,6 +11,7 @@ import (
 	"github.com/cuemby/warren/pkg/api"
 	"github.com/cuemby/warren/pkg/client"
 	"github.com/cuemby/warren/pkg/manager"
+	"github.com/cuemby/warren/pkg/metrics"
 	"github.com/cuemby/warren/pkg/reconciler"
 	"github.com/cuemby/warren/pkg/scheduler"
 	"github.com/cuemby/warren/pkg/types"
@@ -112,6 +114,21 @@ automatically form a Raft quorum once additional managers join.`,
 		recon.Start()
 		fmt.Println("✓ Reconciler started")
 
+		// Start metrics collector
+		metricsCollector := metrics.NewCollector(mgr)
+		metricsCollector.Start()
+		fmt.Println("✓ Metrics collector started")
+
+		// Start metrics HTTP server in background
+		metricsAddr := "127.0.0.1:9090"
+		go func() {
+			http.Handle("/metrics", metrics.Handler())
+			if err := http.ListenAndServe(metricsAddr, nil); err != nil {
+				fmt.Printf("Metrics server error: %v\n", err)
+			}
+		}()
+		fmt.Printf("✓ Metrics endpoint: http://%s/metrics\n", metricsAddr)
+
 		// Start API server in background
 		apiServer := api.NewServer(mgr)
 		errCh := make(chan error, 1)
@@ -138,6 +155,7 @@ automatically form a Raft quorum once additional managers join.`,
 		// Shutdown
 		sched.Stop()
 		recon.Stop()
+		metricsCollector.Stop()
 		apiServer.Stop()
 		if err := mgr.Shutdown(); err != nil {
 			return fmt.Errorf("failed to shutdown: %v", err)
@@ -387,6 +405,21 @@ var managerJoinCmd = &cobra.Command{
 		recon.Start()
 		fmt.Println("✓ Reconciler started")
 
+		// Start metrics collector
+		metricsCollector := metrics.NewCollector(mgr)
+		metricsCollector.Start()
+		fmt.Println("✓ Metrics collector started")
+
+		// Start metrics HTTP server in background
+		metricsAddr := "127.0.0.1:9090"
+		go func() {
+			http.Handle("/metrics", metrics.Handler())
+			if err := http.ListenAndServe(metricsAddr, nil); err != nil {
+				fmt.Printf("Metrics server error: %v\n", err)
+			}
+		}()
+		fmt.Printf("✓ Metrics endpoint: http://%s/metrics\n", metricsAddr)
+
 		// Start API server in background
 		apiServer := api.NewServer(mgr)
 		errCh := make(chan error, 1)
@@ -413,6 +446,7 @@ var managerJoinCmd = &cobra.Command{
 		// Shutdown
 		sched.Stop()
 		recon.Stop()
+		metricsCollector.Stop()
 		apiServer.Stop()
 		if err := mgr.Shutdown(); err != nil {
 			return fmt.Errorf("failed to shutdown: %v", err)
