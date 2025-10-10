@@ -129,6 +129,10 @@ test_bootstrap_manager1() {
   vm_exec "$MANAGER_1" pkill -9 warren || true
   sleep 2
 
+  # Clean up old data directory
+  vm_exec "$MANAGER_1" rm -rf /tmp/warren-data-1
+  vm_exec "$MANAGER_1" mkdir -p /tmp/warren-data-1
+
   # Start manager in background
   vm_exec "$MANAGER_1" bash -c "cd /Users/ar4mirez/Developer/Work/cuemby/warren && nohup ./bin/warren-linux-arm64 cluster init \
     --node-id=manager-1 \
@@ -137,9 +141,20 @@ test_bootstrap_manager1() {
     --data-dir=/tmp/warren-data-1 \
     > /tmp/warren-manager-1.log 2>&1 &"
 
-  # Wait for API to be ready
-  wait_for 30 2 "manager-1 API to be ready" \
-    vm_exec "$MANAGER_1" curl -s "http://${MANAGER_1_API}/health"
+  # Wait for API to be ready (check if gRPC port is open)
+  log_info "Waiting for manager-1 API to be ready..."
+  local elapsed=0
+  while ! vm_exec "$MANAGER_1" sh -c "nc -z lima-warren-manager-1.internal 8080" &> /dev/null; do
+    if [[ $elapsed -ge 30 ]]; then
+      log_error "Timeout waiting for manager-1 API"
+      return 1
+    fi
+    sleep 2
+    elapsed=$((elapsed + 2))
+    echo -n "."
+  done
+  echo
+  log_success "manager-1 API is ready"
 
   log_success "Manager-1 is running and ready"
 }
@@ -177,6 +192,10 @@ test_join_manager2() {
   vm_exec "$MANAGER_2" pkill -9 warren || true
   sleep 2
 
+  # Clean up old data directory
+  vm_exec "$MANAGER_2" rm -rf /tmp/warren-data-2
+  vm_exec "$MANAGER_2" mkdir -p /tmp/warren-data-2
+
   # Start manager-2 in background
   vm_exec "$MANAGER_2" bash -c "cd /Users/ar4mirez/Developer/Work/cuemby/warren && nohup ./bin/warren-linux-arm64 manager join \
     --node-id=manager-2 \
@@ -187,9 +206,20 @@ test_join_manager2() {
     --token=${token} \
     > /tmp/warren-manager-2.log 2>&1 &"
 
-  # Wait for API to be ready
-  wait_for 30 2 "manager-2 API to be ready" \
-    vm_exec "$MANAGER_2" curl -s "http://${MANAGER_2_API}/health"
+  # Wait for API to be ready (check if gRPC port is open)
+  log_info "Waiting for manager-2 API to be ready..."
+  local elapsed=0
+  while ! vm_exec "$MANAGER_2" sh -c "nc -z lima-warren-manager-2.internal 8081" &> /dev/null; do
+    if [[ $elapsed -ge 30 ]]; then
+      log_error "Timeout waiting for manager-2 API"
+      return 1
+    fi
+    sleep 2
+    elapsed=$((elapsed + 2))
+    echo -n "."
+  done
+  echo
+  log_success "manager-2 API is ready"
 
   log_success "Manager-2 joined cluster"
 }
@@ -207,6 +237,10 @@ test_join_manager3() {
   vm_exec "$MANAGER_3" pkill -9 warren || true
   sleep 2
 
+  # Clean up old data directory
+  vm_exec "$MANAGER_3" rm -rf /tmp/warren-data-3
+  vm_exec "$MANAGER_3" mkdir -p /tmp/warren-data-3
+
   # Start manager-3 in background
   vm_exec "$MANAGER_3" bash -c "cd /Users/ar4mirez/Developer/Work/cuemby/warren && nohup ./bin/warren-linux-arm64 manager join \
     --node-id=manager-3 \
@@ -217,9 +251,20 @@ test_join_manager3() {
     --token=${token} \
     > /tmp/warren-manager-3.log 2>&1 &"
 
-  # Wait for API to be ready
-  wait_for 30 2 "manager-3 API to be ready" \
-    vm_exec "$MANAGER_3" curl -s "http://${MANAGER_3_API}/health"
+  # Wait for API to be ready (check if gRPC port is open)
+  log_info "Waiting for manager-3 API to be ready..."
+  local elapsed=0
+  while ! vm_exec "$MANAGER_3" sh -c "nc -z lima-warren-manager-3.internal 8082" &> /dev/null; do
+    if [[ $elapsed -ge 30 ]]; then
+      log_error "Timeout waiting for manager-3 API"
+      return 1
+    fi
+    sleep 2
+    elapsed=$((elapsed + 2))
+    echo -n "."
+  done
+  echo
+  log_success "manager-3 API is ready"
 
   log_success "Manager-3 joined cluster"
 }
@@ -268,6 +313,10 @@ test_start_workers() {
   vm_exec "$WORKER_1" pkill -9 warren || true
   sleep 2
 
+  # Clean up old data directory
+  vm_exec "$WORKER_1" rm -rf /tmp/warren-worker-1
+  vm_exec "$WORKER_1" mkdir -p /tmp/warren-worker-1
+
   vm_exec "$WORKER_1" bash -c "cd /Users/ar4mirez/Developer/Work/cuemby/warren && nohup ./bin/warren-linux-arm64 worker start \
     --node-id=worker-1 \
     --manager=${MANAGER_1_API} \
@@ -283,6 +332,10 @@ test_start_workers() {
   log_info "Starting worker-2..."
   vm_exec "$WORKER_2" pkill -9 warren || true
   sleep 2
+
+  # Clean up old data directory
+  vm_exec "$WORKER_2" rm -rf /tmp/warren-worker-2
+  vm_exec "$WORKER_2" mkdir -p /tmp/warren-worker-2
 
   vm_exec "$WORKER_2" bash -c "cd /Users/ar4mirez/Developer/Work/cuemby/warren && nohup ./bin/warren-linux-arm64 worker start \
     --node-id=worker-2 \
