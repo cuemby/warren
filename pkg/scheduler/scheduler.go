@@ -117,24 +117,30 @@ func (s *Scheduler) scheduleService(service *types.Service, nodes []*types.Node)
 	tasksToCreate := desiredTasks - activeTasks
 	if tasksToCreate > 0 {
 		for i := 0; i < tasksToCreate; i++ {
-			node := s.selectNode(nodes, tasks)
+			// Check if service has volume requirements
+			node, err := s.selectNodeForService(service, nodes, tasks)
+			if err != nil {
+				return fmt.Errorf("failed to select node: %v", err)
+			}
 			if node == nil {
 				return fmt.Errorf("no suitable node found")
 			}
 
 			task := &types.Task{
-				ID:          uuid.New().String(),
-				ServiceID:   service.ID,
-				ServiceName: service.Name,
-				NodeID:      node.ID,
-				DesiredState: types.TaskStateRunning,
-				ActualState:  types.TaskStatePending,
-				Image:       service.Image,
-				Env:         service.Env,
-				Resources:   service.Resources,
-				HealthCheck: service.HealthCheck,
+				ID:            uuid.New().String(),
+				ServiceID:     service.ID,
+				ServiceName:   service.Name,
+				NodeID:        node.ID,
+				DesiredState:  types.TaskStateRunning,
+				ActualState:   types.TaskStatePending,
+				Image:         service.Image,
+				Env:           service.Env,
+				Mounts:        service.Volumes,
+				Secrets:       service.Secrets,
+				Resources:     service.Resources,
+				HealthCheck:   service.HealthCheck,
 				RestartPolicy: service.RestartPolicy,
-				CreatedAt:   time.Now(),
+				CreatedAt:     time.Now(),
 			}
 
 			if err := s.manager.CreateTask(task); err != nil {
@@ -165,6 +171,36 @@ func (s *Scheduler) scheduleService(service *types.Service, nodes []*types.Node)
 	}
 
 	return nil
+}
+
+// selectNodeForService selects a node for a service, considering volume affinity
+func (s *Scheduler) selectNodeForService(service *types.Service, nodes []*types.Node, existingTasks []*types.Task) (*types.Node, error) {
+	// Check if service has volume requirements
+	if len(service.Volumes) > 0 {
+		// Find node with volume affinity
+		for _, volumeMount := range service.Volumes {
+			volume, err := s.manager.GetVolumeByName(volumeMount.Source)
+			if err != nil {
+				// Volume doesn't exist yet, will be created on selected node
+				continue
+			}
+
+			// If volume exists and has node affinity, use that node
+			if volume.NodeID != "" {
+				for _, node := range nodes {
+					if node.ID == volume.NodeID {
+						fmt.Printf("Selecting node %s for service %s (volume affinity: %s)\n",
+							node.ID, service.Name, volume.Name)
+						return node, nil
+					}
+				}
+				return nil, fmt.Errorf("volume %s requires node %s which is not available", volume.Name, volume.NodeID)
+			}
+		}
+	}
+
+	// No volume affinity, use standard selection
+	return s.selectNode(nodes, existingTasks), nil
 }
 
 // selectNode implements simple round-robin node selection
