@@ -1,4 +1,4 @@
-.PHONY: build clean test lint fmt help install dev proto
+.PHONY: build clean test lint fmt help install dev proto download-containerd embed-deps
 
 # Build variables
 VERSION ?= dev
@@ -12,6 +12,9 @@ RELEASE_LDFLAGS := $(LDFLAGS) -s -w
 # Binaries
 BINARY := warren
 BUILD_DIR := bin
+
+# Embedded dependencies
+EMBED_DIR := pkg/embedded/binaries
 
 # Protobuf
 PROTO_DIR := api/proto
@@ -42,12 +45,33 @@ proto:
 		$(PROTO_DIR)/warren.proto
 	@echo "✓ Protobuf code generated"
 
-## build: Build Warren binary
+## download-containerd: Download containerd binaries for embedding
+download-containerd:
+	@echo "Downloading containerd binaries..."
+	@./scripts/download-containerd.sh
+	@echo "✓ Containerd binaries downloaded"
+
+## embed-deps: Prepare all embedded dependencies (runs download-containerd)
+embed-deps: download-containerd
+	@echo "✓ All embedded dependencies prepared"
+
+## build: Build Warren binary (without embedded containerd - for dev)
 build:
-	@echo "Building Warren..."
+	@echo "Building Warren (dev mode - no embedded containerd)..."
 	@mkdir -p $(BUILD_DIR)
 	go build -ldflags="$(LDFLAGS)" -o $(BUILD_DIR)/$(BINARY) ./cmd/warren
 	@echo "✓ Built: $(BUILD_DIR)/$(BINARY)"
+	@echo "⚠️  Note: This build does NOT include embedded containerd."
+	@echo "   Use 'make build-embedded' to build with containerd, or"
+	@echo "   Use --external-containerd flag to use system containerd."
+
+## build-embedded: Build Warren with embedded containerd (requires download-containerd first)
+build-embedded: embed-deps
+	@echo "Building Warren with embedded containerd..."
+	@mkdir -p $(BUILD_DIR)
+	go build -ldflags="$(LDFLAGS)" -o $(BUILD_DIR)/$(BINARY) ./cmd/warren
+	@echo "✓ Built: $(BUILD_DIR)/$(BINARY) (with embedded containerd)"
+	@ls -lh $(BUILD_DIR)/$(BINARY)
 
 ## build-release: Build optimized Warren binary for release
 build-release:
@@ -147,6 +171,12 @@ clean:
 	rm -rf $(BUILD_DIR)
 	rm -f coverage.out
 	@echo "✓ Cleaned"
+
+## clean-all: Clean build artifacts and embedded binaries
+clean-all: clean
+	@echo "Cleaning embedded binaries..."
+	rm -f $(EMBED_DIR)/containerd-*
+	@echo "✓ Cleaned all"
 
 ## check: Run all checks (fmt, lint, test)
 check: fmt lint test
