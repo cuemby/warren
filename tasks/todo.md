@@ -121,11 +121,11 @@ Warren development follows a milestone-based approach (not MVP-based). Each mile
   - Wired up `warren cluster init` command with graceful shutdown
   - Bootstrap creates single-node cluster successfully
 
-- [ ] **API Server**
-  - Define gRPC protobuf schema (services, nodes, tasks)
-  - Implement gRPC server
-  - Implement REST gateway (grpc-gateway)
-  - Test: Create/list/delete service via API
+- [x] **API Server**
+  - Defined complete gRPC protobuf schema (api/proto/warren.proto)
+  - Implemented full gRPC server (pkg/api/server.go) with 25+ methods
+  - Integrated API server with manager (starts on cluster init)
+  - REST gateway deferred to later milestone
 
 - [ ] **Scheduler (basic)**
   - Implement task creation from service spec
