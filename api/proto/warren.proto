@@ -39,6 +39,11 @@ service WarrenAPI {
   rpc CreateVolume(CreateVolumeRequest) returns (CreateVolumeResponse);
   rpc DeleteVolume(DeleteVolumeRequest) returns (DeleteVolumeResponse);
   rpc ListVolumes(ListVolumesRequest) returns (ListVolumesResponse);
+
+  // Cluster operations
+  rpc GenerateJoinToken(GenerateJoinTokenRequest) returns (GenerateJoinTokenResponse);
+  rpc JoinCluster(JoinClusterRequest) returns (JoinClusterResponse);
+  rpc GetClusterInfo(GetClusterInfoRequest) returns (GetClusterInfoResponse);
 }
 
 // Node messages
@@ -342,4 +347,40 @@ message ListVolumesRequest {}
 
 message ListVolumesResponse {
   repeated Volume volumes = 1;
+}
+
+// Cluster messages
+message GenerateJoinTokenRequest {
+  string role = 1; // "manager" or "worker"
+}
+
+message GenerateJoinTokenResponse {
+  string token = 1;
+  string role = 2;
+  google.protobuf.Timestamp expires_at = 3;
+}
+
+message JoinClusterRequest {
+  string node_id = 1;
+  string bind_addr = 2;
+  string token = 3;
+}
+
+message JoinClusterResponse {
+  string status = 1;
+  string leader_addr = 2;
+}
+
+message GetClusterInfoRequest {}
+
+message GetClusterInfoResponse {
+  string leader_id = 1;
+  string leader_addr = 2;
+  repeated ClusterServer servers = 3;
+}
+
+message ClusterServer {
+  string id = 1;
+  string address = 2;
+  string suffrage = 3; // "Voter", "Nonvoter", "Staging"
 }

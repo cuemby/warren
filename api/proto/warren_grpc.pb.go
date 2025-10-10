@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.5.1
 // - protoc             v6.32.1
-// source: api/proto/warren.proto
+// source: warren.proto
 
 package proto
 
@@ -19,26 +19,29 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	WarrenAPI_RegisterNode_FullMethodName     = "/warren.v1.WarrenAPI/RegisterNode"
-	WarrenAPI_Heartbeat_FullMethodName        = "/warren.v1.WarrenAPI/Heartbeat"
-	WarrenAPI_ListNodes_FullMethodName        = "/warren.v1.WarrenAPI/ListNodes"
-	WarrenAPI_GetNode_FullMethodName          = "/warren.v1.WarrenAPI/GetNode"
-	WarrenAPI_RemoveNode_FullMethodName       = "/warren.v1.WarrenAPI/RemoveNode"
-	WarrenAPI_CreateService_FullMethodName    = "/warren.v1.WarrenAPI/CreateService"
-	WarrenAPI_UpdateService_FullMethodName    = "/warren.v1.WarrenAPI/UpdateService"
-	WarrenAPI_DeleteService_FullMethodName    = "/warren.v1.WarrenAPI/DeleteService"
-	WarrenAPI_GetService_FullMethodName       = "/warren.v1.WarrenAPI/GetService"
-	WarrenAPI_ListServices_FullMethodName     = "/warren.v1.WarrenAPI/ListServices"
-	WarrenAPI_UpdateTaskStatus_FullMethodName = "/warren.v1.WarrenAPI/UpdateTaskStatus"
-	WarrenAPI_ListTasks_FullMethodName        = "/warren.v1.WarrenAPI/ListTasks"
-	WarrenAPI_GetTask_FullMethodName          = "/warren.v1.WarrenAPI/GetTask"
-	WarrenAPI_WatchTasks_FullMethodName       = "/warren.v1.WarrenAPI/WatchTasks"
-	WarrenAPI_CreateSecret_FullMethodName     = "/warren.v1.WarrenAPI/CreateSecret"
-	WarrenAPI_DeleteSecret_FullMethodName     = "/warren.v1.WarrenAPI/DeleteSecret"
-	WarrenAPI_ListSecrets_FullMethodName      = "/warren.v1.WarrenAPI/ListSecrets"
-	WarrenAPI_CreateVolume_FullMethodName     = "/warren.v1.WarrenAPI/CreateVolume"
-	WarrenAPI_DeleteVolume_FullMethodName     = "/warren.v1.WarrenAPI/DeleteVolume"
-	WarrenAPI_ListVolumes_FullMethodName      = "/warren.v1.WarrenAPI/ListVolumes"
+	WarrenAPI_RegisterNode_FullMethodName      = "/warren.v1.WarrenAPI/RegisterNode"
+	WarrenAPI_Heartbeat_FullMethodName         = "/warren.v1.WarrenAPI/Heartbeat"
+	WarrenAPI_ListNodes_FullMethodName         = "/warren.v1.WarrenAPI/ListNodes"
+	WarrenAPI_GetNode_FullMethodName           = "/warren.v1.WarrenAPI/GetNode"
+	WarrenAPI_RemoveNode_FullMethodName        = "/warren.v1.WarrenAPI/RemoveNode"
+	WarrenAPI_CreateService_FullMethodName     = "/warren.v1.WarrenAPI/CreateService"
+	WarrenAPI_UpdateService_FullMethodName     = "/warren.v1.WarrenAPI/UpdateService"
+	WarrenAPI_DeleteService_FullMethodName     = "/warren.v1.WarrenAPI/DeleteService"
+	WarrenAPI_GetService_FullMethodName        = "/warren.v1.WarrenAPI/GetService"
+	WarrenAPI_ListServices_FullMethodName      = "/warren.v1.WarrenAPI/ListServices"
+	WarrenAPI_UpdateTaskStatus_FullMethodName  = "/warren.v1.WarrenAPI/UpdateTaskStatus"
+	WarrenAPI_ListTasks_FullMethodName         = "/warren.v1.WarrenAPI/ListTasks"
+	WarrenAPI_GetTask_FullMethodName           = "/warren.v1.WarrenAPI/GetTask"
+	WarrenAPI_WatchTasks_FullMethodName        = "/warren.v1.WarrenAPI/WatchTasks"
+	WarrenAPI_CreateSecret_FullMethodName      = "/warren.v1.WarrenAPI/CreateSecret"
+	WarrenAPI_DeleteSecret_FullMethodName      = "/warren.v1.WarrenAPI/DeleteSecret"
+	WarrenAPI_ListSecrets_FullMethodName       = "/warren.v1.WarrenAPI/ListSecrets"
+	WarrenAPI_CreateVolume_FullMethodName      = "/warren.v1.WarrenAPI/CreateVolume"
+	WarrenAPI_DeleteVolume_FullMethodName      = "/warren.v1.WarrenAPI/DeleteVolume"
+	WarrenAPI_ListVolumes_FullMethodName       = "/warren.v1.WarrenAPI/ListVolumes"
+	WarrenAPI_GenerateJoinToken_FullMethodName = "/warren.v1.WarrenAPI/GenerateJoinToken"
+	WarrenAPI_JoinCluster_FullMethodName       = "/warren.v1.WarrenAPI/JoinCluster"
+	WarrenAPI_GetClusterInfo_FullMethodName    = "/warren.v1.WarrenAPI/GetClusterInfo"
 )
 
 // WarrenAPIClient is the client API for WarrenAPI service.
@@ -73,6 +76,10 @@ type WarrenAPIClient interface {
 	CreateVolume(ctx context.Context, in *CreateVolumeRequest, opts ...grpc.CallOption) (*CreateVolumeResponse, error)
 	DeleteVolume(ctx context.Context, in *DeleteVolumeRequest, opts ...grpc.CallOption) (*DeleteVolumeResponse, error)
 	ListVolumes(ctx context.Context, in *ListVolumesRequest, opts ...grpc.CallOption) (*ListVolumesResponse, error)
+	// Cluster operations
+	GenerateJoinToken(ctx context.Context, in *GenerateJoinTokenRequest, opts ...grpc.CallOption) (*GenerateJoinTokenResponse, error)
+	JoinCluster(ctx context.Context, in *JoinClusterRequest, opts ...grpc.CallOption) (*JoinClusterResponse, error)
+	GetClusterInfo(ctx context.Context, in *GetClusterInfoRequest, opts ...grpc.CallOption) (*GetClusterInfoResponse, error)
 }
 
 type warrenAPIClient struct {
@@ -292,6 +299,36 @@ func (c *warrenAPIClient) ListVolumes(ctx context.Context, in *ListVolumesReques
 	return out, nil
 }
 
+func (c *warrenAPIClient) GenerateJoinToken(ctx context.Context, in *GenerateJoinTokenRequest, opts ...grpc.CallOption) (*GenerateJoinTokenResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GenerateJoinTokenResponse)
+	err := c.cc.Invoke(ctx, WarrenAPI_GenerateJoinToken_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *warrenAPIClient) JoinCluster(ctx context.Context, in *JoinClusterRequest, opts ...grpc.CallOption) (*JoinClusterResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(JoinClusterResponse)
+	err := c.cc.Invoke(ctx, WarrenAPI_JoinCluster_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *warrenAPIClient) GetClusterInfo(ctx context.Context, in *GetClusterInfoRequest, opts ...grpc.CallOption) (*GetClusterInfoResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetClusterInfoResponse)
+	err := c.cc.Invoke(ctx, WarrenAPI_GetClusterInfo_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // WarrenAPIServer is the server API for WarrenAPI service.
 // All implementations must embed UnimplementedWarrenAPIServer
 // for forward compatibility.
@@ -324,6 +361,10 @@ type WarrenAPIServer interface {
 	CreateVolume(context.Context, *CreateVolumeRequest) (*CreateVolumeResponse, error)
 	DeleteVolume(context.Context, *DeleteVolumeRequest) (*DeleteVolumeResponse, error)
 	ListVolumes(context.Context, *ListVolumesRequest) (*ListVolumesResponse, error)
+	// Cluster operations
+	GenerateJoinToken(context.Context, *GenerateJoinTokenRequest) (*GenerateJoinTokenResponse, error)
+	JoinCluster(context.Context, *JoinClusterRequest) (*JoinClusterResponse, error)
+	GetClusterInfo(context.Context, *GetClusterInfoRequest) (*GetClusterInfoResponse, error)
 	mustEmbedUnimplementedWarrenAPIServer()
 }
 
@@ -393,6 +434,15 @@ func (UnimplementedWarrenAPIServer) DeleteVolume(context.Context, *DeleteVolumeR
 }
 func (UnimplementedWarrenAPIServer) ListVolumes(context.Context, *ListVolumesRequest) (*ListVolumesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListVolumes not implemented")
+}
+func (UnimplementedWarrenAPIServer) GenerateJoinToken(context.Context, *GenerateJoinTokenRequest) (*GenerateJoinTokenResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GenerateJoinToken not implemented")
+}
+func (UnimplementedWarrenAPIServer) JoinCluster(context.Context, *JoinClusterRequest) (*JoinClusterResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method JoinCluster not implemented")
+}
+func (UnimplementedWarrenAPIServer) GetClusterInfo(context.Context, *GetClusterInfoRequest) (*GetClusterInfoResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetClusterInfo not implemented")
 }
 func (UnimplementedWarrenAPIServer) mustEmbedUnimplementedWarrenAPIServer() {}
 func (UnimplementedWarrenAPIServer) testEmbeddedByValue()                   {}
@@ -768,6 +818,60 @@ func _WarrenAPI_ListVolumes_Handler(srv interface{}, ctx context.Context, dec fu
 	return interceptor(ctx, in, info, handler)
 }
 
+func _WarrenAPI_GenerateJoinToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GenerateJoinTokenRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WarrenAPIServer).GenerateJoinToken(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WarrenAPI_GenerateJoinToken_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WarrenAPIServer).GenerateJoinToken(ctx, req.(*GenerateJoinTokenRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WarrenAPI_JoinCluster_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(JoinClusterRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WarrenAPIServer).JoinCluster(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WarrenAPI_JoinCluster_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WarrenAPIServer).JoinCluster(ctx, req.(*JoinClusterRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WarrenAPI_GetClusterInfo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetClusterInfoRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WarrenAPIServer).GetClusterInfo(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WarrenAPI_GetClusterInfo_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WarrenAPIServer).GetClusterInfo(ctx, req.(*GetClusterInfoRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // WarrenAPI_ServiceDesc is the grpc.ServiceDesc for WarrenAPI service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -851,6 +955,18 @@ var WarrenAPI_ServiceDesc = grpc.ServiceDesc{
 			MethodName: "ListVolumes",
 			Handler:    _WarrenAPI_ListVolumes_Handler,
 		},
+		{
+			MethodName: "GenerateJoinToken",
+			Handler:    _WarrenAPI_GenerateJoinToken_Handler,
+		},
+		{
+			MethodName: "JoinCluster",
+			Handler:    _WarrenAPI_JoinCluster_Handler,
+		},
+		{
+			MethodName: "GetClusterInfo",
+			Handler:    _WarrenAPI_GetClusterInfo_Handler,
+		},
 	},
 	Streams: []grpc.StreamDesc{
 		{
@@ -859,5 +975,5 @@ var WarrenAPI_ServiceDesc = grpc.ServiceDesc{
 			ServerStreams: true,
 		},
 	},
-	Metadata: "api/proto/warren.proto",
+	Metadata: "warren.proto",
 }

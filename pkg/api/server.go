@@ -535,6 +535,88 @@ func (s *Server) ListVolumes(ctx context.Context, req *proto.ListVolumesRequest)
 	}, nil
 }
 
+// GenerateJoinToken generates a join token for adding nodes
+func (s *Server) GenerateJoinToken(ctx context.Context, req *proto.GenerateJoinTokenRequest) (*proto.GenerateJoinTokenResponse, error) {
+	// Ensure we're the leader (only leader can generate tokens)
+	if err := s.ensureLeader(); err != nil {
+		return nil, err
+	}
+
+	// Generate token
+	token, err := s.manager.GenerateJoinToken(req.Role)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate join token: %v", err)
+	}
+
+	return &proto.GenerateJoinTokenResponse{
+		Token:     token.Token,
+		Role:      token.Role,
+		ExpiresAt: timestamppb.New(token.ExpiresAt),
+	}, nil
+}
+
+// JoinCluster handles a manager join request
+func (s *Server) JoinCluster(ctx context.Context, req *proto.JoinClusterRequest) (*proto.JoinClusterResponse, error) {
+	// Ensure we're the leader (only leader can add voters)
+	if err := s.ensureLeader(); err != nil {
+		return nil, err
+	}
+
+	// Validate the join token
+	role, err := s.manager.ValidateJoinToken(req.Token)
+	if err != nil {
+		return nil, fmt.Errorf("invalid join token: %v", err)
+	}
+
+	// Only managers can join via this endpoint
+	if role != "manager" {
+		return nil, fmt.Errorf("invalid token role: expected manager, got %s", role)
+	}
+
+	// Add the manager as a voter in Raft
+	if err := s.manager.AddVoter(req.NodeId, req.BindAddr); err != nil {
+		return nil, fmt.Errorf("failed to add voter: %v", err)
+	}
+
+	return &proto.JoinClusterResponse{
+		Status:     "success",
+		LeaderAddr: s.manager.LeaderAddr(),
+	}, nil
+}
+
+// GetClusterInfo returns information about the Raft cluster
+func (s *Server) GetClusterInfo(ctx context.Context, req *proto.GetClusterInfoRequest) (*proto.GetClusterInfoResponse, error) {
+	servers, err := s.manager.GetClusterServers()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get cluster servers: %v", err)
+	}
+
+	protoServers := make([]*proto.ClusterServer, len(servers))
+	for i, srv := range servers {
+		protoServers[i] = &proto.ClusterServer{
+			Id:       string(srv.ID),
+			Address:  string(srv.Address),
+			Suffrage: srv.Suffrage.String(),
+		}
+	}
+
+	leaderAddr := s.manager.LeaderAddr()
+	leaderID := ""
+	// Try to find leader ID from servers
+	for _, srv := range servers {
+		if string(srv.Address) == leaderAddr {
+			leaderID = string(srv.ID)
+			break
+		}
+	}
+
+	return &proto.GetClusterInfoResponse{
+		LeaderId:   leaderID,
+		LeaderAddr: leaderAddr,
+		Servers:    protoServers,
+	}, nil
+}
+
 // Helper functions to convert between internal types and protobuf
 
 func nodeToProto(n *types.Node) *proto.Node {
