@@ -35,17 +35,18 @@ type Worker struct {
 
 // Config holds worker configuration
 type Config struct {
-	NodeID        string
-	ManagerAddr   string
-	DataDir       string
-	Resources     *types.NodeResources
-	EncryptionKey []byte // Cluster-wide encryption key for secrets
+	NodeID            string
+	ManagerAddr       string
+	DataDir           string
+	Resources         *types.NodeResources
+	EncryptionKey     []byte // Cluster-wide encryption key for secrets
+	ContainerdSocket  string // Containerd socket path (empty = auto-detect)
 }
 
 // NewWorker creates a new worker instance
 func NewWorker(cfg *Config) (*Worker, error) {
 	// Initialize containerd runtime
-	rt, err := runtime.NewContainerdRuntime("")
+	rt, err := runtime.NewContainerdRuntime(cfg.ContainerdSocket)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize containerd runtime: %w", err)
 	}

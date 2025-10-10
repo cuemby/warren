@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	_ "net/http/pprof" // Import pprof for profiling endpoints
@@ -11,6 +12,7 @@ import (
 
 	"github.com/cuemby/warren/pkg/api"
 	"github.com/cuemby/warren/pkg/client"
+	"github.com/cuemby/warren/pkg/embedded"
 	"github.com/cuemby/warren/pkg/log"
 	"github.com/cuemby/warren/pkg/manager"
 	"github.com/cuemby/warren/pkg/metrics"
@@ -56,6 +58,8 @@ func init() {
 	// Global flags
 	rootCmd.PersistentFlags().String("log-level", "info", "Log level (debug, info, warn, error)")
 	rootCmd.PersistentFlags().Bool("log-json", false, "Output logs in JSON format")
+	rootCmd.PersistentFlags().Bool("external-containerd", false, "Use external containerd instead of embedded (requires containerd daemon running)")
+	rootCmd.PersistentFlags().String("containerd-socket", "", "Custom containerd socket path (auto-detected if not specified)")
 
 	// Initialize logging before command execution
 	cobra.OnInitialize(initLogging)
@@ -98,13 +102,31 @@ automatically form a Raft quorum once additional managers join.`,
 		bindAddr, _ := cmd.Flags().GetString("bind-addr")
 		apiAddr, _ := cmd.Flags().GetString("api-addr")
 		dataDir, _ := cmd.Flags().GetString("data-dir")
+		useExternal, _ := cmd.Flags().GetBool("external-containerd")
 
 		fmt.Println("Initializing Warren cluster...")
 		fmt.Printf("  Node ID: %s\n", nodeID)
 		fmt.Printf("  Raft Address: %s\n", bindAddr)
 		fmt.Printf("  API Address: %s\n", apiAddr)
 		fmt.Printf("  Data Directory: %s\n", dataDir)
+		if useExternal {
+			fmt.Println("  Containerd: External (system containerd)")
+		} else {
+			fmt.Println("  Containerd: Embedded")
+		}
 		fmt.Println()
+
+		// Start embedded containerd if needed
+		ctx := context.Background()
+		containerdMgr, err := embedded.EnsureContainerd(ctx, dataDir, useExternal)
+		if err != nil {
+			return fmt.Errorf("failed to start containerd: %v", err)
+		}
+		defer containerdMgr.Stop()
+
+		if !useExternal {
+			fmt.Printf("✓ Embedded containerd started (socket: %s)\n", containerdMgr.GetSocketPath())
+		}
 
 		// Create manager
 		mgr, err := manager.NewManager(&manager.Config{
@@ -319,19 +341,38 @@ var workerStartCmd = &cobra.Command{
 		dataDir, _ := cmd.Flags().GetString("data-dir")
 		cpuCores, _ := cmd.Flags().GetInt("cpu")
 		memoryGB, _ := cmd.Flags().GetInt("memory")
+		useExternal, _ := cmd.Flags().GetBool("external-containerd")
 
 		fmt.Println("Starting Warren worker...")
 		fmt.Printf("  Node ID: %s\n", nodeID)
 		fmt.Printf("  Manager: %s\n", managerAddr)
 		fmt.Printf("  Data Directory: %s\n", dataDir)
 		fmt.Printf("  Resources: %d cores, %d GB memory\n", cpuCores, memoryGB)
+		if useExternal {
+			fmt.Println("  Containerd: External (system containerd)")
+		} else {
+			fmt.Println("  Containerd: Embedded")
+		}
 		fmt.Println()
+
+		// Start embedded containerd if needed
+		ctx := context.Background()
+		containerdMgr, err := embedded.EnsureContainerd(ctx, dataDir, useExternal)
+		if err != nil {
+			return fmt.Errorf("failed to start containerd: %v", err)
+		}
+		defer containerdMgr.Stop()
+
+		if !useExternal {
+			fmt.Printf("✓ Embedded containerd started (socket: %s)\n", containerdMgr.GetSocketPath())
+		}
 
 		// Create worker
 		w, err := worker.NewWorker(&worker.Config{
-			NodeID:      nodeID,
-			ManagerAddr: managerAddr,
-			DataDir:     dataDir,
+			NodeID:           nodeID,
+			ManagerAddr:      managerAddr,
+			DataDir:          dataDir,
+			ContainerdSocket: containerdMgr.GetSocketPath(),
 		})
 		if err != nil {
 			return fmt.Errorf("failed to create worker: %v", err)

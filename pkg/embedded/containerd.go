@@ -4,7 +4,6 @@ import (
 	"context"
 	"embed"
 	"fmt"
-	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -12,7 +11,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/cuemby/warren/pkg/log"
+	"github.com/rs/zerolog"
 )
 
 //go:embed binaries/*
@@ -37,7 +36,7 @@ type ContainerdManager struct {
 	binaryPath   string
 	cmd          *exec.Cmd
 	useExternal  bool
-	logger       *log.Logger
+	logger       zerolog.Logger
 }
 
 // NewContainerdManager creates a new containerd manager
@@ -46,7 +45,10 @@ func NewContainerdManager(dataDir string, useExternal bool) (*ContainerdManager,
 		dataDir = DefaultDataDir
 	}
 
-	logger := log.NewLogger("embedded-containerd", "info")
+	logger := zerolog.New(os.Stdout).With().
+		Str("component", "embedded-containerd").
+		Timestamp().
+		Logger()
 
 	return &ContainerdManager{
 		dataDir:     dataDir,
@@ -60,7 +62,7 @@ func NewContainerdManager(dataDir string, useExternal bool) (*ContainerdManager,
 // Start starts the embedded containerd daemon
 func (cm *ContainerdManager) Start(ctx context.Context) error {
 	if cm.useExternal {
-		cm.logger.Info("Using external containerd, skipping embedded start")
+		cm.logger.Info().Msg("Using external containerd, skipping embedded start")
 		return nil
 	}
 
@@ -81,7 +83,7 @@ func (cm *ContainerdManager) Start(ctx context.Context) error {
 	}
 
 	// Start containerd process
-	cm.logger.Info(fmt.Sprintf("Starting embedded containerd at %s", cm.socketPath))
+	cm.logger.Info().Msgf("Starting embedded containerd at %s", cm.socketPath)
 
 	cm.cmd = exec.CommandContext(ctx, cm.binaryPath,
 		"--config", cm.configPath,
@@ -105,7 +107,7 @@ func (cm *ContainerdManager) Start(ctx context.Context) error {
 		return fmt.Errorf("containerd failed to become ready: %w", err)
 	}
 
-	cm.logger.Info("Embedded containerd started successfully")
+	cm.logger.Info().Msg("Embedded containerd started successfully")
 
 	// Monitor containerd in background
 	go cm.monitor(ctx)
@@ -119,11 +121,11 @@ func (cm *ContainerdManager) Stop() error {
 		return nil
 	}
 
-	cm.logger.Info("Stopping embedded containerd")
+	cm.logger.Info().Msg("Stopping embedded containerd")
 
 	// Send SIGTERM for graceful shutdown
 	if err := cm.cmd.Process.Signal(syscall.SIGTERM); err != nil {
-		cm.logger.Error(fmt.Sprintf("Failed to send SIGTERM: %v", err))
+		cm.logger.Error().Msg(fmt.Sprintf("Failed to send SIGTERM: %v", err))
 	}
 
 	// Wait for up to 10 seconds for graceful shutdown
@@ -135,18 +137,18 @@ func (cm *ContainerdManager) Stop() error {
 	select {
 	case <-time.After(10 * time.Second):
 		// Force kill if graceful shutdown fails
-		cm.logger.Warn("Containerd did not stop gracefully, force killing")
+		cm.logger.Warn().Msg("Containerd did not stop gracefully, force killing")
 		if err := cm.cmd.Process.Kill(); err != nil {
 			return fmt.Errorf("failed to kill containerd: %w", err)
 		}
 		<-done // Wait for process to exit
 	case err := <-done:
 		if err != nil && err.Error() != "signal: terminated" {
-			cm.logger.Error(fmt.Sprintf("Containerd exited with error: %v", err))
+			cm.logger.Error().Msg(fmt.Sprintf("Containerd exited with error: %v", err))
 		}
 	}
 
-	cm.logger.Info("Embedded containerd stopped")
+	cm.logger.Info().Msg("Embedded containerd stopped")
 	return nil
 }
 
@@ -171,12 +173,12 @@ func (cm *ContainerdManager) extractBinary() error {
 	if info, err := os.Stat(cm.binaryPath); err == nil {
 		// Binary exists, check if it's recent enough (skip re-extraction for now)
 		if time.Since(info.ModTime()) < 24*time.Hour {
-			cm.logger.Info("Using existing containerd binary")
+			cm.logger.Info().Msg("Using existing containerd binary")
 			return nil
 		}
 	}
 
-	cm.logger.Info("Extracting containerd binary")
+	cm.logger.Info().Msg("Extracting containerd binary")
 
 	// Create bin directory
 	if err := os.MkdirAll(binDir, 0755); err != nil {
@@ -194,7 +196,7 @@ func (cm *ContainerdManager) extractBinary() error {
 		return fmt.Errorf("failed to write binary: %w", err)
 	}
 
-	cm.logger.Info(fmt.Sprintf("Extracted containerd binary to %s", cm.binaryPath))
+	cm.logger.Info().Msg(fmt.Sprintf("Extracted containerd binary to %s", cm.binaryPath))
 	return nil
 }
 
@@ -269,16 +271,16 @@ func (cm *ContainerdManager) monitor(ctx context.Context) {
 	// Check if context was cancelled (intentional shutdown)
 	select {
 	case <-ctx.Done():
-		cm.logger.Info("Containerd monitor exiting (context cancelled)")
+		cm.logger.Info().Msg("Containerd monitor exiting (context cancelled)")
 		return
 	default:
 	}
 
 	// Unexpected exit - log error
 	if err != nil {
-		cm.logger.Error(fmt.Sprintf("Containerd process exited unexpectedly: %v", err))
+		cm.logger.Error().Msg(fmt.Sprintf("Containerd process exited unexpectedly: %v", err))
 	} else {
-		cm.logger.Warn("Containerd process exited unexpectedly with no error")
+		cm.logger.Warn().Msg("Containerd process exited unexpectedly with no error")
 	}
 
 	// TODO: Implement automatic restart logic if needed
@@ -287,16 +289,16 @@ func (cm *ContainerdManager) monitor(ctx context.Context) {
 
 // logWriter adapts containerd output to Warren's logger
 type logWriter struct {
-	logger *log.Logger
+	logger zerolog.Logger
 	level  string
 }
 
 func (lw *logWriter) Write(p []byte) (n int, err error) {
 	msg := string(p)
 	if lw.level == "error" {
-		lw.logger.Error(msg)
+		lw.logger.Error().Msg(msg)
 	} else {
-		lw.logger.Info(msg)
+		lw.logger.Info().Msg(msg)
 	}
 	return len(p), nil
 }
