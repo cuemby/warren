@@ -68,10 +68,28 @@ build:
 ## build-embedded: Build Warren with embedded containerd (requires download-containerd first)
 build-embedded: embed-deps
 	@echo "Building Warren with embedded containerd..."
+	@if [ "$$(uname -s)" = "Darwin" ]; then \
+		echo "⚠️  WARNING: You're on macOS!"; \
+		echo "   Containerd does NOT provide macOS binaries."; \
+		echo "   This will build Warren with Linux containerd embedded (for cross-compilation)."; \
+		echo ""; \
+		echo "   To run Warren on macOS, use:"; \
+		echo "     1. make build (without embedded)"; \
+		echo "     2. sudo warren cluster init --external-containerd"; \
+		echo ""; \
+		echo "   Or cross-compile for Linux:"; \
+		echo "     make build-linux-amd64"; \
+		echo ""; \
+	fi
 	@mkdir -p $(BUILD_DIR)
 	go build -ldflags="$(LDFLAGS)" -o $(BUILD_DIR)/$(BINARY) ./cmd/warren
-	@echo "✓ Built: $(BUILD_DIR)/$(BINARY) (with embedded containerd)"
+	@echo "✓ Built: $(BUILD_DIR)/$(BINARY)"
 	@ls -lh $(BUILD_DIR)/$(BINARY)
+	@if [ "$$(uname -s)" = "Darwin" ]; then \
+		echo ""; \
+		echo "ℹ️  This binary contains Linux containerd binaries (not usable on macOS)."; \
+		echo "   For macOS dev: make build && sudo warren cluster init --external-containerd"; \
+	fi
 
 ## build-release: Build optimized Warren binary for release
 build-release:
