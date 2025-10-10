@@ -98,8 +98,8 @@ func (r *ContainerdRuntime) CreateContainer(ctx context.Context, task *types.Tas
 	return container.ID(), nil
 }
 
-// CreateContainerWithSecrets creates a container with secret tmpfs mounts
-func (r *ContainerdRuntime) CreateContainerWithSecrets(ctx context.Context, task *types.Task, secretsPath string) (string, error) {
+// CreateContainerWithMounts creates a container with secret and volume mounts
+func (r *ContainerdRuntime) CreateContainerWithMounts(ctx context.Context, task *types.Task, secretsPath string, volumeMounts []specs.Mount) (string, error) {
 	ctx = namespaces.WithNamespace(ctx, r.namespace)
 
 	// Get the image
@@ -108,22 +108,31 @@ func (r *ContainerdRuntime) CreateContainerWithSecrets(ctx context.Context, task
 		return "", fmt.Errorf("failed to get image %s: %w", task.Image, err)
 	}
 
-	// Create container spec with environment variables and secrets mount
+	// Create container spec with environment variables
 	opts := []oci.SpecOpts{
 		oci.WithImageConfig(image),
 		oci.WithEnv(task.Env),
 	}
 
+	// Collect all mounts
+	var mounts []specs.Mount
+
 	// Add bind mount for secrets if provided
 	if secretsPath != "" {
-		opts = append(opts, oci.WithMounts([]specs.Mount{
-			{
-				Source:      secretsPath,
-				Destination: "/run/secrets",
-				Type:        "bind",
-				Options:     []string{"ro", "bind"}, // Read-only bind mount
-			},
-		}))
+		mounts = append(mounts, specs.Mount{
+			Source:      secretsPath,
+			Destination: "/run/secrets",
+			Type:        "bind",
+			Options:     []string{"ro", "bind"}, // Read-only bind mount
+		})
+	}
+
+	// Add volume mounts
+	mounts = append(mounts, volumeMounts...)
+
+	// Apply all mounts if any
+	if len(mounts) > 0 {
+		opts = append(opts, oci.WithMounts(mounts))
 	}
 
 	// Create the container
@@ -139,6 +148,11 @@ func (r *ContainerdRuntime) CreateContainerWithSecrets(ctx context.Context, task
 	}
 
 	return container.ID(), nil
+}
+
+// CreateContainerWithSecrets creates a container with secret tmpfs mounts (deprecated, use CreateContainerWithMounts)
+func (r *ContainerdRuntime) CreateContainerWithSecrets(ctx context.Context, task *types.Task, secretsPath string) (string, error) {
+	return r.CreateContainerWithMounts(ctx, task, secretsPath, nil)
 }
 
 // StartContainer starts a container and returns its runtime ID
