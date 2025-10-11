@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/big"
+	"net"
 	"sync"
 	"time"
 
@@ -183,7 +184,7 @@ func (ca *CertAuthority) SaveToStore() error {
 }
 
 // IssueNodeCertificate issues a certificate for a node (manager or worker)
-func (ca *CertAuthority) IssueNodeCertificate(nodeID, role string) (*tls.Certificate, error) {
+func (ca *CertAuthority) IssueNodeCertificate(nodeID, role string, dnsNames []string, ipAddresses []net.IP) (*tls.Certificate, error) {
 	ca.mu.RLock()
 	defer ca.mu.RUnlock()
 
@@ -209,10 +210,12 @@ func (ca *CertAuthority) IssueNodeCertificate(nodeID, role string) (*tls.Certifi
 			Organization: []string{"Warren Cluster"},
 			CommonName:   fmt.Sprintf("%s-%s", role, nodeID),
 		},
-		NotBefore:   time.Now(),
-		NotAfter:    time.Now().Add(nodeCertValidity),
-		KeyUsage:    x509.KeyUsageDigitalSignature | x509.KeyUsageKeyEncipherment,
-		ExtKeyUsage: []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth, x509.ExtKeyUsageServerAuth},
+		NotBefore:    time.Now(),
+		NotAfter:     time.Now().Add(nodeCertValidity),
+		KeyUsage:     x509.KeyUsageDigitalSignature | x509.KeyUsageKeyEncipherment,
+		ExtKeyUsage:  []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth, x509.ExtKeyUsageServerAuth},
+		DNSNames:     dnsNames,
+		IPAddresses:  ipAddresses,
 	}
 
 	// Create certificate signed by root CA

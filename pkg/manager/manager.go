@@ -781,7 +781,25 @@ func (m *Manager) initializeCA() error {
 	// Check if certificate already exists
 	if !security.CertExists(certDir) {
 		fmt.Printf("Issuing certificate for manager %s...\n", m.nodeID)
-		cert, err := m.ca.IssueNodeCertificate(m.nodeID, "manager")
+
+		// Extract IP from bind address for certificate SAN
+		host, _, err := net.SplitHostPort(m.bindAddr)
+		if err != nil {
+			return fmt.Errorf("failed to parse bind address: %v", err)
+		}
+		ip := net.ParseIP(host)
+		var ipAddresses []net.IP
+		if ip != nil {
+			ipAddresses = []net.IP{ip}
+		}
+
+		// DNS names for the manager
+		dnsNames := []string{
+			fmt.Sprintf("manager-%s", m.nodeID),
+			"localhost",
+		}
+
+		cert, err := m.ca.IssueNodeCertificate(m.nodeID, "manager", dnsNames, ipAddresses)
 		if err != nil {
 			return fmt.Errorf("failed to issue node certificate: %v", err)
 		}
@@ -811,7 +829,9 @@ func (m *Manager) IssueCertificate(nodeID, role string) (*tls.Certificate, error
 		return nil, fmt.Errorf("CA not initialized")
 	}
 
-	return m.ca.IssueNodeCertificate(nodeID, role)
+	// For workers and CLI, no DNS names or IP addresses needed (client certs)
+	// They connect to the manager, not vice versa
+	return m.ca.IssueNodeCertificate(nodeID, role, nil, nil)
 }
 
 // CertToPEM converts a TLS certificate to PEM format
