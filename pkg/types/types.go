@@ -109,10 +109,22 @@ type UpdateConfig struct {
 // PortMapping defines port exposure
 type PortMapping struct {
 	Name          string
-	ContainerPort int
-	HostPort      int
-	Protocol      string // "tcp" or "udp"
+	ContainerPort int      // Port inside container (target port)
+	HostPort      int      // Port on host/cluster (published port)
+	Protocol      string   // "tcp" or "udp"
+	PublishMode   PublishMode // "host" or "ingress"
 }
+
+// PublishMode defines how a port is published
+type PublishMode string
+
+const (
+	// PublishModeHost publishes port only on the node running the task
+	PublishModeHost PublishMode = "host"
+
+	// PublishModeIngress publishes port on all nodes with routing mesh
+	PublishModeIngress PublishMode = "ingress"
+)
 
 // VolumeMount defines a volume mount point
 type VolumeMount struct {

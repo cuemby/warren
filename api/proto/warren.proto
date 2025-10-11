@@ -145,6 +145,7 @@ message Service {
   repeated string command = 14;
   google.protobuf.Timestamp created_at = 15;
   google.protobuf.Timestamp updated_at = 16;
+  repeated PortMapping ports = 17; // Published ports
 }
 
 message UpdateConfig {
@@ -215,6 +216,19 @@ message VolumeMount {
   bool read_only = 3;
 }
 
+message PortMapping {
+  enum PublishMode {
+    HOST = 0;     // Publish on node running the task
+    INGRESS = 1;  // Publish on all nodes with routing mesh
+  }
+
+  string name = 1;           // Optional port name
+  int32 container_port = 2;  // Port inside container (target)
+  int32 host_port = 3;       // Port on host/cluster (published)
+  string protocol = 4;       // "tcp" or "udp" (default: "tcp")
+  PublishMode publish_mode = 5; // Publishing mode (default: HOST)
+}
+
 message CreateServiceRequest {
   string name = 1;
   string image = 2;
@@ -229,6 +243,7 @@ message CreateServiceRequest {
   repeated VolumeMount volumes = 11;
   map<string, string> env = 12;
   repeated string command = 13;
+  repeated PortMapping ports = 14; // Published ports
 }
 
 message CreateServiceResponse {
