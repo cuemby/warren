@@ -4,11 +4,12 @@ Warren provides built-in networking for secure communication between containers 
 
 ## Overview
 
-Warren's networking is built on three key components:
+Warren's networking is built on four key components:
 
 1. **WireGuard Overlay** - Encrypted mesh network between all nodes
-2. **Service VIPs** - Virtual IPs for load-balanced service access
-3. **Container Networking** - Per-container IP assignment
+2. **DNS Service Discovery** - Built-in DNS for service name resolution ✅ NEW
+3. **Service VIPs** - Virtual IPs for load-balanced service access (planned)
+4. **Container Networking** - Per-container IP assignment
 
 ## Network Architecture
 
@@ -293,33 +294,127 @@ spec:
 
 ## Service Discovery
 
-### Current: VIP-based
+### DNS-based Service Discovery ✅ NEW
 
-Access services via their VIP:
+Warren includes a built-in DNS server for service discovery. Containers can discover services by name instead of hardcoded IPs.
 
-```bash
-# Get VIP from service inspect
-warren service inspect nginx
+**How it works:**
 
-# Access via VIP
-curl http://10.1.0.5
-```
+1. Manager runs DNS server on port 53 (127.0.0.11)
+2. Workers auto-configure containers with Warren DNS
+3. Containers query DNS → Manager resolves → Service IPs returned
+4. External DNS fallback (8.8.8.8, 1.1.1.1) for internet domains
 
-### Future: DNS-based (M6)
-
-Warren will run a built-in DNS server:
+**DNS Resolution Patterns:**
 
 ```bash
-# Access by service name
-curl http://nginx.warren.local
+# From within a container:
 
-# Access specific task
-curl http://nginx-task-1.warren.local
+# Service name → Round-robin instance IPs
+ping nginx
+# Resolves to: 10.0.1.5, 10.0.1.6, 10.0.1.7 (all instances)
+
+# With domain suffix
+ping nginx.warren
+# Same as above
+
+# Specific instance (instance-1, instance-2, etc.)
+ping nginx-1
+# Resolves to: 10.0.1.5 (first instance by creation time)
+
+ping nginx-2
+# Resolves to: 10.0.1.6 (second instance)
+
+# External domains (forwarded to 8.8.8.8)
+ping google.com
+# Works! Forwarded to upstream DNS
 ```
 
-**DNS Records:**
-- `<service>.warren.local` → VIP
-- `<task>.warren.local` → Container IP
+**Container DNS Configuration:**
+
+Warren automatically configures containers with custom resolv.conf:
+
+```
+# /etc/resolv.conf inside containers
+nameserver <manager-ip>     # Primary: Warren DNS
+nameserver 8.8.8.8          # Fallback: Google DNS
+nameserver 1.1.1.1          # Fallback: Cloudflare DNS
+search warren               # Search domain
+options ndots:0             # Use search immediately
+```
+
+**Benefits:**
+
+- ✅ **No hardcoded IPs** - Services discoverable by name
+- ✅ **Load balancing** - DNS returns all healthy instances
+- ✅ **Instance-specific** - Access specific replicas (nginx-1, nginx-2)
+- ✅ **Automatic** - Zero configuration required
+- ✅ **Fallback** - External DNS for internet domains
+- ✅ **Docker-compatible** - Uses 127.0.0.11:53 convention
+
+**Example Usage:**
+
+```bash
+# Deploy a service
+warren service create nginx --image nginx --replicas 3
+
+# From another container:
+# Access the service by name (load-balanced)
+curl http://nginx
+
+# Access specific instance
+curl http://nginx-1
+
+# Works with domain suffix too
+curl http://nginx.warren
+```
+
+**DNS Server Details:**
+
+- **Location**: Runs on all manager nodes
+- **Port**: 127.0.0.11:53 (Docker-compatible)
+- **Protocol**: UDP
+- **Resolution**: Service name → Healthy instance IPs
+- **Load Balancing**: Round-robin via multiple A records
+- **TTL**: 10 seconds (dynamic services)
+- **Upstream**: 8.8.8.8 (Google), 1.1.1.1 (Cloudflare)
+
+**Testing DNS:**
+
+```bash
+# From within a container
+nslookup nginx
+# Output:
+# Server:    <manager-ip>
+# Address:   <manager-ip>:53
+#
+# Name:      nginx
+# Address:   10.0.1.5
+# Address:   10.0.1.6
+# Address:   10.0.1.7
+
+# Query specific instance
+nslookup nginx-1
+# Output:
+# Name:      nginx-1
+# Address:   10.0.1.5
+
+# External domain
+nslookup google.com
+# Works! Forwarded to upstream DNS
+```
+
+### VIP-based (Future - Phase 6.2)
+
+VIP infrastructure is planned for Phase 6.2 (Published Ports):
+
+- Each service will get a Virtual IP (VIP) from 10.1.0.0/16
+- DNS will return VIPs instead of instance IPs
+- iptables DNAT will load-balance VIP → instances
+- Enables ingress mode port publishing
+
+**Current:** DNS returns instance IPs directly (round-robin)
+**Future:** DNS returns VIP → iptables routes to instances
 
 ## Multi-Cluster Networking (Future)
 
@@ -410,12 +505,43 @@ sudo ctr -n warren tasks exec -t --exec-id debug <container-id> sh
 
 ### Common Issues
 
+**DNS not resolving service names:**
+
+```bash
+# 1. Check DNS server is running on manager
+# On manager node:
+sudo netstat -tulpn | grep 53
+# Should show warren process listening on 127.0.0.11:53
+
+# 2. Check container DNS configuration
+# From inside container:
+cat /etc/resolv.conf
+# Should show: nameserver <manager-ip>
+
+# 3. Test DNS resolution manually
+nslookup nginx
+# Should resolve to instance IPs
+
+# 4. Check if service has running instances
+warren service inspect nginx
+# Verify ActualState: running
+
+# 5. Test external DNS (fallback)
+nslookup google.com
+# Should work (forwarded to 8.8.8.8)
+
+# Common fixes:
+# - Restart manager if DNS server not running
+# - Check manager IP is reachable from worker
+# - Verify service has healthy instances
+```
+
 **Cannot ping containers:**
 - Check WireGuard is up: `ip link show warren0`
 - Check routes: `ip route show | grep warren0`
 - Check firewall: `sudo iptables -L -n`
 
-**Service VIP not working:**
+**Service VIP not working (future feature):**
 - Check iptables NAT rules exist
 - Verify service has running tasks
 - Check task IPs are reachable
@@ -452,29 +578,54 @@ warren cluster init --enable-mtls
 
 ## Best Practices
 
-### 1. Use Service Names (Future DNS)
+### 1. Use DNS Service Names ✅
 
 ```bash
-# Bad: Hardcoded IP
+# Bad: Hardcoded IP (breaks on container restart)
 curl http://10.0.1.5
 
-# Good: Service name (future)
-curl http://nginx.warren.local
+# Good: Service name (load-balanced, discoverable)
+curl http://nginx
+
+# Also good: With domain suffix
+curl http://nginx.warren
+
+# Advanced: Specific instance
+curl http://nginx-1
 ```
 
-### 2. Collocate Related Services
+**Benefits:**
+- Load-balanced automatically (round-robin)
+- Resilient to container restarts (IPs may change)
+- Readable and maintainable
+- Works across all environments
+
+### 2. Use Search Domain
+
+With `search warren` in resolv.conf, you can use short names:
+
+```bash
+# Both work:
+ping nginx              # ✅ Tries nginx.warren automatically
+ping nginx.warren       # ✅ Explicit
+
+# External domains still work:
+ping google.com         # ✅ Forwarded to 8.8.8.8
+```
+
+### 3. Collocate Related Services
 
 Deploy services that communicate frequently on same worker:
 
 ```bash
-# Good: App + cache on same node
+# Good: App + cache on same node (reduces network hops)
 warren service create app --replicas 3 --constraint "node.id==worker-1"
 warren service create cache --replicas 1 --constraint "node.id==worker-1"
 ```
 
 (Constraint support coming in M6)
 
-### 3. Monitor WireGuard Health
+### 4. Monitor WireGuard Health
 
 ```bash
 # Check handshakes regularly
@@ -483,17 +634,16 @@ sudo wg show warren0 latest-handshakes
 # Alert if no handshake > 5 minutes
 ```
 
-### 4. Use VIPs for Load Balancing
+### 5. Test DNS Resolution
 
 ```bash
-# Good: Access via VIP (load-balanced)
-curl http://10.1.0.5
-
-# Avoid: Direct task IP (single point)
-curl http://10.0.1.5
+# From within container:
+nslookup nginx        # Should resolve to instance IPs
+ping nginx-1          # Should resolve to specific instance
+nslookup google.com   # Should resolve via external DNS
 ```
 
-### 5. Plan IP Ranges
+### 6. Plan IP Ranges
 
 Default IP ranges:
 
