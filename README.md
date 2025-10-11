@@ -82,10 +82,12 @@ sudo warren cluster init
 # 2. Start worker (in another terminal)
 sudo warren worker start --manager 127.0.0.1:8080
 
-# 3. Deploy nginx
+# 3. Deploy nginx with health checks
 warren service create nginx \
   --image nginx:latest \
   --replicas 3 \
+  --health-http / \
+  --health-interval 30 \
   --manager 127.0.0.1:8080
 
 # 4. Check status
@@ -93,7 +95,7 @@ warren service list --manager 127.0.0.1:8080
 warren service inspect nginx --manager 127.0.0.1:8080
 ```
 
-**That's it!** You have a production-ready orchestrator running.
+**That's it!** You have a production-ready orchestrator running with automated health monitoring.
 
 ## 📚 Documentation
 
@@ -157,6 +159,7 @@ warren service inspect nginx --manager 127.0.0.1:8080
 ### Core Orchestration
 - ✅ Multi-manager HA (Raft consensus)
 - ✅ Auto-scaling and self-healing
+- ✅ Health checks (HTTP, TCP, Exec)
 - ✅ Service discovery & load balancing
 - ✅ Global services (DaemonSet equivalent)
 
