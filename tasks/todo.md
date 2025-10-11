@@ -1060,16 +1060,328 @@ See [backlog.md](backlog.md) for details on deferred features:
 
 ---
 
+## Milestone 6: Production Hardening (v1.0)
+
+**Goal**: Add critical production features for enterprise readiness
+
+**Priority**: [CRITICAL]
+**Estimated Effort**: 2-3 weeks
+**Status**: 🔄 **IN PROGRESS**
+**Start Date**: 2025-10-10
+
+### Overview
+
+Warren is functionally complete with M0-M5, but needs key production features to be truly enterprise-ready. M6 focuses on operational requirements that make Warren suitable for mission-critical deployments.
+
+**Success Criteria**:
+- Health checks ensure container reliability
+- Published ports enable external access
+- DNS service discovery simplifies internal networking
+- mTLS secures all communications
+- Resource limits prevent resource exhaustion
+
+---
+
+### Phase 6.1: Health Checks (Week 1)
+
+**Priority**: [CRITICAL] - Container reliability
+
+#### Task 6.1.1: Health Check Types
+- [ ] **HTTP health probes (pkg/health/http.go)**
+  - Configure path, port, expected status code
+  - Configurable interval, timeout, retries
+  - Support custom headers
+  - Test: nginx with /health endpoint
+
+- [ ] **TCP health probes (pkg/health/tcp.go)**
+  - Check TCP port connectivity
+  - Configurable interval, timeout, retries
+  - Test: redis TCP port check
+
+- [ ] **Exec health probes (pkg/health/exec.go)**
+  - Execute command inside container
+  - Check exit code (0 = healthy)
+  - Configurable interval, timeout, retries
+  - Test: postgres pg_isready check
+
+#### Task 6.1.2: Health Check Integration
+- [ ] **Service spec updates (api/proto/warren.proto)**
+  - Add HealthCheck message type
+  - Add to ServiceSpec (optional field)
+  - Support startup, liveness, readiness probes
+
+- [ ] **Worker health monitoring (pkg/worker/health.go)**
+  - Run health checks for assigned tasks
+  - Report health status to manager
+  - Respect grace periods and retries
+
+- [ ] **Reconciler integration (pkg/reconciler/reconciler.go)**
+  - Monitor task health status
+  - Mark unhealthy tasks as failed
+  - Trigger replacement tasks
+  - Test: Kill container health endpoint, verify auto-replacement
+
+#### Task 6.1.3: CLI & Testing
+- [ ] **CLI support**
+  - `--health-cmd`, `--health-http`, `--health-tcp` flags
+  - `--health-interval`, `--health-timeout`, `--health-retries`
+  - Test: Create service with health check
+
+- [ ] **Integration tests**
+  - Healthy service stays running
+  - Unhealthy service auto-replaced
+  - Startup check delays liveness
+  - Readiness check affects load balancing
+
+**Phase 6.1 Deliverables**:
+- ✅ HTTP/TCP/Exec health checks implemented
+- ✅ Worker monitors and reports health
+- ✅ Reconciler auto-replaces unhealthy tasks
+- ✅ CLI functional
+- ✅ Integration tests passing
+
+---
+
+### Phase 6.2: Published Ports (Week 1-2)
+
+**Priority**: [CRITICAL] - External service access
+
+#### Task 6.2.1: Port Publishing
+- [ ] **Port mapping spec (types.PublishedPort)**
+  - TargetPort (container), PublishedPort (host)
+  - Protocol (TCP/UDP)
+  - PublishMode (host/ingress)
+
+- [ ] **Host mode publishing (pkg/network/hostports.go)**
+  - Map host port to container port on same node
+  - Update iptables for port forwarding
+  - Test: Access nginx on host:8080
+
+- [ ] **Ingress mode publishing (pkg/network/ingress.go)**
+  - Publish port on all nodes (routing mesh)
+  - Load balance across replicas
+  - Update iptables on all nodes
+  - Test: Access service from any node
+
+#### Task 6.2.2: Port Allocation
+- [ ] **Port manager (pkg/network/portmanager.go)**
+  - Track allocated ports per node
+  - Prevent port conflicts
+  - Release ports on service deletion
+
+- [ ] **Worker port forwarding (pkg/worker/ports.go)**
+  - Set up iptables rules for published ports
+  - Clean up rules on task stop
+
+#### Task 6.2.3: CLI & Testing
+- [ ] **CLI support**
+  - `--publish 8080:80` or `-p 8080:80`
+  - `--publish mode=ingress,target=80,published=8080`
+  - Test: Publish nginx on port 80
+
+- [ ] **Integration tests**
+  - Host mode: port accessible on worker node
+  - Ingress mode: port accessible on all nodes
+  - Port conflicts prevented
+  - Load balancing works
+
+**Phase 6.2 Deliverables**:
+- ✅ Host and ingress port publishing
+- ✅ Port conflict prevention
+- ✅ Routing mesh for ingress mode
+- ✅ CLI functional
+- ✅ Integration tests passing
+
+---
+
+### Phase 6.3: DNS Service Discovery (Week 2)
+
+**Priority**: [REQUIRED] - Internal networking
+
+#### Task 6.3.1: Embedded DNS Server
+- [ ] **DNS server (pkg/dns/server.go)**
+  - Listen on 127.0.0.11:53 (Docker compat)
+  - Resolve service names to VIPs
+  - Resolve task names to task IPs
+  - Use github.com/miekg/dns library
+
+- [ ] **Service resolution**
+  - `<service-name>` → service VIP
+  - `<service-name>.warren` → service VIP
+  - Round-robin for tasks
+
+- [ ] **Task resolution**
+  - `<task-name>.<service-name>` → task IP
+  - Unique task addressing
+
+#### Task 6.3.2: Container DNS Configuration
+- [ ] **Worker DNS setup (pkg/worker/dns.go)**
+  - Configure container resolv.conf
+  - Point to Warren DNS (127.0.0.11)
+  - Fallback to external DNS
+
+- [ ] **DNS record management (pkg/manager/dns.go)**
+  - Create records on service creation
+  - Update records on scaling
+  - Remove records on service deletion
+
+#### Task 6.3.3: Testing
+- [ ] **Integration tests**
+  - Service name resolves to VIP
+  - Task name resolves to IP
+  - DNS updates on scaling
+  - Fallback DNS works
+
+**Phase 6.3 Deliverables**:
+- ✅ Embedded DNS server functional
+- ✅ Service and task name resolution
+- ✅ Container DNS auto-configured
+- ✅ Integration tests passing
+
+---
+
+### Phase 6.4: mTLS Security (Week 2-3)
+
+**Priority**: [REQUIRED] - Secure communications
+
+#### Task 6.4.1: Certificate Authority
+- [ ] **CA setup (pkg/security/ca.go)**
+  - Generate root CA certificate
+  - Store CA key securely (encrypted)
+  - Auto-rotate CA (yearly)
+
+- [ ] **Certificate issuance (pkg/security/certs.go)**
+  - Issue node certificates (manager/worker)
+  - Issue client certificates (CLI)
+  - Certificate rotation (30-day expiry)
+
+#### Task 6.4.2: mTLS for gRPC
+- [ ] **Manager mTLS (pkg/api/server.go)**
+  - Configure TLS credentials
+  - Require client certificates
+  - Verify client identity
+
+- [ ] **Worker mTLS (pkg/worker/worker.go)**
+  - Load client certificate
+  - Connect with TLS
+  - Verify server certificate
+
+- [ ] **CLI mTLS (pkg/client/client.go)**
+  - Load client certificate
+  - Connect with TLS
+
+#### Task 6.4.3: Certificate Management
+- [ ] **CLI commands**
+  - `warren cert rotate` - rotate node cert
+  - `warren cert list` - list certificates
+  - `warren cert revoke <id>` - revoke cert
+
+- [ ] **Auto-rotation**
+  - Background task checks cert expiry
+  - Auto-renew before expiration
+  - Graceful certificate rollover
+
+#### Task 6.4.4: Testing
+- [ ] **Security tests**
+  - Unauthorized client rejected
+  - Expired certificates rejected
+  - Certificate rotation works
+  - Man-in-the-middle prevented
+
+**Phase 6.4 Deliverables**:
+- ✅ Root CA operational
+- ✅ Node and client certificates issued
+- ✅ All gRPC communication secured
+- ✅ Auto-rotation functional
+- ✅ Security tests passing
+
+---
+
+### Phase 6.5: Resource Limits (Week 3)
+
+**Priority**: [RECOMMENDED] - Resource management
+
+#### Task 6.5.1: Resource Constraints
+- [ ] **CPU limits (pkg/runtime/resources.go)**
+  - Use containerd CPU shares/quota
+  - Support --cpus flag
+  - Test: CPU throttling works
+
+- [ ] **Memory limits (pkg/runtime/resources.go)**
+  - Use containerd memory limits
+  - Support --memory flag
+  - OOM handling
+  - Test: Container killed on OOM
+
+#### Task 6.5.2: Resource Reservation
+- [ ] **Scheduler integration (pkg/scheduler/resources.go)**
+  - Track node available resources
+  - Enforce resource reservations
+  - Prevent over-scheduling
+
+- [ ] **CLI support**
+  - `--cpus 0.5` (half a CPU)
+  - `--memory 512m` (512 MB RAM)
+  - `--memory-reservation 256m` (soft limit)
+
+#### Task 6.5.3: Testing
+- [ ] **Resource tests**
+  - CPU limit enforced
+  - Memory limit enforced
+  - OOM kills container
+  - Scheduler respects limits
+
+**Phase 6.5 Deliverables**:
+- ✅ CPU and memory limits enforced
+- ✅ Scheduler resource-aware
+- ✅ CLI functional
+- ✅ Integration tests passing
+
+---
+
+### Milestone 6 Acceptance Criteria
+
+**Core Features Completed**:
+- [ ] HTTP/TCP/Exec health checks working
+- [ ] Health monitoring and auto-replacement
+- [ ] Host and ingress port publishing
+- [ ] Routing mesh for ingress ports
+- [ ] DNS service discovery (service and task names)
+- [ ] mTLS for all gRPC communications
+- [ ] Certificate auto-rotation
+- [ ] CPU and memory limits enforced
+- [ ] Resource-aware scheduling
+
+**Quality Gates Met**:
+- [ ] Unit tests for all new features (>80% coverage)
+- [ ] Integration tests for health checks
+- [ ] Integration tests for published ports
+- [ ] Integration tests for DNS resolution
+- [ ] Security tests for mTLS
+- [ ] Resource limit tests
+- [ ] Documentation updated (API, CLI, concepts)
+- [ ] Performance regression tests passing
+
+**Production Readiness**:
+- [ ] Health checks ensure reliability
+- [ ] Services accessible externally (published ports)
+- [ ] Internal networking simplified (DNS)
+- [ ] Communications secured (mTLS)
+- [ ] Resource exhaustion prevented (limits)
+- [ ] Ready for production deployment ✅
+
+---
+
 ## Future Milestones (Post v1.0)
 
-### Milestone 6: Built-in Ingress (v1.1)
+### Milestone 7: Built-in Ingress (v1.1)
 
 - [ ] HTTP reverse proxy
 - [ ] TLS termination (Let's Encrypt integration)
 - [ ] Path-based routing
 - [ ] Host-based routing
 
-### Milestone 7: Service Mesh (v1.2)
+### Milestone 8: Service Mesh (v1.2)
 
 - [ ] Sidecar injection
 - [ ] Service-to-service mTLS
@@ -1156,6 +1468,7 @@ See [backlog.md](backlog.md) for details on deferred features:
 - **Milestone 3**: ✅ **COMPLETE** (2025-10-10)
 - **Milestone 4**: ✅ **COMPLETE** (2025-10-10)
 - **Milestone 5**: ✅ **COMPLETE** (2025-10-10)
+- **Milestone 6**: 🔄 **IN PROGRESS** (Started 2025-10-10)
 
 ### Legend
 
