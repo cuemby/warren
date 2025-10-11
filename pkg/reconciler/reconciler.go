@@ -113,6 +113,23 @@ func (r *Reconciler) reconcileTasks() error {
 			}
 		}
 
+		// Handle unhealthy tasks
+		if task.ActualState == types.TaskStateRunning && task.DesiredState == types.TaskStateRunning {
+			if task.HealthStatus != nil && !task.HealthStatus.Healthy {
+				// Check if task has exceeded failure threshold
+				// For now, we use a simple check: if unhealthy, mark as failed
+				fmt.Printf("Task %s is unhealthy (%d consecutive failures): %s\n",
+					task.ID, task.HealthStatus.ConsecutiveFailures, task.HealthStatus.Message)
+
+				// Mark task as failed so it gets replaced
+				task.ActualState = types.TaskStateFailed
+				task.Error = fmt.Sprintf("health check failed: %s", task.HealthStatus.Message)
+				if err := r.manager.UpdateTask(task); err != nil {
+					fmt.Printf("Failed to mark unhealthy task %s as failed: %v\n", task.ID, err)
+				}
+			}
+		}
+
 		// Handle tasks on down nodes
 		node, err := r.manager.GetNode(task.NodeID)
 		if err != nil {
