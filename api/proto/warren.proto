@@ -30,6 +30,9 @@ service WarrenAPI {
   // Task assignment stream (worker watches for assigned tasks)
   rpc WatchTasks(WatchTasksRequest) returns (stream TaskEvent);
 
+  // Health check operations
+  rpc ReportTaskHealth(ReportTaskHealthRequest) returns (ReportTaskHealthResponse);
+
   // Secret operations
   rpc CreateSecret(CreateSecretRequest) returns (CreateSecretResponse);
   rpc GetSecretByName(GetSecretByNameRequest) returns (GetSecretByNameResponse);
@@ -151,11 +154,47 @@ message UpdateConfig {
 }
 
 message HealthCheck {
-  string type = 1; // "http", "tcp", "exec"
-  string endpoint = 2;
-  int32 interval_seconds = 3;
-  int32 timeout_seconds = 4;
-  int32 retries = 5;
+  // Type of health check
+  enum Type {
+    HTTP = 0;
+    TCP = 1;
+    EXEC = 2;
+  }
+
+  Type type = 1;
+
+  // Type-specific configurations
+  HTTPHealthCheck http = 2;
+  TCPHealthCheck tcp = 3;
+  ExecHealthCheck exec = 4;
+
+  // Common configuration
+  int32 interval_seconds = 5;      // Time between checks (default: 30s)
+  int32 timeout_seconds = 6;       // Check timeout (default: 10s)
+  int32 retries = 7;               // Failures before unhealthy (default: 3)
+  int32 start_period_seconds = 8;  // Grace period for startup (default: 0s)
+}
+
+message HTTPHealthCheck {
+  string path = 1;              // HTTP path (e.g., "/health")
+  int32 port = 2;               // Container port
+  string scheme = 3;            // "http" or "https" (default: "http")
+  repeated Header headers = 4;  // Custom headers
+  int32 status_code_min = 5;    // Min acceptable status (default: 200)
+  int32 status_code_max = 6;    // Max acceptable status (default: 399)
+}
+
+message Header {
+  string key = 1;
+  string value = 2;
+}
+
+message TCPHealthCheck {
+  int32 port = 1;  // Container port to check
+}
+
+message ExecHealthCheck {
+  repeated string command = 1;  // Command to execute (e.g., ["pg_isready"])
 }
 
 message RestartPolicy {
@@ -408,6 +447,20 @@ message ClusterServer {
   string id = 1;
   string address = 2;
   string suffrage = 3; // "Voter", "Nonvoter", "Staging"
+}
+
+// Health check messages
+message ReportTaskHealthRequest {
+  string task_id = 1;
+  bool healthy = 2;
+  string message = 3;
+  google.protobuf.Timestamp checked_at = 4;
+  int32 consecutive_failures = 5;
+  int32 consecutive_successes = 6;
+}
+
+message ReportTaskHealthResponse {
+  string status = 1;
 }
 
 // Event streaming messages
