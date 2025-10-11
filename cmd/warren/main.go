@@ -11,6 +11,7 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/cuemby/warren/api/proto"
 	"github.com/cuemby/warren/pkg/api"
 	"github.com/cuemby/warren/pkg/client"
 	"github.com/cuemby/warren/pkg/embedded"
@@ -594,6 +595,14 @@ var serviceCreateCmd = &cobra.Command{
 		manager, _ := cmd.Flags().GetString("manager")
 		envVars, _ := cmd.Flags().GetStringSlice("env")
 
+		// Health check flags
+		healthHTTP, _ := cmd.Flags().GetString("health-http")
+		healthTCP, _ := cmd.Flags().GetString("health-tcp")
+		healthCmd, _ := cmd.Flags().GetStringSlice("health-cmd")
+		healthInterval, _ := cmd.Flags().GetInt("health-interval")
+		healthTimeout, _ := cmd.Flags().GetInt("health-timeout")
+		healthRetries, _ := cmd.Flags().GetInt("health-retries")
+
 		// Parse env vars
 		env := make(map[string]string)
 		for _, e := range envVars {
@@ -611,8 +620,22 @@ var serviceCreateCmd = &cobra.Command{
 		}
 		defer c.Close()
 
+		// Build service request
+		req := &proto.CreateServiceRequest{
+			Name:     name,
+			Image:    image,
+			Replicas: int32(replicas),
+			Mode:     "replicated",
+			Env:      env,
+		}
+
+		// Add health check if specified
+		if healthHTTP != "" || healthTCP != "" || len(healthCmd) > 0 {
+			req.HealthCheck = buildHealthCheck(healthHTTP, healthTCP, healthCmd, healthInterval, healthTimeout, healthRetries)
+		}
+
 		// Create service
-		service, err := c.CreateService(name, image, int32(replicas), env)
+		service, err := c.CreateServiceWithOptions(req)
 		if err != nil {
 			return fmt.Errorf("failed to create service: %v", err)
 		}
@@ -621,6 +644,9 @@ var serviceCreateCmd = &cobra.Command{
 		fmt.Printf("  ID: %s\n", service.Id)
 		fmt.Printf("  Image: %s\n", service.Image)
 		fmt.Printf("  Replicas: %d\n", service.Replicas)
+		if service.HealthCheck != nil {
+			fmt.Printf("  Health Check: %s\n", service.HealthCheck.Type)
+		}
 		return nil
 	},
 }
@@ -777,6 +803,15 @@ func init() {
 	serviceCreateCmd.Flags().String("image", "", "Container image")
 	serviceCreateCmd.Flags().Int("replicas", 1, "Number of replicas")
 	serviceCreateCmd.Flags().StringSlice("env", []string{}, "Environment variables (KEY=VALUE)")
+
+	// Health check flags
+	serviceCreateCmd.Flags().String("health-http", "", "HTTP health check path (e.g., /health)")
+	serviceCreateCmd.Flags().String("health-tcp", "", "TCP health check port (e.g., 8080 or :8080)")
+	serviceCreateCmd.Flags().StringSlice("health-cmd", []string{}, "Exec health check command (e.g., pg_isready)")
+	serviceCreateCmd.Flags().Int("health-interval", 30, "Health check interval in seconds")
+	serviceCreateCmd.Flags().Int("health-timeout", 10, "Health check timeout in seconds")
+	serviceCreateCmd.Flags().Int("health-retries", 3, "Health check retries before marking unhealthy")
+
 	serviceCreateCmd.MarkFlagRequired("image")
 
 	serviceScaleCmd.Flags().Int("replicas", 0, "Number of replicas")
@@ -1200,4 +1235,58 @@ func splitEnv(s string) []string {
 		return []string{s}
 	}
 	return []string{s[:idx], s[idx+1:]}
+}
+
+// buildHealthCheck creates a HealthCheck proto message from CLI flags
+func buildHealthCheck(httpPath, tcpPort string, execCmd []string, interval, timeout, retries int) *proto.HealthCheck {
+	// Set defaults if not specified
+	if interval == 0 {
+		interval = 30
+	}
+	if timeout == 0 {
+		timeout = 10
+	}
+	if retries == 0 {
+		retries = 3
+	}
+
+	hc := &proto.HealthCheck{
+		IntervalSeconds: int32(interval),
+		TimeoutSeconds:  int32(timeout),
+		Retries:         int32(retries),
+	}
+
+	// Determine type and build type-specific config
+	if httpPath != "" {
+		// Parse HTTP path (format: [scheme://]host:port/path)
+		// For simplicity, assume format is :port/path or just /path (default port 80)
+		hc.Type = proto.HealthCheck_HTTP
+		hc.Http = &proto.HTTPHealthCheck{
+			Path:          httpPath,
+			Port:          80, // Default, will be overridden if port specified
+			Scheme:        "http",
+			StatusCodeMin: 200,
+			StatusCodeMax: 399,
+		}
+	} else if tcpPort != "" {
+		// Parse TCP port (format: :port or port)
+		hc.Type = proto.HealthCheck_TCP
+		port := int32(80) // Default
+		if tcpPort != "" {
+			fmt.Sscanf(tcpPort, ":%d", &port)
+			if port == 80 { // If didn't match :port format, try just port
+				fmt.Sscanf(tcpPort, "%d", &port)
+			}
+		}
+		hc.Tcp = &proto.TCPHealthCheck{
+			Port: port,
+		}
+	} else if len(execCmd) > 0 {
+		hc.Type = proto.HealthCheck_EXEC
+		hc.Exec = &proto.ExecHealthCheck{
+			Command: execCmd,
+		}
+	}
+
+	return hc
 }

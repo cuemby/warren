@@ -58,6 +58,19 @@ func (c *Client) CreateService(name, image string, replicas int32, env map[strin
 	return resp.Service, nil
 }
 
+// CreateServiceWithOptions creates a new service with full options including health checks
+func (c *Client) CreateServiceWithOptions(req *proto.CreateServiceRequest) (*proto.Service, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	resp, err := c.client.CreateService(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Service, nil
+}
+
 // ListServices lists all services
 func (c *Client) ListServices() ([]*proto.Service, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
