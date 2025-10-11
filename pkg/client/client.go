@@ -24,7 +24,7 @@ type Client struct {
 // NewClient creates a new Warren client with mTLS
 func NewClient(addr string) (*Client, error) {
 	// Check for CLI certificate
-	certDir, err := security.GetCertDir("cli", "")
+	certDir, err := security.GetCLICertDir()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get cert directory: %w", err)
 	}
@@ -50,7 +50,7 @@ func NewClient(addr string) (*Client, error) {
 
 // NewClientWithToken creates a new Warren client and requests a certificate using a join token
 func NewClientWithToken(addr, token string) (*Client, error) {
-	certDir, err := security.GetCertDir("cli", "")
+	certDir, err := security.GetCLICertDir()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get cert directory: %w", err)
 	}
