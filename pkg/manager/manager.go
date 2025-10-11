@@ -857,3 +857,8 @@ func (m *Manager) GetCACertPEM() []byte {
 func (m *Manager) ValidateToken(token string) (string, error) {
 	return m.tokenManager.ValidateToken(token)
 }
+
+// NodeID returns the manager's node ID
+func (m *Manager) NodeID() string {
+	return m.nodeID
+}

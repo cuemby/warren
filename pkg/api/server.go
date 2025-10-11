@@ -2,6 +2,8 @@ package api
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"fmt"
 	"net"
 	"strings"
@@ -9,9 +11,11 @@ import (
 
 	"github.com/cuemby/warren/api/proto"
 	"github.com/cuemby/warren/pkg/manager"
+	"github.com/cuemby/warren/pkg/security"
 	"github.com/cuemby/warren/pkg/types"
 	"github.com/google/uuid"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -22,12 +26,51 @@ type Server struct {
 	grpc    *grpc.Server
 }
 
-// NewServer creates a new API server
-func NewServer(mgr *manager.Manager) *Server {
+// NewServer creates a new API server with mTLS
+func NewServer(mgr *manager.Manager) (*Server, error) {
+	// Get certificate directory for this manager
+	certDir, err := security.GetCertDir("manager", mgr.NodeID())
+	if err != nil {
+		return nil, fmt.Errorf("failed to get cert directory: %w", err)
+	}
+
+	// Check if certificates exist
+	if !security.CertExists(certDir) {
+		return nil, fmt.Errorf("manager certificate not found at %s - ensure cluster is initialized", certDir)
+	}
+
+	// Load manager certificate
+	cert, err := security.LoadCertFromFile(certDir)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load manager certificate: %w", err)
+	}
+
+	// Load CA certificate for client verification
+	caCert, err := security.LoadCACertFromFile(certDir)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load CA certificate: %w", err)
+	}
+
+	// Create cert pool for client verification
+	certPool := x509.NewCertPool()
+	certPool.AddCert(caCert)
+
+	// Configure TLS with client certificate verification
+	tlsConfig := &tls.Config{
+		ClientAuth:   tls.RequireAndVerifyClientCert,
+		Certificates: []tls.Certificate{*cert},
+		ClientCAs:    certPool,
+		MinVersion:   tls.VersionTLS13,
+	}
+
+	// Create gRPC server with TLS credentials
+	creds := credentials.NewTLS(tlsConfig)
+	grpcServer := grpc.NewServer(grpc.Creds(creds))
+
 	return &Server{
 		manager: mgr,
-		grpc:    grpc.NewServer(),
-	}
+		grpc:    grpcServer,
+	}, nil
 }
 
 // ensureLeader checks if this node is the leader and returns an error if not

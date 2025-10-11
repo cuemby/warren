@@ -2,7 +2,10 @@ package worker
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"fmt"
+	"os"
 	"sync"
 	"time"
 
@@ -10,8 +13,10 @@ import (
 
 	"github.com/cuemby/warren/api/proto"
 	"github.com/cuemby/warren/pkg/runtime"
+	"github.com/cuemby/warren/pkg/security"
 	"github.com/cuemby/warren/pkg/types"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 )
 
@@ -43,6 +48,7 @@ type Config struct {
 	Resources         *types.NodeResources
 	EncryptionKey     []byte // Cluster-wide encryption key for secrets
 	ContainerdSocket  string // Containerd socket path (empty = auto-detect)
+	JoinToken         string // Join token for initial authentication
 }
 
 // NewWorker creates a new worker instance
@@ -98,11 +104,28 @@ func NewWorker(cfg *Config) (*Worker, error) {
 }
 
 // Start starts the worker and connects to manager
-func (w *Worker) Start(resources *types.NodeResources) error {
-	// Connect to manager
-	conn, err := grpc.Dial(w.managerAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+func (w *Worker) Start(resources *types.NodeResources, joinToken string) error {
+	// Ensure worker has a certificate
+	certDir, err := security.GetCertDir("worker", w.nodeID)
 	if err != nil {
-		return fmt.Errorf("failed to connect to manager: %v", err)
+		return fmt.Errorf("failed to get cert directory: %w", err)
+	}
+
+	// Request certificate if not exists
+	if !security.CertExists(certDir) {
+		fmt.Println("Worker certificate not found, requesting from manager...")
+		if err := w.requestCertificate(joinToken); err != nil {
+			return fmt.Errorf("failed to request certificate: %w", err)
+		}
+		fmt.Printf("✓ Certificate obtained and saved to %s\n", certDir)
+	} else {
+		fmt.Printf("✓ Using existing certificate from %s\n", certDir)
+	}
+
+	// Connect to manager with mTLS
+	conn, err := w.connectWithMTLS(certDir)
+	if err != nil {
+		return fmt.Errorf("failed to connect to manager: %w", err)
 	}
 	w.conn = conn
 	w.client = proto.NewWarrenAPIClient(conn)
@@ -122,7 +145,7 @@ func (w *Worker) Start(resources *types.NodeResources) error {
 		},
 	})
 	if err != nil {
-		return fmt.Errorf("failed to register with manager: %v", err)
+		return fmt.Errorf("failed to register with manager: %w", err)
 	}
 
 	fmt.Printf("Worker registered with manager\n")
@@ -474,4 +497,93 @@ func (w *Worker) stopTask(task *types.Task) {
 	w.taskMu.Unlock()
 
 	fmt.Printf("Task %s stopped\n", task.ID)
+}
+
+// requestCertificate requests a certificate from the manager using a join token
+func (w *Worker) requestCertificate(token string) error {
+	// Connect without TLS for certificate request (token provides authentication)
+	conn, err := grpc.Dial(w.managerAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		return fmt.Errorf("failed to connect to manager: %w", err)
+	}
+	defer conn.Close()
+
+	client := proto.NewWarrenAPIClient(conn)
+
+	// Request certificate
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	resp, err := client.RequestCertificate(ctx, &proto.RequestCertificateRequest{
+		NodeId: w.nodeID,
+		Token:  token,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to request certificate: %w", err)
+	}
+
+	// Get certificate directory
+	certDir, err := security.GetCertDir("worker", w.nodeID)
+	if err != nil {
+		return fmt.Errorf("failed to get cert directory: %w", err)
+	}
+
+	// Create directory
+	if err := os.MkdirAll(certDir, 0700); err != nil {
+		return fmt.Errorf("failed to create cert directory: %w", err)
+	}
+
+	// Save certificate files
+	certPath := certDir + "/node.crt"
+	keyPath := certDir + "/node.key"
+	caPath := certDir + "/ca.crt"
+
+	if err := os.WriteFile(certPath, resp.Certificate, 0600); err != nil {
+		return fmt.Errorf("failed to write certificate: %w", err)
+	}
+
+	if err := os.WriteFile(keyPath, resp.PrivateKey, 0600); err != nil {
+		return fmt.Errorf("failed to write private key: %w", err)
+	}
+
+	if err := os.WriteFile(caPath, resp.CaCert, 0644); err != nil {
+		return fmt.Errorf("failed to write CA certificate: %w", err)
+	}
+
+	return nil
+}
+
+// connectWithMTLS establishes a gRPC connection with mTLS
+func (w *Worker) connectWithMTLS(certDir string) (*grpc.ClientConn, error) {
+	// Load worker certificate
+	cert, err := security.LoadCertFromFile(certDir)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load worker certificate: %w", err)
+	}
+
+	// Load CA certificate for server verification
+	caCert, err := security.LoadCACertFromFile(certDir)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load CA certificate: %w", err)
+	}
+
+	// Create cert pool for server verification
+	certPool := x509.NewCertPool()
+	certPool.AddCert(caCert)
+
+	// Configure TLS
+	tlsConfig := &tls.Config{
+		Certificates: []tls.Certificate{*cert},
+		RootCAs:      certPool,
+		MinVersion:   tls.VersionTLS13,
+	}
+
+	// Create gRPC connection with TLS
+	creds := credentials.NewTLS(tlsConfig)
+	conn, err := grpc.Dial(w.managerAddr, grpc.WithTransportCredentials(creds))
+	if err != nil {
+		return nil, fmt.Errorf("failed to dial manager: %w", err)
+	}
+
+	return conn, nil
 }

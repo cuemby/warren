@@ -187,7 +187,10 @@ automatically form a Raft quorum once additional managers join.`,
 		}
 
 		// Start API server in background
-		apiServer := api.NewServer(mgr)
+		apiServer, err := api.NewServer(mgr)
+		if err != nil {
+			return fmt.Errorf("failed to create API server: %v", err)
+		}
 		errCh := make(chan error, 1)
 		go func() {
 			if err := apiServer.Start(apiAddr); err != nil {
@@ -311,7 +314,42 @@ var clusterInfoCmd = &cobra.Command{
 	},
 }
 
+var cliInitCmd = &cobra.Command{
+	Use:   "init",
+	Short: "Initialize CLI certificate for secure communication with manager",
+	Long: `Request a certificate from the manager to enable mTLS authentication.
+This command must be run before using other CLI commands.`,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		managerAddr, _ := cmd.Flags().GetString("manager")
+		token, _ := cmd.Flags().GetString("token")
+
+		if token == "" {
+			return fmt.Errorf("--token is required (get token from 'warren cluster join-token --manager <addr>')")
+		}
+
+		fmt.Println("Initializing CLI certificate...")
+		fmt.Printf("  Manager: %s\n", managerAddr)
+
+		// Create client with token to request certificate
+		c, err := client.NewClientWithToken(managerAddr, token)
+		if err != nil {
+			return fmt.Errorf("failed to initialize CLI: %v", err)
+		}
+		defer c.Close()
+
+		fmt.Println("\n✓ CLI initialized successfully")
+		fmt.Println("You can now use other Warren CLI commands")
+
+		return nil
+	},
+}
+
 func init() {
+	// Add init command to root
+	rootCmd.AddCommand(cliInitCmd)
+	cliInitCmd.Flags().String("manager", "127.0.0.1:8080", "Manager address")
+	cliInitCmd.Flags().String("token", "", "Join token from manager (required)")
+
 	clusterCmd.AddCommand(clusterInitCmd)
 	clusterCmd.AddCommand(clusterJoinTokenCmd)
 	clusterCmd.AddCommand(clusterJoinCmd)
@@ -349,6 +387,7 @@ var workerStartCmd = &cobra.Command{
 		cpuCores, _ := cmd.Flags().GetInt("cpu")
 		memoryGB, _ := cmd.Flags().GetInt("memory")
 		useExternal, _ := cmd.Flags().GetBool("external-containerd")
+		token, _ := cmd.Flags().GetString("token")
 
 		fmt.Println("Starting Warren worker...")
 		fmt.Printf("  Node ID: %s\n", nodeID)
@@ -397,7 +436,7 @@ var workerStartCmd = &cobra.Command{
 			DiskBytes:   100 * 1024 * 1024 * 1024, // 100GB default
 		}
 
-		if err := w.Start(resources); err != nil {
+		if err := w.Start(resources, token); err != nil {
 			return fmt.Errorf("failed to start worker: %v", err)
 		}
 
@@ -442,6 +481,7 @@ func init() {
 	workerStartCmd.Flags().String("data-dir", "./warren-worker-data", "Data directory")
 	workerStartCmd.Flags().Int("cpu", 4, "CPU cores")
 	workerStartCmd.Flags().Int("memory", 8, "Memory in GB")
+	workerStartCmd.Flags().String("token", "", "Join token from manager (required for first connection)")
 	workerStartCmd.Flags().Bool("enable-pprof", false, "Enable pprof profiling endpoints")
 }
 
@@ -528,7 +568,10 @@ var managerJoinCmd = &cobra.Command{
 		}
 
 		// Start API server in background
-		apiServer := api.NewServer(mgr)
+		apiServer, err := api.NewServer(mgr)
+		if err != nil {
+			return fmt.Errorf("failed to create API server: %v", err)
+		}
 		errCh := make(chan error, 1)
 		go func() {
 			if err := apiServer.Start(apiAddr); err != nil {
