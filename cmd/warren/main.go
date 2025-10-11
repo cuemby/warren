@@ -10,6 +10,7 @@ import (
 	"runtime"
 	"strings"
 	"syscall"
+	"time"
 
 	"github.com/cuemby/warren/api/proto"
 	"github.com/cuemby/warren/pkg/api"
@@ -198,8 +199,47 @@ automatically form a Raft quorum once additional managers join.`,
 			}
 		}()
 
+		// Wait for API server to start
+		time.Sleep(500 * time.Millisecond)
+
+		// Generate and display join tokens for initial setup
+		fmt.Println()
+		fmt.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+		fmt.Println("  Join Tokens (valid for 24 hours)")
+		fmt.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+		fmt.Println()
+
+		// Generate worker token
+		workerToken, _ := mgr.GenerateJoinToken("worker")
+		fmt.Println("Worker Token:")
+		fmt.Printf("  %s\n", workerToken.Token)
+		fmt.Println()
+		fmt.Println("To add a worker node:")
+		fmt.Printf("  warren worker start --manager %s --token %s\n", apiAddr, workerToken.Token)
+		fmt.Println()
+
+		// Generate manager token
+		managerToken, _ := mgr.GenerateJoinToken("manager")
+		fmt.Println("Manager Token:")
+		fmt.Printf("  %s\n", managerToken.Token)
+		fmt.Println()
+		fmt.Println("To add a manager node:")
+		fmt.Printf("  warren manager join --leader %s --token %s\n", apiAddr, managerToken.Token)
+		fmt.Println()
+
+		// Generate CLI token
+		cliToken, _ := mgr.GenerateJoinToken("worker") // CLI can use worker token
+		fmt.Println("CLI Token (for remote CLI access):")
+		fmt.Printf("  %s\n", cliToken.Token)
+		fmt.Println()
+		fmt.Println("To initialize CLI:")
+		fmt.Printf("  warren init --manager %s --token %s\n", apiAddr, cliToken.Token)
+		fmt.Println()
+		fmt.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 		fmt.Println()
 		fmt.Println("Manager is running. Press Ctrl+C to stop.")
+		fmt.Printf("gRPC API listening on %s\n", apiAddr)
+		fmt.Println()
 
 		// Wait for interrupt signal or API server error
 		sigCh := make(chan os.Signal, 1)
@@ -579,8 +619,47 @@ var managerJoinCmd = &cobra.Command{
 			}
 		}()
 
+		// Wait for API server to start
+		time.Sleep(500 * time.Millisecond)
+
+		// Generate and display join tokens for initial setup
+		fmt.Println()
+		fmt.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+		fmt.Println("  Join Tokens (valid for 24 hours)")
+		fmt.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+		fmt.Println()
+
+		// Generate worker token
+		workerToken, _ := mgr.GenerateJoinToken("worker")
+		fmt.Println("Worker Token:")
+		fmt.Printf("  %s\n", workerToken.Token)
+		fmt.Println()
+		fmt.Println("To add a worker node:")
+		fmt.Printf("  warren worker start --manager %s --token %s\n", apiAddr, workerToken.Token)
+		fmt.Println()
+
+		// Generate manager token
+		managerToken, _ := mgr.GenerateJoinToken("manager")
+		fmt.Println("Manager Token:")
+		fmt.Printf("  %s\n", managerToken.Token)
+		fmt.Println()
+		fmt.Println("To add a manager node:")
+		fmt.Printf("  warren manager join --leader %s --token %s\n", apiAddr, managerToken.Token)
+		fmt.Println()
+
+		// Generate CLI token
+		cliToken, _ := mgr.GenerateJoinToken("worker") // CLI can use worker token
+		fmt.Println("CLI Token (for remote CLI access):")
+		fmt.Printf("  %s\n", cliToken.Token)
+		fmt.Println()
+		fmt.Println("To initialize CLI:")
+		fmt.Printf("  warren init --manager %s --token %s\n", apiAddr, cliToken.Token)
+		fmt.Println()
+		fmt.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 		fmt.Println()
 		fmt.Println("Manager is running. Press Ctrl+C to stop.")
+		fmt.Printf("gRPC API listening on %s\n", apiAddr)
+		fmt.Println()
 
 		// Wait for interrupt signal or API server error
 		sigCh := make(chan os.Signal, 1)

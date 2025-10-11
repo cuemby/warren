@@ -56,8 +56,10 @@ func NewServer(mgr *manager.Manager) (*Server, error) {
 	certPool.AddCert(caCert)
 
 	// Configure TLS with client certificate verification
+	// Use RequestClientCert to allow initial connections without certificates (for RequestCertificate RPC)
+	// Individual RPCs will verify client certs as needed
 	tlsConfig := &tls.Config{
-		ClientAuth:   tls.RequireAndVerifyClientCert,
+		ClientAuth:   tls.RequestClientCert, // Request but don't require - verify per-RPC
 		Certificates: []tls.Certificate{*cert},
 		ClientCAs:    certPool,
 		MinVersion:   tls.VersionTLS13,

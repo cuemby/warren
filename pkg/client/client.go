@@ -12,7 +12,6 @@ import (
 	"github.com/cuemby/warren/pkg/security"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
-	"google.golang.org/grpc/credentials/insecure"
 )
 
 // Client wraps the Warren gRPC client for easy CLI usage
@@ -377,8 +376,15 @@ func (c *Client) JoinCluster(nodeID, bindAddr, token string) error {
 
 // requestCertificate requests a certificate from the manager using a join token
 func requestCertificate(addr, token, certDir string) error {
-	// Connect without TLS for certificate request (token provides authentication)
-	conn, err := grpc.Dial(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	// Connect with TLS but without client certificate (token provides authentication)
+	// Skip server verification temporarily since we don't have the CA cert yet
+	tlsConfig := &tls.Config{
+		InsecureSkipVerify: true, // Skip server cert verification for initial connection
+		MinVersion:         tls.VersionTLS13,
+	}
+	creds := credentials.NewTLS(tlsConfig)
+
+	conn, err := grpc.Dial(addr, grpc.WithTransportCredentials(creds))
 	if err != nil {
 		return fmt.Errorf("failed to connect to manager: %w", err)
 	}

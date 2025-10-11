@@ -17,7 +17,6 @@ import (
 	"github.com/cuemby/warren/pkg/types"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
-	"google.golang.org/grpc/credentials/insecure"
 )
 
 // Worker represents a Warren worker node
@@ -501,8 +500,15 @@ func (w *Worker) stopTask(task *types.Task) {
 
 // requestCertificate requests a certificate from the manager using a join token
 func (w *Worker) requestCertificate(token string) error {
-	// Connect without TLS for certificate request (token provides authentication)
-	conn, err := grpc.Dial(w.managerAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	// Connect with TLS but without client certificate (token provides authentication)
+	// Skip server verification temporarily since we don't have the CA cert yet
+	tlsConfig := &tls.Config{
+		InsecureSkipVerify: true, // Skip server cert verification for initial connection
+		MinVersion:         tls.VersionTLS13,
+	}
+	creds := credentials.NewTLS(tlsConfig)
+
+	conn, err := grpc.Dial(w.managerAddr, grpc.WithTransportCredentials(creds))
 	if err != nil {
 		return fmt.Errorf("failed to connect to manager: %w", err)
 	}
