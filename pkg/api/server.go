@@ -250,6 +250,25 @@ func (s *Server) CreateService(ctx context.Context, req *proto.CreateServiceRequ
 		}
 	}
 
+	// Convert port mappings from proto to types
+	if len(req.Ports) > 0 {
+		service.Ports = make([]*types.PortMapping, 0, len(req.Ports))
+		for _, protoPort := range req.Ports {
+			publishMode := types.PublishModeHost
+			if protoPort.PublishMode == proto.PortMapping_INGRESS {
+				publishMode = types.PublishModeIngress
+			}
+
+			service.Ports = append(service.Ports, &types.PortMapping{
+				Name:          protoPort.Name,
+				ContainerPort: int(protoPort.ContainerPort),
+				HostPort:      int(protoPort.HostPort),
+				Protocol:      protoPort.Protocol,
+				PublishMode:   publishMode,
+			})
+		}
+	}
+
 	if err := s.manager.CreateService(service); err != nil {
 		return nil, fmt.Errorf("failed to create service: %v", err)
 	}
@@ -743,6 +762,25 @@ func serviceToProto(s *types.Service) *proto.Service {
 			CpuShares:              int64(s.Resources.CPULimit * 1024), // Convert cores to shares
 			MemoryBytes:            s.Resources.MemoryLimit,
 			MemoryReservationBytes: s.Resources.MemoryReservation,
+		}
+	}
+
+	// Convert port mappings from types to proto
+	if len(s.Ports) > 0 {
+		ps.Ports = make([]*proto.PortMapping, 0, len(s.Ports))
+		for _, typePort := range s.Ports {
+			publishMode := proto.PortMapping_HOST
+			if typePort.PublishMode == types.PublishModeIngress {
+				publishMode = proto.PortMapping_INGRESS
+			}
+
+			ps.Ports = append(ps.Ports, &proto.PortMapping{
+				Name:          typePort.Name,
+				ContainerPort: int32(typePort.ContainerPort),
+				HostPort:      int32(typePort.HostPort),
+				Protocol:      typePort.Protocol,
+				PublishMode:   publishMode,
+			})
 		}
 	}
 
