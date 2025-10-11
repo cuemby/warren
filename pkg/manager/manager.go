@@ -1,6 +1,7 @@
 package manager
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net"
@@ -9,6 +10,7 @@ import (
 	"time"
 
 	"github.com/cuemby/warren/pkg/client"
+	"github.com/cuemby/warren/pkg/dns"
 	"github.com/cuemby/warren/pkg/events"
 	"github.com/cuemby/warren/pkg/security"
 	"github.com/cuemby/warren/pkg/storage"
@@ -29,6 +31,9 @@ type Manager struct {
 	tokenManager   *TokenManager
 	secretsManager *security.SecretsManager
 	eventBroker    *events.Broker
+	dnsServer      *dns.Server
+	dnsCtx         context.Context
+	dnsCancel      context.CancelFunc
 }
 
 // Config holds configuration for creating a Manager
@@ -67,6 +72,10 @@ func NewManager(cfg *Config) (*Manager, error) {
 	eventBroker := events.NewBroker()
 	eventBroker.Start()
 
+	// Create DNS server
+	dnsServer := dns.NewServer(store, nil) // Use default config
+	dnsCtx, dnsCancel := context.WithCancel(context.Background())
+
 	m := &Manager{
 		nodeID:         cfg.NodeID,
 		bindAddr:       cfg.BindAddr,
@@ -76,6 +85,9 @@ func NewManager(cfg *Config) (*Manager, error) {
 		secretsManager: secretsManager,
 		tokenManager:   tokenManager,
 		eventBroker:    eventBroker,
+		dnsServer:      dnsServer,
+		dnsCtx:         dnsCtx,
+		dnsCancel:      dnsCancel,
 	}
 
 	return m, nil
@@ -156,6 +168,16 @@ func (m *Manager) Bootstrap() error {
 		return fmt.Errorf("failed to bootstrap cluster: %v", err)
 	}
 
+	// Start DNS server
+	go func() {
+		if err := m.dnsServer.Start(m.dnsCtx); err != nil {
+			fmt.Printf("Failed to start DNS server: %v\n", err)
+		}
+	}()
+
+	// Give DNS server time to start
+	time.Sleep(100 * time.Millisecond)
+
 	return nil
 }
 
@@ -226,6 +248,17 @@ func (m *Manager) Join(leaderAddr string, token string) error {
 	}
 
 	fmt.Println("✓ Successfully joined cluster")
+
+	// Start DNS server
+	go func() {
+		if err := m.dnsServer.Start(m.dnsCtx); err != nil {
+			fmt.Printf("Failed to start DNS server: %v\n", err)
+		}
+	}()
+
+	// Give DNS server time to start
+	time.Sleep(100 * time.Millisecond)
+
 	return nil
 }
 
@@ -653,7 +686,19 @@ func (m *Manager) ValidateJoinToken(token string) (string, error) {
 
 // Shutdown gracefully shuts down the manager
 func (m *Manager) Shutdown() error {
-	// Stop event broker first
+	// Stop DNS server first
+	if m.dnsServer != nil {
+		if err := m.dnsServer.Stop(); err != nil {
+			fmt.Printf("Warning: failed to stop DNS server: %v\n", err)
+		}
+	}
+
+	// Cancel DNS context
+	if m.dnsCancel != nil {
+		m.dnsCancel()
+	}
+
+	// Stop event broker
 	if m.eventBroker != nil {
 		m.eventBroker.Stop()
 	}
