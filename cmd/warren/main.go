@@ -595,6 +595,10 @@ var serviceCreateCmd = &cobra.Command{
 		manager, _ := cmd.Flags().GetString("manager")
 		envVars, _ := cmd.Flags().GetStringSlice("env")
 
+		// Port publishing flags
+		publishPorts, _ := cmd.Flags().GetStringSlice("publish")
+		publishMode, _ := cmd.Flags().GetString("publish-mode")
+
 		// Health check flags
 		healthHTTP, _ := cmd.Flags().GetString("health-http")
 		healthTCP, _ := cmd.Flags().GetString("health-tcp")
@@ -613,6 +617,12 @@ var serviceCreateCmd = &cobra.Command{
 			}
 		}
 
+		// Parse port mappings
+		ports, err := parsePortMappings(publishPorts, publishMode)
+		if err != nil {
+			return fmt.Errorf("failed to parse port mappings: %v", err)
+		}
+
 		// Connect to manager
 		c, err := client.NewClient(manager)
 		if err != nil {
@@ -627,6 +637,7 @@ var serviceCreateCmd = &cobra.Command{
 			Replicas: int32(replicas),
 			Mode:     "replicated",
 			Env:      env,
+			Ports:    ports,
 		}
 
 		// Add health check if specified
@@ -644,6 +655,16 @@ var serviceCreateCmd = &cobra.Command{
 		fmt.Printf("  ID: %s\n", service.Id)
 		fmt.Printf("  Image: %s\n", service.Image)
 		fmt.Printf("  Replicas: %d\n", service.Replicas)
+		if len(service.Ports) > 0 {
+			fmt.Printf("  Published Ports:\n")
+			for _, port := range service.Ports {
+				mode := "host"
+				if port.PublishMode == proto.PortMapping_INGRESS {
+					mode = "ingress"
+				}
+				fmt.Printf("    %d:%d/%s (%s)\n", port.HostPort, port.ContainerPort, port.Protocol, mode)
+			}
+		}
 		if service.HealthCheck != nil {
 			fmt.Printf("  Health Check: %s\n", service.HealthCheck.Type)
 		}
@@ -803,6 +824,10 @@ func init() {
 	serviceCreateCmd.Flags().String("image", "", "Container image")
 	serviceCreateCmd.Flags().Int("replicas", 1, "Number of replicas")
 	serviceCreateCmd.Flags().StringSlice("env", []string{}, "Environment variables (KEY=VALUE)")
+
+	// Port publishing flags
+	serviceCreateCmd.Flags().StringSliceP("publish", "p", []string{}, "Publish ports (e.g., 8080:80, 443:443/tcp)")
+	serviceCreateCmd.Flags().String("publish-mode", "host", "Port publish mode: 'host' or 'ingress'")
 
 	// Health check flags
 	serviceCreateCmd.Flags().String("health-http", "", "HTTP health check path (e.g., /health)")
@@ -1289,4 +1314,79 @@ func buildHealthCheck(httpPath, tcpPort string, execCmd []string, interval, time
 	}
 
 	return hc
+}
+
+// parsePortMappings parses port mapping strings like "8080:80" or "443:443/tcp"
+func parsePortMappings(portSpecs []string, defaultMode string) ([]*proto.PortMapping, error) {
+	if len(portSpecs) == 0 {
+		return nil, nil
+	}
+
+	var ports []*proto.PortMapping
+
+	// Determine publish mode
+	publishMode := proto.PortMapping_HOST
+	if defaultMode == "ingress" {
+		publishMode = proto.PortMapping_INGRESS
+	}
+
+	for _, spec := range portSpecs {
+		port, err := parsePortSpec(spec, publishMode)
+		if err != nil {
+			return nil, fmt.Errorf("invalid port spec '%s': %v", spec, err)
+		}
+		ports = append(ports, port)
+	}
+
+	return ports, nil
+}
+
+// parsePortSpec parses a single port specification
+// Formats supported:
+//   - "8080:80"       -> host:container, tcp
+//   - "8080:80/tcp"   -> host:container/protocol
+//   - "8080:80/udp"   -> host:container/protocol
+func parsePortSpec(spec string, publishMode proto.PortMapping_PublishMode) (*proto.PortMapping, error) {
+	// Default protocol
+	protocol := "tcp"
+
+	// Check for protocol suffix
+	parts := strings.Split(spec, "/")
+	if len(parts) == 2 {
+		spec = parts[0]
+		protocol = strings.ToLower(parts[1])
+		if protocol != "tcp" && protocol != "udp" {
+			return nil, fmt.Errorf("protocol must be 'tcp' or 'udp', got '%s'", protocol)
+		}
+	} else if len(parts) > 2 {
+		return nil, fmt.Errorf("invalid format, too many '/' separators")
+	}
+
+	// Parse host:container ports
+	portParts := strings.Split(spec, ":")
+	if len(portParts) != 2 {
+		return nil, fmt.Errorf("format must be 'hostPort:containerPort'")
+	}
+
+	hostPort := 0
+	containerPort := 0
+
+	// Parse host port
+	_, err := fmt.Sscanf(portParts[0], "%d", &hostPort)
+	if err != nil || hostPort <= 0 || hostPort > 65535 {
+		return nil, fmt.Errorf("invalid host port: must be 1-65535")
+	}
+
+	// Parse container port
+	_, err = fmt.Sscanf(portParts[1], "%d", &containerPort)
+	if err != nil || containerPort <= 0 || containerPort > 65535 {
+		return nil, fmt.Errorf("invalid container port: must be 1-65535")
+	}
+
+	return &proto.PortMapping{
+		ContainerPort: int32(containerPort),
+		HostPort:      int32(hostPort),
+		Protocol:      protocol,
+		PublishMode:   publishMode,
+	}, nil
 }
