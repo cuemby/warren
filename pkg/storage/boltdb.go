@@ -17,6 +17,7 @@ var (
 	bucketSecrets  = []byte("secrets")
 	bucketVolumes  = []byte("volumes")
 	bucketNetworks = []byte("networks")
+	bucketCA       = []byte("ca")
 )
 
 // BoltStore implements Store interface using BoltDB
@@ -42,6 +43,7 @@ func NewBoltStore(dataDir string) (*BoltStore, error) {
 			bucketSecrets,
 			bucketVolumes,
 			bucketNetworks,
+			bucketCA,
 		}
 
 		for _, bucket := range buckets {
@@ -459,4 +461,30 @@ func (s *BoltStore) DeleteNetwork(id string) error {
 		b := tx.Bucket(bucketNetworks)
 		return b.Delete([]byte(id))
 	})
+}
+
+// Certificate Authority operations
+func (s *BoltStore) SaveCA(data []byte) error {
+	return s.db.Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket(bucketCA)
+		// Use fixed key "ca" for the CA data
+		return b.Put([]byte("ca"), data)
+	})
+}
+
+func (s *BoltStore) GetCA() ([]byte, error) {
+	var data []byte
+	err := s.db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket(bucketCA)
+		data = b.Get([]byte("ca"))
+		if data == nil {
+			return fmt.Errorf("CA not found")
+		}
+		// Make a copy since BoltDB data is only valid during the transaction
+		dataCopy := make([]byte, len(data))
+		copy(dataCopy, data)
+		data = dataCopy
+		return nil
+	})
+	return data, err
 }

@@ -51,6 +51,10 @@ type Store interface {
 	ListNetworks() ([]*types.Network, error)
 	DeleteNetwork(id string) error
 
+	// Certificate Authority
+	SaveCA(data []byte) error
+	GetCA() ([]byte, error)
+
 	// Utility
 	Close() error
 }

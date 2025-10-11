@@ -151,3 +151,75 @@ func DeriveKeyFromClusterID(clusterID string) []byte {
 	hash := sha256.Sum256([]byte(clusterID))
 	return hash[:]
 }
+
+// clusterEncryptionKey is the global encryption key for the cluster
+// This is derived from the cluster ID during initialization
+var clusterEncryptionKey []byte
+
+// SetClusterEncryptionKey sets the global cluster encryption key
+// This should be called once during cluster initialization
+func SetClusterEncryptionKey(key []byte) error {
+	if len(key) != 32 {
+		return fmt.Errorf("encryption key must be 32 bytes, got %d", len(key))
+	}
+	clusterEncryptionKey = key
+	return nil
+}
+
+// Encrypt encrypts data using the cluster encryption key
+// This is used for encrypting sensitive data like CA private keys
+func Encrypt(plaintext []byte) ([]byte, error) {
+	if len(clusterEncryptionKey) == 0 {
+		return nil, fmt.Errorf("cluster encryption key not set")
+	}
+
+	block, err := aes.NewCipher(clusterEncryptionKey)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create cipher: %w", err)
+	}
+
+	gcm, err := cipher.NewGCM(block)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create GCM: %w", err)
+	}
+
+	nonce := make([]byte, gcm.NonceSize())
+	if _, err := io.ReadFull(rand.Reader, nonce); err != nil {
+		return nil, fmt.Errorf("failed to generate nonce: %w", err)
+	}
+
+	ciphertext := gcm.Seal(nonce, nonce, plaintext, nil)
+	return ciphertext, nil
+}
+
+// Decrypt decrypts data using the cluster encryption key
+// This is used for decrypting sensitive data like CA private keys
+func Decrypt(ciphertext []byte) ([]byte, error) {
+	if len(clusterEncryptionKey) == 0 {
+		return nil, fmt.Errorf("cluster encryption key not set")
+	}
+
+	block, err := aes.NewCipher(clusterEncryptionKey)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create cipher: %w", err)
+	}
+
+	gcm, err := cipher.NewGCM(block)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create GCM: %w", err)
+	}
+
+	nonceSize := gcm.NonceSize()
+	if len(ciphertext) < nonceSize {
+		return nil, fmt.Errorf("ciphertext too short")
+	}
+
+	nonce, ciphertext := ciphertext[:nonceSize], ciphertext[nonceSize:]
+
+	plaintext, err := gcm.Open(nil, nonce, ciphertext, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decrypt: %w", err)
+	}
+
+	return plaintext, nil
+}
