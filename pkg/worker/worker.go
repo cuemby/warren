@@ -26,6 +26,7 @@ type Worker struct {
 	runtime        *runtime.ContainerdRuntime
 	secretsHandler *SecretsHandler
 	volumesHandler *VolumesHandler
+	healthMonitor  *HealthMonitor
 
 	tasks  map[string]*types.Task
 	taskMu sync.RWMutex
@@ -81,6 +82,9 @@ func NewWorker(cfg *Config) (*Worker, error) {
 	}
 	w.volumesHandler = vh
 
+	// Initialize health monitor
+	w.healthMonitor = NewHealthMonitor(w)
+
 	return w, nil
 }
 
@@ -122,12 +126,20 @@ func (w *Worker) Start(resources *types.NodeResources) error {
 	// Start task executor loop
 	go w.taskExecutorLoop()
 
+	// Start health monitor
+	w.healthMonitor.Start()
+
 	return nil
 }
 
 // Stop stops the worker
 func (w *Worker) Stop() error {
 	close(w.stopCh)
+
+	// Stop health monitor
+	if w.healthMonitor != nil {
+		w.healthMonitor.Stop()
+	}
 
 	if w.conn != nil {
 		w.conn.Close()
