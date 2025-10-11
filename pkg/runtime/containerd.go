@@ -99,7 +99,7 @@ func (r *ContainerdRuntime) CreateContainer(ctx context.Context, task *types.Tas
 }
 
 // CreateContainerWithMounts creates a container with secret and volume mounts
-func (r *ContainerdRuntime) CreateContainerWithMounts(ctx context.Context, task *types.Task, secretsPath string, volumeMounts []specs.Mount) (string, error) {
+func (r *ContainerdRuntime) CreateContainerWithMounts(ctx context.Context, task *types.Task, secretsPath string, volumeMounts []specs.Mount, resolvConfPath string) (string, error) {
 	ctx = namespaces.WithNamespace(ctx, r.namespace)
 
 	// Get the image
@@ -130,6 +130,16 @@ func (r *ContainerdRuntime) CreateContainerWithMounts(ctx context.Context, task 
 	// Add volume mounts
 	mounts = append(mounts, volumeMounts...)
 
+	// Add DNS configuration (resolv.conf) if provided
+	if resolvConfPath != "" {
+		mounts = append(mounts, specs.Mount{
+			Source:      resolvConfPath,
+			Destination: "/etc/resolv.conf",
+			Type:        "bind",
+			Options:     []string{"ro", "bind"}, // Read-only bind mount
+		})
+	}
+
 	// Apply all mounts if any
 	if len(mounts) > 0 {
 		opts = append(opts, oci.WithMounts(mounts))
@@ -152,7 +162,7 @@ func (r *ContainerdRuntime) CreateContainerWithMounts(ctx context.Context, task 
 
 // CreateContainerWithSecrets creates a container with secret tmpfs mounts (deprecated, use CreateContainerWithMounts)
 func (r *ContainerdRuntime) CreateContainerWithSecrets(ctx context.Context, task *types.Task, secretsPath string) (string, error) {
-	return r.CreateContainerWithMounts(ctx, task, secretsPath, nil)
+	return r.CreateContainerWithMounts(ctx, task, secretsPath, nil, "")
 }
 
 // StartContainer starts a container and returns its runtime ID

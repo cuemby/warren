@@ -27,6 +27,7 @@ type Worker struct {
 	secretsHandler *SecretsHandler
 	volumesHandler *VolumesHandler
 	healthMonitor  *HealthMonitor
+	dnsHandler     *DNSHandler
 
 	tasks  map[string]*types.Task
 	taskMu sync.RWMutex
@@ -81,6 +82,14 @@ func NewWorker(cfg *Config) (*Worker, error) {
 		return nil, fmt.Errorf("failed to initialize volumes handler: %w", err)
 	}
 	w.volumesHandler = vh
+
+	// Initialize DNS handler
+	managerIP := ExtractManagerIP(cfg.ManagerAddr)
+	dh, err := NewDNSHandler(w, managerIP)
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialize DNS handler: %w", err)
+	}
+	w.dnsHandler = dh
 
 	// Initialize health monitor
 	w.healthMonitor = NewHealthMonitor(w)
@@ -337,11 +346,23 @@ func (w *Worker) executeTask(task *types.Task) {
 		}()
 	}
 
-	// Create the container with secrets and/or volumes
-	var containerID string
+	// Get DNS configuration (resolv.conf path)
+	var resolvConfPath string
 	var err error
-	if secretsPath != "" || len(volumeMounts) > 0 {
-		containerID, err = w.runtime.CreateContainerWithMounts(ctx, task, secretsPath, volumeMounts)
+	if w.dnsHandler != nil {
+		resolvConfPath, err = w.dnsHandler.GetResolvConfPath()
+		if err != nil {
+			fmt.Printf("Warning: failed to get DNS config for task %s: %v (continuing without DNS)\n", task.ID, err)
+			resolvConfPath = "" // Continue without DNS if it fails
+		} else {
+			fmt.Printf("Using DNS config from %s\n", resolvConfPath)
+		}
+	}
+
+	// Create the container with secrets, volumes, and DNS config
+	var containerID string
+	if secretsPath != "" || len(volumeMounts) > 0 || resolvConfPath != "" {
+		containerID, err = w.runtime.CreateContainerWithMounts(ctx, task, secretsPath, volumeMounts, resolvConfPath)
 	} else {
 		containerID, err = w.runtime.CreateContainer(ctx, task)
 	}
