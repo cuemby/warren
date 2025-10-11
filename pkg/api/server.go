@@ -955,3 +955,33 @@ func healthCheckToProto(hc *types.HealthCheck) *proto.HealthCheck {
 func (s *Server) StreamEvents(req *proto.StreamEventsRequest, stream proto.WarrenAPI_StreamEventsServer) error {
 	return fmt.Errorf("event streaming not yet implemented")
 }
+
+// RequestCertificate issues a certificate for a node joining the cluster
+func (s *Server) RequestCertificate(ctx context.Context, req *proto.RequestCertificateRequest) (*proto.RequestCertificateResponse, error) {
+	// Validate token
+	role, err := s.manager.ValidateToken(req.Token)
+	if err != nil {
+		return nil, fmt.Errorf("invalid token: %w", err)
+	}
+
+	// Issue certificate
+	cert, err := s.manager.IssueCertificate(req.NodeId, role)
+	if err != nil {
+		return nil, fmt.Errorf("failed to issue certificate: %w", err)
+	}
+
+	// Convert to PEM format for transmission
+	certPEM, keyPEM, err := s.manager.CertToPEM(cert)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert certificate to PEM: %w", err)
+	}
+
+	// Get CA certificate
+	caCertPEM := s.manager.GetCACertPEM()
+
+	return &proto.RequestCertificateResponse{
+		Certificate: certPEM,
+		PrivateKey:  keyPEM,
+		CaCert:      caCertPEM,
+	}, nil
+}

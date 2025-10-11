@@ -19,33 +19,34 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	WarrenAPI_RegisterNode_FullMethodName      = "/warren.v1.WarrenAPI/RegisterNode"
-	WarrenAPI_Heartbeat_FullMethodName         = "/warren.v1.WarrenAPI/Heartbeat"
-	WarrenAPI_ListNodes_FullMethodName         = "/warren.v1.WarrenAPI/ListNodes"
-	WarrenAPI_GetNode_FullMethodName           = "/warren.v1.WarrenAPI/GetNode"
-	WarrenAPI_RemoveNode_FullMethodName        = "/warren.v1.WarrenAPI/RemoveNode"
-	WarrenAPI_CreateService_FullMethodName     = "/warren.v1.WarrenAPI/CreateService"
-	WarrenAPI_UpdateService_FullMethodName     = "/warren.v1.WarrenAPI/UpdateService"
-	WarrenAPI_DeleteService_FullMethodName     = "/warren.v1.WarrenAPI/DeleteService"
-	WarrenAPI_GetService_FullMethodName        = "/warren.v1.WarrenAPI/GetService"
-	WarrenAPI_ListServices_FullMethodName      = "/warren.v1.WarrenAPI/ListServices"
-	WarrenAPI_UpdateTaskStatus_FullMethodName  = "/warren.v1.WarrenAPI/UpdateTaskStatus"
-	WarrenAPI_ListTasks_FullMethodName         = "/warren.v1.WarrenAPI/ListTasks"
-	WarrenAPI_GetTask_FullMethodName           = "/warren.v1.WarrenAPI/GetTask"
-	WarrenAPI_WatchTasks_FullMethodName        = "/warren.v1.WarrenAPI/WatchTasks"
-	WarrenAPI_ReportTaskHealth_FullMethodName  = "/warren.v1.WarrenAPI/ReportTaskHealth"
-	WarrenAPI_CreateSecret_FullMethodName      = "/warren.v1.WarrenAPI/CreateSecret"
-	WarrenAPI_GetSecretByName_FullMethodName   = "/warren.v1.WarrenAPI/GetSecretByName"
-	WarrenAPI_DeleteSecret_FullMethodName      = "/warren.v1.WarrenAPI/DeleteSecret"
-	WarrenAPI_ListSecrets_FullMethodName       = "/warren.v1.WarrenAPI/ListSecrets"
-	WarrenAPI_CreateVolume_FullMethodName      = "/warren.v1.WarrenAPI/CreateVolume"
-	WarrenAPI_GetVolumeByName_FullMethodName   = "/warren.v1.WarrenAPI/GetVolumeByName"
-	WarrenAPI_DeleteVolume_FullMethodName      = "/warren.v1.WarrenAPI/DeleteVolume"
-	WarrenAPI_ListVolumes_FullMethodName       = "/warren.v1.WarrenAPI/ListVolumes"
-	WarrenAPI_GenerateJoinToken_FullMethodName = "/warren.v1.WarrenAPI/GenerateJoinToken"
-	WarrenAPI_JoinCluster_FullMethodName       = "/warren.v1.WarrenAPI/JoinCluster"
-	WarrenAPI_GetClusterInfo_FullMethodName    = "/warren.v1.WarrenAPI/GetClusterInfo"
-	WarrenAPI_StreamEvents_FullMethodName      = "/warren.v1.WarrenAPI/StreamEvents"
+	WarrenAPI_RegisterNode_FullMethodName       = "/warren.v1.WarrenAPI/RegisterNode"
+	WarrenAPI_Heartbeat_FullMethodName          = "/warren.v1.WarrenAPI/Heartbeat"
+	WarrenAPI_ListNodes_FullMethodName          = "/warren.v1.WarrenAPI/ListNodes"
+	WarrenAPI_GetNode_FullMethodName            = "/warren.v1.WarrenAPI/GetNode"
+	WarrenAPI_RemoveNode_FullMethodName         = "/warren.v1.WarrenAPI/RemoveNode"
+	WarrenAPI_CreateService_FullMethodName      = "/warren.v1.WarrenAPI/CreateService"
+	WarrenAPI_UpdateService_FullMethodName      = "/warren.v1.WarrenAPI/UpdateService"
+	WarrenAPI_DeleteService_FullMethodName      = "/warren.v1.WarrenAPI/DeleteService"
+	WarrenAPI_GetService_FullMethodName         = "/warren.v1.WarrenAPI/GetService"
+	WarrenAPI_ListServices_FullMethodName       = "/warren.v1.WarrenAPI/ListServices"
+	WarrenAPI_UpdateTaskStatus_FullMethodName   = "/warren.v1.WarrenAPI/UpdateTaskStatus"
+	WarrenAPI_ListTasks_FullMethodName          = "/warren.v1.WarrenAPI/ListTasks"
+	WarrenAPI_GetTask_FullMethodName            = "/warren.v1.WarrenAPI/GetTask"
+	WarrenAPI_WatchTasks_FullMethodName         = "/warren.v1.WarrenAPI/WatchTasks"
+	WarrenAPI_ReportTaskHealth_FullMethodName   = "/warren.v1.WarrenAPI/ReportTaskHealth"
+	WarrenAPI_CreateSecret_FullMethodName       = "/warren.v1.WarrenAPI/CreateSecret"
+	WarrenAPI_GetSecretByName_FullMethodName    = "/warren.v1.WarrenAPI/GetSecretByName"
+	WarrenAPI_DeleteSecret_FullMethodName       = "/warren.v1.WarrenAPI/DeleteSecret"
+	WarrenAPI_ListSecrets_FullMethodName        = "/warren.v1.WarrenAPI/ListSecrets"
+	WarrenAPI_CreateVolume_FullMethodName       = "/warren.v1.WarrenAPI/CreateVolume"
+	WarrenAPI_GetVolumeByName_FullMethodName    = "/warren.v1.WarrenAPI/GetVolumeByName"
+	WarrenAPI_DeleteVolume_FullMethodName       = "/warren.v1.WarrenAPI/DeleteVolume"
+	WarrenAPI_ListVolumes_FullMethodName        = "/warren.v1.WarrenAPI/ListVolumes"
+	WarrenAPI_GenerateJoinToken_FullMethodName  = "/warren.v1.WarrenAPI/GenerateJoinToken"
+	WarrenAPI_JoinCluster_FullMethodName        = "/warren.v1.WarrenAPI/JoinCluster"
+	WarrenAPI_GetClusterInfo_FullMethodName     = "/warren.v1.WarrenAPI/GetClusterInfo"
+	WarrenAPI_RequestCertificate_FullMethodName = "/warren.v1.WarrenAPI/RequestCertificate"
+	WarrenAPI_StreamEvents_FullMethodName       = "/warren.v1.WarrenAPI/StreamEvents"
 )
 
 // WarrenAPIClient is the client API for WarrenAPI service.
@@ -88,6 +89,8 @@ type WarrenAPIClient interface {
 	GenerateJoinToken(ctx context.Context, in *GenerateJoinTokenRequest, opts ...grpc.CallOption) (*GenerateJoinTokenResponse, error)
 	JoinCluster(ctx context.Context, in *JoinClusterRequest, opts ...grpc.CallOption) (*JoinClusterResponse, error)
 	GetClusterInfo(ctx context.Context, in *GetClusterInfoRequest, opts ...grpc.CallOption) (*GetClusterInfoResponse, error)
+	// Certificate operations
+	RequestCertificate(ctx context.Context, in *RequestCertificateRequest, opts ...grpc.CallOption) (*RequestCertificateResponse, error)
 	// Event streaming
 	StreamEvents(ctx context.Context, in *StreamEventsRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[Event], error)
 }
@@ -369,6 +372,16 @@ func (c *warrenAPIClient) GetClusterInfo(ctx context.Context, in *GetClusterInfo
 	return out, nil
 }
 
+func (c *warrenAPIClient) RequestCertificate(ctx context.Context, in *RequestCertificateRequest, opts ...grpc.CallOption) (*RequestCertificateResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RequestCertificateResponse)
+	err := c.cc.Invoke(ctx, WarrenAPI_RequestCertificate_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *warrenAPIClient) StreamEvents(ctx context.Context, in *StreamEventsRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[Event], error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	stream, err := c.cc.NewStream(ctx, &WarrenAPI_ServiceDesc.Streams[1], WarrenAPI_StreamEvents_FullMethodName, cOpts...)
@@ -428,6 +441,8 @@ type WarrenAPIServer interface {
 	GenerateJoinToken(context.Context, *GenerateJoinTokenRequest) (*GenerateJoinTokenResponse, error)
 	JoinCluster(context.Context, *JoinClusterRequest) (*JoinClusterResponse, error)
 	GetClusterInfo(context.Context, *GetClusterInfoRequest) (*GetClusterInfoResponse, error)
+	// Certificate operations
+	RequestCertificate(context.Context, *RequestCertificateRequest) (*RequestCertificateResponse, error)
 	// Event streaming
 	StreamEvents(*StreamEventsRequest, grpc.ServerStreamingServer[Event]) error
 	mustEmbedUnimplementedWarrenAPIServer()
@@ -517,6 +532,9 @@ func (UnimplementedWarrenAPIServer) JoinCluster(context.Context, *JoinClusterReq
 }
 func (UnimplementedWarrenAPIServer) GetClusterInfo(context.Context, *GetClusterInfoRequest) (*GetClusterInfoResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetClusterInfo not implemented")
+}
+func (UnimplementedWarrenAPIServer) RequestCertificate(context.Context, *RequestCertificateRequest) (*RequestCertificateResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RequestCertificate not implemented")
 }
 func (UnimplementedWarrenAPIServer) StreamEvents(*StreamEventsRequest, grpc.ServerStreamingServer[Event]) error {
 	return status.Errorf(codes.Unimplemented, "method StreamEvents not implemented")
@@ -1003,6 +1021,24 @@ func _WarrenAPI_GetClusterInfo_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
+func _WarrenAPI_RequestCertificate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RequestCertificateRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WarrenAPIServer).RequestCertificate(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WarrenAPI_RequestCertificate_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WarrenAPIServer).RequestCertificate(ctx, req.(*RequestCertificateRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _WarrenAPI_StreamEvents_Handler(srv interface{}, stream grpc.ServerStream) error {
 	m := new(StreamEventsRequest)
 	if err := stream.RecvMsg(m); err != nil {
@@ -1120,6 +1156,10 @@ var WarrenAPI_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetClusterInfo",
 			Handler:    _WarrenAPI_GetClusterInfo_Handler,
+		},
+		{
+			MethodName: "RequestCertificate",
+			Handler:    _WarrenAPI_RequestCertificate_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

@@ -4328,6 +4328,119 @@ func (x *StreamEventsRequest) GetEventTypes() []string {
 	return nil
 }
 
+// Certificate messages
+type RequestCertificateRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	NodeId        string                 `protobuf:"bytes,1,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
+	Token         string                 `protobuf:"bytes,2,opt,name=token,proto3" json:"token,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RequestCertificateRequest) Reset() {
+	*x = RequestCertificateRequest{}
+	mi := &file_api_proto_warren_proto_msgTypes[72]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RequestCertificateRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RequestCertificateRequest) ProtoMessage() {}
+
+func (x *RequestCertificateRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_api_proto_warren_proto_msgTypes[72]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RequestCertificateRequest.ProtoReflect.Descriptor instead.
+func (*RequestCertificateRequest) Descriptor() ([]byte, []int) {
+	return file_api_proto_warren_proto_rawDescGZIP(), []int{72}
+}
+
+func (x *RequestCertificateRequest) GetNodeId() string {
+	if x != nil {
+		return x.NodeId
+	}
+	return ""
+}
+
+func (x *RequestCertificateRequest) GetToken() string {
+	if x != nil {
+		return x.Token
+	}
+	return ""
+}
+
+type RequestCertificateResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Certificate   []byte                 `protobuf:"bytes,1,opt,name=certificate,proto3" json:"certificate,omitempty"`
+	PrivateKey    []byte                 `protobuf:"bytes,2,opt,name=private_key,json=privateKey,proto3" json:"private_key,omitempty"`
+	CaCert        []byte                 `protobuf:"bytes,3,opt,name=ca_cert,json=caCert,proto3" json:"ca_cert,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RequestCertificateResponse) Reset() {
+	*x = RequestCertificateResponse{}
+	mi := &file_api_proto_warren_proto_msgTypes[73]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RequestCertificateResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RequestCertificateResponse) ProtoMessage() {}
+
+func (x *RequestCertificateResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_api_proto_warren_proto_msgTypes[73]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RequestCertificateResponse.ProtoReflect.Descriptor instead.
+func (*RequestCertificateResponse) Descriptor() ([]byte, []int) {
+	return file_api_proto_warren_proto_rawDescGZIP(), []int{73}
+}
+
+func (x *RequestCertificateResponse) GetCertificate() []byte {
+	if x != nil {
+		return x.Certificate
+	}
+	return nil
+}
+
+func (x *RequestCertificateResponse) GetPrivateKey() []byte {
+	if x != nil {
+		return x.PrivateKey
+	}
+	return nil
+}
+
+func (x *RequestCertificateResponse) GetCaCert() []byte {
+	if x != nil {
+		return x.CaCert
+	}
+	return nil
+}
+
 var File_api_proto_warren_proto protoreflect.FileDescriptor
 
 const file_api_proto_warren_proto_rawDesc = "" +
@@ -4671,7 +4784,15 @@ const file_api_proto_warren_proto_rawDesc = "" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"6\n" +
 	"\x13StreamEventsRequest\x12\x1f\n" +
 	"\vevent_types\x18\x01 \x03(\tR\n" +
-	"eventTypes2\xf6\x10\n" +
+	"eventTypes\"J\n" +
+	"\x19RequestCertificateRequest\x12\x17\n" +
+	"\anode_id\x18\x01 \x01(\tR\x06nodeId\x12\x14\n" +
+	"\x05token\x18\x02 \x01(\tR\x05token\"x\n" +
+	"\x1aRequestCertificateResponse\x12 \n" +
+	"\vcertificate\x18\x01 \x01(\fR\vcertificate\x12\x1f\n" +
+	"\vprivate_key\x18\x02 \x01(\fR\n" +
+	"privateKey\x12\x17\n" +
+	"\aca_cert\x18\x03 \x01(\fR\x06caCert2\xd9\x11\n" +
 	"\tWarrenAPI\x12O\n" +
 	"\fRegisterNode\x12\x1e.warren.v1.RegisterNodeRequest\x1a\x1f.warren.v1.RegisterNodeResponse\x12F\n" +
 	"\tHeartbeat\x12\x1b.warren.v1.HeartbeatRequest\x1a\x1c.warren.v1.HeartbeatResponse\x12F\n" +
@@ -4701,7 +4822,8 @@ const file_api_proto_warren_proto_rawDesc = "" +
 	"\vListVolumes\x12\x1d.warren.v1.ListVolumesRequest\x1a\x1e.warren.v1.ListVolumesResponse\x12^\n" +
 	"\x11GenerateJoinToken\x12#.warren.v1.GenerateJoinTokenRequest\x1a$.warren.v1.GenerateJoinTokenResponse\x12L\n" +
 	"\vJoinCluster\x12\x1d.warren.v1.JoinClusterRequest\x1a\x1e.warren.v1.JoinClusterResponse\x12U\n" +
-	"\x0eGetClusterInfo\x12 .warren.v1.GetClusterInfoRequest\x1a!.warren.v1.GetClusterInfoResponse\x12B\n" +
+	"\x0eGetClusterInfo\x12 .warren.v1.GetClusterInfoRequest\x1a!.warren.v1.GetClusterInfoResponse\x12a\n" +
+	"\x12RequestCertificate\x12$.warren.v1.RequestCertificateRequest\x1a%.warren.v1.RequestCertificateResponse\x12B\n" +
 	"\fStreamEvents\x12\x1e.warren.v1.StreamEventsRequest\x1a\x10.warren.v1.Event0\x01B$Z\"github.com/cuemby/warren/api/protob\x06proto3"
 
 var (
@@ -4717,102 +4839,104 @@ func file_api_proto_warren_proto_rawDescGZIP() []byte {
 }
 
 var file_api_proto_warren_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_api_proto_warren_proto_msgTypes = make([]protoimpl.MessageInfo, 83)
+var file_api_proto_warren_proto_msgTypes = make([]protoimpl.MessageInfo, 85)
 var file_api_proto_warren_proto_goTypes = []any{
-	(HealthCheck_Type)(0),             // 0: warren.v1.HealthCheck.Type
-	(PortMapping_PublishMode)(0),      // 1: warren.v1.PortMapping.PublishMode
-	(*Node)(nil),                      // 2: warren.v1.Node
-	(*NodeResources)(nil),             // 3: warren.v1.NodeResources
-	(*RegisterNodeRequest)(nil),       // 4: warren.v1.RegisterNodeRequest
-	(*RegisterNodeResponse)(nil),      // 5: warren.v1.RegisterNodeResponse
-	(*HeartbeatRequest)(nil),          // 6: warren.v1.HeartbeatRequest
-	(*HeartbeatResponse)(nil),         // 7: warren.v1.HeartbeatResponse
-	(*TaskStatus)(nil),                // 8: warren.v1.TaskStatus
-	(*ListNodesRequest)(nil),          // 9: warren.v1.ListNodesRequest
-	(*ListNodesResponse)(nil),         // 10: warren.v1.ListNodesResponse
-	(*GetNodeRequest)(nil),            // 11: warren.v1.GetNodeRequest
-	(*GetNodeResponse)(nil),           // 12: warren.v1.GetNodeResponse
-	(*RemoveNodeRequest)(nil),         // 13: warren.v1.RemoveNodeRequest
-	(*RemoveNodeResponse)(nil),        // 14: warren.v1.RemoveNodeResponse
-	(*Service)(nil),                   // 15: warren.v1.Service
-	(*UpdateConfig)(nil),              // 16: warren.v1.UpdateConfig
-	(*HealthCheck)(nil),               // 17: warren.v1.HealthCheck
-	(*HTTPHealthCheck)(nil),           // 18: warren.v1.HTTPHealthCheck
-	(*Header)(nil),                    // 19: warren.v1.Header
-	(*TCPHealthCheck)(nil),            // 20: warren.v1.TCPHealthCheck
-	(*ExecHealthCheck)(nil),           // 21: warren.v1.ExecHealthCheck
-	(*RestartPolicy)(nil),             // 22: warren.v1.RestartPolicy
-	(*ResourceRequirements)(nil),      // 23: warren.v1.ResourceRequirements
-	(*VolumeMount)(nil),               // 24: warren.v1.VolumeMount
-	(*PortMapping)(nil),               // 25: warren.v1.PortMapping
-	(*CreateServiceRequest)(nil),      // 26: warren.v1.CreateServiceRequest
-	(*CreateServiceResponse)(nil),     // 27: warren.v1.CreateServiceResponse
-	(*UpdateServiceRequest)(nil),      // 28: warren.v1.UpdateServiceRequest
-	(*UpdateServiceResponse)(nil),     // 29: warren.v1.UpdateServiceResponse
-	(*DeleteServiceRequest)(nil),      // 30: warren.v1.DeleteServiceRequest
-	(*DeleteServiceResponse)(nil),     // 31: warren.v1.DeleteServiceResponse
-	(*GetServiceRequest)(nil),         // 32: warren.v1.GetServiceRequest
-	(*GetServiceResponse)(nil),        // 33: warren.v1.GetServiceResponse
-	(*ListServicesRequest)(nil),       // 34: warren.v1.ListServicesRequest
-	(*ListServicesResponse)(nil),      // 35: warren.v1.ListServicesResponse
-	(*Task)(nil),                      // 36: warren.v1.Task
-	(*UpdateTaskStatusRequest)(nil),   // 37: warren.v1.UpdateTaskStatusRequest
-	(*UpdateTaskStatusResponse)(nil),  // 38: warren.v1.UpdateTaskStatusResponse
-	(*ListTasksRequest)(nil),          // 39: warren.v1.ListTasksRequest
-	(*ListTasksResponse)(nil),         // 40: warren.v1.ListTasksResponse
-	(*GetTaskRequest)(nil),            // 41: warren.v1.GetTaskRequest
-	(*GetTaskResponse)(nil),           // 42: warren.v1.GetTaskResponse
-	(*WatchTasksRequest)(nil),         // 43: warren.v1.WatchTasksRequest
-	(*TaskEvent)(nil),                 // 44: warren.v1.TaskEvent
-	(*Secret)(nil),                    // 45: warren.v1.Secret
-	(*CreateSecretRequest)(nil),       // 46: warren.v1.CreateSecretRequest
-	(*CreateSecretResponse)(nil),      // 47: warren.v1.CreateSecretResponse
-	(*DeleteSecretRequest)(nil),       // 48: warren.v1.DeleteSecretRequest
-	(*DeleteSecretResponse)(nil),      // 49: warren.v1.DeleteSecretResponse
-	(*GetSecretByNameRequest)(nil),    // 50: warren.v1.GetSecretByNameRequest
-	(*GetSecretByNameResponse)(nil),   // 51: warren.v1.GetSecretByNameResponse
-	(*ListSecretsRequest)(nil),        // 52: warren.v1.ListSecretsRequest
-	(*ListSecretsResponse)(nil),       // 53: warren.v1.ListSecretsResponse
-	(*Volume)(nil),                    // 54: warren.v1.Volume
-	(*CreateVolumeRequest)(nil),       // 55: warren.v1.CreateVolumeRequest
-	(*CreateVolumeResponse)(nil),      // 56: warren.v1.CreateVolumeResponse
-	(*DeleteVolumeRequest)(nil),       // 57: warren.v1.DeleteVolumeRequest
-	(*DeleteVolumeResponse)(nil),      // 58: warren.v1.DeleteVolumeResponse
-	(*GetVolumeByNameRequest)(nil),    // 59: warren.v1.GetVolumeByNameRequest
-	(*GetVolumeByNameResponse)(nil),   // 60: warren.v1.GetVolumeByNameResponse
-	(*ListVolumesRequest)(nil),        // 61: warren.v1.ListVolumesRequest
-	(*ListVolumesResponse)(nil),       // 62: warren.v1.ListVolumesResponse
-	(*GenerateJoinTokenRequest)(nil),  // 63: warren.v1.GenerateJoinTokenRequest
-	(*GenerateJoinTokenResponse)(nil), // 64: warren.v1.GenerateJoinTokenResponse
-	(*JoinClusterRequest)(nil),        // 65: warren.v1.JoinClusterRequest
-	(*JoinClusterResponse)(nil),       // 66: warren.v1.JoinClusterResponse
-	(*GetClusterInfoRequest)(nil),     // 67: warren.v1.GetClusterInfoRequest
-	(*GetClusterInfoResponse)(nil),    // 68: warren.v1.GetClusterInfoResponse
-	(*ClusterServer)(nil),             // 69: warren.v1.ClusterServer
-	(*ReportTaskHealthRequest)(nil),   // 70: warren.v1.ReportTaskHealthRequest
-	(*ReportTaskHealthResponse)(nil),  // 71: warren.v1.ReportTaskHealthResponse
-	(*Event)(nil),                     // 72: warren.v1.Event
-	(*StreamEventsRequest)(nil),       // 73: warren.v1.StreamEventsRequest
-	nil,                               // 74: warren.v1.Node.LabelsEntry
-	nil,                               // 75: warren.v1.RegisterNodeRequest.LabelsEntry
-	nil,                               // 76: warren.v1.Service.EnvEntry
-	nil,                               // 77: warren.v1.CreateServiceRequest.EnvEntry
-	nil,                               // 78: warren.v1.UpdateServiceRequest.EnvEntry
-	nil,                               // 79: warren.v1.Task.EnvEntry
-	nil,                               // 80: warren.v1.Volume.DriverOptsEntry
-	nil,                               // 81: warren.v1.Volume.LabelsEntry
-	nil,                               // 82: warren.v1.CreateVolumeRequest.DriverOptsEntry
-	nil,                               // 83: warren.v1.CreateVolumeRequest.LabelsEntry
-	nil,                               // 84: warren.v1.Event.MetadataEntry
-	(*timestamppb.Timestamp)(nil),     // 85: google.protobuf.Timestamp
+	(HealthCheck_Type)(0),              // 0: warren.v1.HealthCheck.Type
+	(PortMapping_PublishMode)(0),       // 1: warren.v1.PortMapping.PublishMode
+	(*Node)(nil),                       // 2: warren.v1.Node
+	(*NodeResources)(nil),              // 3: warren.v1.NodeResources
+	(*RegisterNodeRequest)(nil),        // 4: warren.v1.RegisterNodeRequest
+	(*RegisterNodeResponse)(nil),       // 5: warren.v1.RegisterNodeResponse
+	(*HeartbeatRequest)(nil),           // 6: warren.v1.HeartbeatRequest
+	(*HeartbeatResponse)(nil),          // 7: warren.v1.HeartbeatResponse
+	(*TaskStatus)(nil),                 // 8: warren.v1.TaskStatus
+	(*ListNodesRequest)(nil),           // 9: warren.v1.ListNodesRequest
+	(*ListNodesResponse)(nil),          // 10: warren.v1.ListNodesResponse
+	(*GetNodeRequest)(nil),             // 11: warren.v1.GetNodeRequest
+	(*GetNodeResponse)(nil),            // 12: warren.v1.GetNodeResponse
+	(*RemoveNodeRequest)(nil),          // 13: warren.v1.RemoveNodeRequest
+	(*RemoveNodeResponse)(nil),         // 14: warren.v1.RemoveNodeResponse
+	(*Service)(nil),                    // 15: warren.v1.Service
+	(*UpdateConfig)(nil),               // 16: warren.v1.UpdateConfig
+	(*HealthCheck)(nil),                // 17: warren.v1.HealthCheck
+	(*HTTPHealthCheck)(nil),            // 18: warren.v1.HTTPHealthCheck
+	(*Header)(nil),                     // 19: warren.v1.Header
+	(*TCPHealthCheck)(nil),             // 20: warren.v1.TCPHealthCheck
+	(*ExecHealthCheck)(nil),            // 21: warren.v1.ExecHealthCheck
+	(*RestartPolicy)(nil),              // 22: warren.v1.RestartPolicy
+	(*ResourceRequirements)(nil),       // 23: warren.v1.ResourceRequirements
+	(*VolumeMount)(nil),                // 24: warren.v1.VolumeMount
+	(*PortMapping)(nil),                // 25: warren.v1.PortMapping
+	(*CreateServiceRequest)(nil),       // 26: warren.v1.CreateServiceRequest
+	(*CreateServiceResponse)(nil),      // 27: warren.v1.CreateServiceResponse
+	(*UpdateServiceRequest)(nil),       // 28: warren.v1.UpdateServiceRequest
+	(*UpdateServiceResponse)(nil),      // 29: warren.v1.UpdateServiceResponse
+	(*DeleteServiceRequest)(nil),       // 30: warren.v1.DeleteServiceRequest
+	(*DeleteServiceResponse)(nil),      // 31: warren.v1.DeleteServiceResponse
+	(*GetServiceRequest)(nil),          // 32: warren.v1.GetServiceRequest
+	(*GetServiceResponse)(nil),         // 33: warren.v1.GetServiceResponse
+	(*ListServicesRequest)(nil),        // 34: warren.v1.ListServicesRequest
+	(*ListServicesResponse)(nil),       // 35: warren.v1.ListServicesResponse
+	(*Task)(nil),                       // 36: warren.v1.Task
+	(*UpdateTaskStatusRequest)(nil),    // 37: warren.v1.UpdateTaskStatusRequest
+	(*UpdateTaskStatusResponse)(nil),   // 38: warren.v1.UpdateTaskStatusResponse
+	(*ListTasksRequest)(nil),           // 39: warren.v1.ListTasksRequest
+	(*ListTasksResponse)(nil),          // 40: warren.v1.ListTasksResponse
+	(*GetTaskRequest)(nil),             // 41: warren.v1.GetTaskRequest
+	(*GetTaskResponse)(nil),            // 42: warren.v1.GetTaskResponse
+	(*WatchTasksRequest)(nil),          // 43: warren.v1.WatchTasksRequest
+	(*TaskEvent)(nil),                  // 44: warren.v1.TaskEvent
+	(*Secret)(nil),                     // 45: warren.v1.Secret
+	(*CreateSecretRequest)(nil),        // 46: warren.v1.CreateSecretRequest
+	(*CreateSecretResponse)(nil),       // 47: warren.v1.CreateSecretResponse
+	(*DeleteSecretRequest)(nil),        // 48: warren.v1.DeleteSecretRequest
+	(*DeleteSecretResponse)(nil),       // 49: warren.v1.DeleteSecretResponse
+	(*GetSecretByNameRequest)(nil),     // 50: warren.v1.GetSecretByNameRequest
+	(*GetSecretByNameResponse)(nil),    // 51: warren.v1.GetSecretByNameResponse
+	(*ListSecretsRequest)(nil),         // 52: warren.v1.ListSecretsRequest
+	(*ListSecretsResponse)(nil),        // 53: warren.v1.ListSecretsResponse
+	(*Volume)(nil),                     // 54: warren.v1.Volume
+	(*CreateVolumeRequest)(nil),        // 55: warren.v1.CreateVolumeRequest
+	(*CreateVolumeResponse)(nil),       // 56: warren.v1.CreateVolumeResponse
+	(*DeleteVolumeRequest)(nil),        // 57: warren.v1.DeleteVolumeRequest
+	(*DeleteVolumeResponse)(nil),       // 58: warren.v1.DeleteVolumeResponse
+	(*GetVolumeByNameRequest)(nil),     // 59: warren.v1.GetVolumeByNameRequest
+	(*GetVolumeByNameResponse)(nil),    // 60: warren.v1.GetVolumeByNameResponse
+	(*ListVolumesRequest)(nil),         // 61: warren.v1.ListVolumesRequest
+	(*ListVolumesResponse)(nil),        // 62: warren.v1.ListVolumesResponse
+	(*GenerateJoinTokenRequest)(nil),   // 63: warren.v1.GenerateJoinTokenRequest
+	(*GenerateJoinTokenResponse)(nil),  // 64: warren.v1.GenerateJoinTokenResponse
+	(*JoinClusterRequest)(nil),         // 65: warren.v1.JoinClusterRequest
+	(*JoinClusterResponse)(nil),        // 66: warren.v1.JoinClusterResponse
+	(*GetClusterInfoRequest)(nil),      // 67: warren.v1.GetClusterInfoRequest
+	(*GetClusterInfoResponse)(nil),     // 68: warren.v1.GetClusterInfoResponse
+	(*ClusterServer)(nil),              // 69: warren.v1.ClusterServer
+	(*ReportTaskHealthRequest)(nil),    // 70: warren.v1.ReportTaskHealthRequest
+	(*ReportTaskHealthResponse)(nil),   // 71: warren.v1.ReportTaskHealthResponse
+	(*Event)(nil),                      // 72: warren.v1.Event
+	(*StreamEventsRequest)(nil),        // 73: warren.v1.StreamEventsRequest
+	(*RequestCertificateRequest)(nil),  // 74: warren.v1.RequestCertificateRequest
+	(*RequestCertificateResponse)(nil), // 75: warren.v1.RequestCertificateResponse
+	nil,                                // 76: warren.v1.Node.LabelsEntry
+	nil,                                // 77: warren.v1.RegisterNodeRequest.LabelsEntry
+	nil,                                // 78: warren.v1.Service.EnvEntry
+	nil,                                // 79: warren.v1.CreateServiceRequest.EnvEntry
+	nil,                                // 80: warren.v1.UpdateServiceRequest.EnvEntry
+	nil,                                // 81: warren.v1.Task.EnvEntry
+	nil,                                // 82: warren.v1.Volume.DriverOptsEntry
+	nil,                                // 83: warren.v1.Volume.LabelsEntry
+	nil,                                // 84: warren.v1.CreateVolumeRequest.DriverOptsEntry
+	nil,                                // 85: warren.v1.CreateVolumeRequest.LabelsEntry
+	nil,                                // 86: warren.v1.Event.MetadataEntry
+	(*timestamppb.Timestamp)(nil),      // 87: google.protobuf.Timestamp
 }
 var file_api_proto_warren_proto_depIdxs = []int32{
 	3,  // 0: warren.v1.Node.resources:type_name -> warren.v1.NodeResources
-	85, // 1: warren.v1.Node.last_heartbeat:type_name -> google.protobuf.Timestamp
-	85, // 2: warren.v1.Node.created_at:type_name -> google.protobuf.Timestamp
-	74, // 3: warren.v1.Node.labels:type_name -> warren.v1.Node.LabelsEntry
+	87, // 1: warren.v1.Node.last_heartbeat:type_name -> google.protobuf.Timestamp
+	87, // 2: warren.v1.Node.created_at:type_name -> google.protobuf.Timestamp
+	76, // 3: warren.v1.Node.labels:type_name -> warren.v1.Node.LabelsEntry
 	3,  // 4: warren.v1.RegisterNodeRequest.resources:type_name -> warren.v1.NodeResources
-	75, // 5: warren.v1.RegisterNodeRequest.labels:type_name -> warren.v1.RegisterNodeRequest.LabelsEntry
+	77, // 5: warren.v1.RegisterNodeRequest.labels:type_name -> warren.v1.RegisterNodeRequest.LabelsEntry
 	2,  // 6: warren.v1.RegisterNodeResponse.node:type_name -> warren.v1.Node
 	3,  // 7: warren.v1.HeartbeatRequest.available_resources:type_name -> warren.v1.NodeResources
 	8,  // 8: warren.v1.HeartbeatRequest.task_statuses:type_name -> warren.v1.TaskStatus
@@ -4823,9 +4947,9 @@ var file_api_proto_warren_proto_depIdxs = []int32{
 	22, // 13: warren.v1.Service.restart_policy:type_name -> warren.v1.RestartPolicy
 	23, // 14: warren.v1.Service.resources:type_name -> warren.v1.ResourceRequirements
 	24, // 15: warren.v1.Service.volumes:type_name -> warren.v1.VolumeMount
-	76, // 16: warren.v1.Service.env:type_name -> warren.v1.Service.EnvEntry
-	85, // 17: warren.v1.Service.created_at:type_name -> google.protobuf.Timestamp
-	85, // 18: warren.v1.Service.updated_at:type_name -> google.protobuf.Timestamp
+	78, // 16: warren.v1.Service.env:type_name -> warren.v1.Service.EnvEntry
+	87, // 17: warren.v1.Service.created_at:type_name -> google.protobuf.Timestamp
+	87, // 18: warren.v1.Service.updated_at:type_name -> google.protobuf.Timestamp
 	25, // 19: warren.v1.Service.ports:type_name -> warren.v1.PortMapping
 	0,  // 20: warren.v1.HealthCheck.type:type_name -> warren.v1.HealthCheck.Type
 	18, // 21: warren.v1.HealthCheck.http:type_name -> warren.v1.HTTPHealthCheck
@@ -4838,40 +4962,40 @@ var file_api_proto_warren_proto_depIdxs = []int32{
 	22, // 28: warren.v1.CreateServiceRequest.restart_policy:type_name -> warren.v1.RestartPolicy
 	23, // 29: warren.v1.CreateServiceRequest.resources:type_name -> warren.v1.ResourceRequirements
 	24, // 30: warren.v1.CreateServiceRequest.volumes:type_name -> warren.v1.VolumeMount
-	77, // 31: warren.v1.CreateServiceRequest.env:type_name -> warren.v1.CreateServiceRequest.EnvEntry
+	79, // 31: warren.v1.CreateServiceRequest.env:type_name -> warren.v1.CreateServiceRequest.EnvEntry
 	25, // 32: warren.v1.CreateServiceRequest.ports:type_name -> warren.v1.PortMapping
 	15, // 33: warren.v1.CreateServiceResponse.service:type_name -> warren.v1.Service
-	78, // 34: warren.v1.UpdateServiceRequest.env:type_name -> warren.v1.UpdateServiceRequest.EnvEntry
+	80, // 34: warren.v1.UpdateServiceRequest.env:type_name -> warren.v1.UpdateServiceRequest.EnvEntry
 	15, // 35: warren.v1.UpdateServiceResponse.service:type_name -> warren.v1.Service
 	15, // 36: warren.v1.GetServiceResponse.service:type_name -> warren.v1.Service
 	15, // 37: warren.v1.ListServicesResponse.services:type_name -> warren.v1.Service
-	79, // 38: warren.v1.Task.env:type_name -> warren.v1.Task.EnvEntry
+	81, // 38: warren.v1.Task.env:type_name -> warren.v1.Task.EnvEntry
 	23, // 39: warren.v1.Task.resources:type_name -> warren.v1.ResourceRequirements
 	24, // 40: warren.v1.Task.volumes:type_name -> warren.v1.VolumeMount
 	17, // 41: warren.v1.Task.health_check:type_name -> warren.v1.HealthCheck
 	22, // 42: warren.v1.Task.restart_policy:type_name -> warren.v1.RestartPolicy
-	85, // 43: warren.v1.Task.created_at:type_name -> google.protobuf.Timestamp
-	85, // 44: warren.v1.Task.updated_at:type_name -> google.protobuf.Timestamp
+	87, // 43: warren.v1.Task.created_at:type_name -> google.protobuf.Timestamp
+	87, // 44: warren.v1.Task.updated_at:type_name -> google.protobuf.Timestamp
 	36, // 45: warren.v1.ListTasksResponse.tasks:type_name -> warren.v1.Task
 	36, // 46: warren.v1.GetTaskResponse.task:type_name -> warren.v1.Task
 	36, // 47: warren.v1.TaskEvent.task:type_name -> warren.v1.Task
-	85, // 48: warren.v1.Secret.created_at:type_name -> google.protobuf.Timestamp
+	87, // 48: warren.v1.Secret.created_at:type_name -> google.protobuf.Timestamp
 	45, // 49: warren.v1.CreateSecretResponse.secret:type_name -> warren.v1.Secret
 	45, // 50: warren.v1.GetSecretByNameResponse.secret:type_name -> warren.v1.Secret
 	45, // 51: warren.v1.ListSecretsResponse.secrets:type_name -> warren.v1.Secret
-	80, // 52: warren.v1.Volume.driver_opts:type_name -> warren.v1.Volume.DriverOptsEntry
-	81, // 53: warren.v1.Volume.labels:type_name -> warren.v1.Volume.LabelsEntry
-	85, // 54: warren.v1.Volume.created_at:type_name -> google.protobuf.Timestamp
-	82, // 55: warren.v1.CreateVolumeRequest.driver_opts:type_name -> warren.v1.CreateVolumeRequest.DriverOptsEntry
-	83, // 56: warren.v1.CreateVolumeRequest.labels:type_name -> warren.v1.CreateVolumeRequest.LabelsEntry
+	82, // 52: warren.v1.Volume.driver_opts:type_name -> warren.v1.Volume.DriverOptsEntry
+	83, // 53: warren.v1.Volume.labels:type_name -> warren.v1.Volume.LabelsEntry
+	87, // 54: warren.v1.Volume.created_at:type_name -> google.protobuf.Timestamp
+	84, // 55: warren.v1.CreateVolumeRequest.driver_opts:type_name -> warren.v1.CreateVolumeRequest.DriverOptsEntry
+	85, // 56: warren.v1.CreateVolumeRequest.labels:type_name -> warren.v1.CreateVolumeRequest.LabelsEntry
 	54, // 57: warren.v1.CreateVolumeResponse.volume:type_name -> warren.v1.Volume
 	54, // 58: warren.v1.GetVolumeByNameResponse.volume:type_name -> warren.v1.Volume
 	54, // 59: warren.v1.ListVolumesResponse.volumes:type_name -> warren.v1.Volume
-	85, // 60: warren.v1.GenerateJoinTokenResponse.expires_at:type_name -> google.protobuf.Timestamp
+	87, // 60: warren.v1.GenerateJoinTokenResponse.expires_at:type_name -> google.protobuf.Timestamp
 	69, // 61: warren.v1.GetClusterInfoResponse.servers:type_name -> warren.v1.ClusterServer
-	85, // 62: warren.v1.ReportTaskHealthRequest.checked_at:type_name -> google.protobuf.Timestamp
-	85, // 63: warren.v1.Event.timestamp:type_name -> google.protobuf.Timestamp
-	84, // 64: warren.v1.Event.metadata:type_name -> warren.v1.Event.MetadataEntry
+	87, // 62: warren.v1.ReportTaskHealthRequest.checked_at:type_name -> google.protobuf.Timestamp
+	87, // 63: warren.v1.Event.timestamp:type_name -> google.protobuf.Timestamp
+	86, // 64: warren.v1.Event.metadata:type_name -> warren.v1.Event.MetadataEntry
 	4,  // 65: warren.v1.WarrenAPI.RegisterNode:input_type -> warren.v1.RegisterNodeRequest
 	6,  // 66: warren.v1.WarrenAPI.Heartbeat:input_type -> warren.v1.HeartbeatRequest
 	9,  // 67: warren.v1.WarrenAPI.ListNodes:input_type -> warren.v1.ListNodesRequest
@@ -4898,36 +5022,38 @@ var file_api_proto_warren_proto_depIdxs = []int32{
 	63, // 88: warren.v1.WarrenAPI.GenerateJoinToken:input_type -> warren.v1.GenerateJoinTokenRequest
 	65, // 89: warren.v1.WarrenAPI.JoinCluster:input_type -> warren.v1.JoinClusterRequest
 	67, // 90: warren.v1.WarrenAPI.GetClusterInfo:input_type -> warren.v1.GetClusterInfoRequest
-	73, // 91: warren.v1.WarrenAPI.StreamEvents:input_type -> warren.v1.StreamEventsRequest
-	5,  // 92: warren.v1.WarrenAPI.RegisterNode:output_type -> warren.v1.RegisterNodeResponse
-	7,  // 93: warren.v1.WarrenAPI.Heartbeat:output_type -> warren.v1.HeartbeatResponse
-	10, // 94: warren.v1.WarrenAPI.ListNodes:output_type -> warren.v1.ListNodesResponse
-	12, // 95: warren.v1.WarrenAPI.GetNode:output_type -> warren.v1.GetNodeResponse
-	14, // 96: warren.v1.WarrenAPI.RemoveNode:output_type -> warren.v1.RemoveNodeResponse
-	27, // 97: warren.v1.WarrenAPI.CreateService:output_type -> warren.v1.CreateServiceResponse
-	29, // 98: warren.v1.WarrenAPI.UpdateService:output_type -> warren.v1.UpdateServiceResponse
-	31, // 99: warren.v1.WarrenAPI.DeleteService:output_type -> warren.v1.DeleteServiceResponse
-	33, // 100: warren.v1.WarrenAPI.GetService:output_type -> warren.v1.GetServiceResponse
-	35, // 101: warren.v1.WarrenAPI.ListServices:output_type -> warren.v1.ListServicesResponse
-	38, // 102: warren.v1.WarrenAPI.UpdateTaskStatus:output_type -> warren.v1.UpdateTaskStatusResponse
-	40, // 103: warren.v1.WarrenAPI.ListTasks:output_type -> warren.v1.ListTasksResponse
-	42, // 104: warren.v1.WarrenAPI.GetTask:output_type -> warren.v1.GetTaskResponse
-	44, // 105: warren.v1.WarrenAPI.WatchTasks:output_type -> warren.v1.TaskEvent
-	71, // 106: warren.v1.WarrenAPI.ReportTaskHealth:output_type -> warren.v1.ReportTaskHealthResponse
-	47, // 107: warren.v1.WarrenAPI.CreateSecret:output_type -> warren.v1.CreateSecretResponse
-	51, // 108: warren.v1.WarrenAPI.GetSecretByName:output_type -> warren.v1.GetSecretByNameResponse
-	49, // 109: warren.v1.WarrenAPI.DeleteSecret:output_type -> warren.v1.DeleteSecretResponse
-	53, // 110: warren.v1.WarrenAPI.ListSecrets:output_type -> warren.v1.ListSecretsResponse
-	56, // 111: warren.v1.WarrenAPI.CreateVolume:output_type -> warren.v1.CreateVolumeResponse
-	60, // 112: warren.v1.WarrenAPI.GetVolumeByName:output_type -> warren.v1.GetVolumeByNameResponse
-	58, // 113: warren.v1.WarrenAPI.DeleteVolume:output_type -> warren.v1.DeleteVolumeResponse
-	62, // 114: warren.v1.WarrenAPI.ListVolumes:output_type -> warren.v1.ListVolumesResponse
-	64, // 115: warren.v1.WarrenAPI.GenerateJoinToken:output_type -> warren.v1.GenerateJoinTokenResponse
-	66, // 116: warren.v1.WarrenAPI.JoinCluster:output_type -> warren.v1.JoinClusterResponse
-	68, // 117: warren.v1.WarrenAPI.GetClusterInfo:output_type -> warren.v1.GetClusterInfoResponse
-	72, // 118: warren.v1.WarrenAPI.StreamEvents:output_type -> warren.v1.Event
-	92, // [92:119] is the sub-list for method output_type
-	65, // [65:92] is the sub-list for method input_type
+	74, // 91: warren.v1.WarrenAPI.RequestCertificate:input_type -> warren.v1.RequestCertificateRequest
+	73, // 92: warren.v1.WarrenAPI.StreamEvents:input_type -> warren.v1.StreamEventsRequest
+	5,  // 93: warren.v1.WarrenAPI.RegisterNode:output_type -> warren.v1.RegisterNodeResponse
+	7,  // 94: warren.v1.WarrenAPI.Heartbeat:output_type -> warren.v1.HeartbeatResponse
+	10, // 95: warren.v1.WarrenAPI.ListNodes:output_type -> warren.v1.ListNodesResponse
+	12, // 96: warren.v1.WarrenAPI.GetNode:output_type -> warren.v1.GetNodeResponse
+	14, // 97: warren.v1.WarrenAPI.RemoveNode:output_type -> warren.v1.RemoveNodeResponse
+	27, // 98: warren.v1.WarrenAPI.CreateService:output_type -> warren.v1.CreateServiceResponse
+	29, // 99: warren.v1.WarrenAPI.UpdateService:output_type -> warren.v1.UpdateServiceResponse
+	31, // 100: warren.v1.WarrenAPI.DeleteService:output_type -> warren.v1.DeleteServiceResponse
+	33, // 101: warren.v1.WarrenAPI.GetService:output_type -> warren.v1.GetServiceResponse
+	35, // 102: warren.v1.WarrenAPI.ListServices:output_type -> warren.v1.ListServicesResponse
+	38, // 103: warren.v1.WarrenAPI.UpdateTaskStatus:output_type -> warren.v1.UpdateTaskStatusResponse
+	40, // 104: warren.v1.WarrenAPI.ListTasks:output_type -> warren.v1.ListTasksResponse
+	42, // 105: warren.v1.WarrenAPI.GetTask:output_type -> warren.v1.GetTaskResponse
+	44, // 106: warren.v1.WarrenAPI.WatchTasks:output_type -> warren.v1.TaskEvent
+	71, // 107: warren.v1.WarrenAPI.ReportTaskHealth:output_type -> warren.v1.ReportTaskHealthResponse
+	47, // 108: warren.v1.WarrenAPI.CreateSecret:output_type -> warren.v1.CreateSecretResponse
+	51, // 109: warren.v1.WarrenAPI.GetSecretByName:output_type -> warren.v1.GetSecretByNameResponse
+	49, // 110: warren.v1.WarrenAPI.DeleteSecret:output_type -> warren.v1.DeleteSecretResponse
+	53, // 111: warren.v1.WarrenAPI.ListSecrets:output_type -> warren.v1.ListSecretsResponse
+	56, // 112: warren.v1.WarrenAPI.CreateVolume:output_type -> warren.v1.CreateVolumeResponse
+	60, // 113: warren.v1.WarrenAPI.GetVolumeByName:output_type -> warren.v1.GetVolumeByNameResponse
+	58, // 114: warren.v1.WarrenAPI.DeleteVolume:output_type -> warren.v1.DeleteVolumeResponse
+	62, // 115: warren.v1.WarrenAPI.ListVolumes:output_type -> warren.v1.ListVolumesResponse
+	64, // 116: warren.v1.WarrenAPI.GenerateJoinToken:output_type -> warren.v1.GenerateJoinTokenResponse
+	66, // 117: warren.v1.WarrenAPI.JoinCluster:output_type -> warren.v1.JoinClusterResponse
+	68, // 118: warren.v1.WarrenAPI.GetClusterInfo:output_type -> warren.v1.GetClusterInfoResponse
+	75, // 119: warren.v1.WarrenAPI.RequestCertificate:output_type -> warren.v1.RequestCertificateResponse
+	72, // 120: warren.v1.WarrenAPI.StreamEvents:output_type -> warren.v1.Event
+	93, // [93:121] is the sub-list for method output_type
+	65, // [65:93] is the sub-list for method input_type
 	65, // [65:65] is the sub-list for extension type_name
 	65, // [65:65] is the sub-list for extension extendee
 	0,  // [0:65] is the sub-list for field type_name
@@ -4944,7 +5070,7 @@ func file_api_proto_warren_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_api_proto_warren_proto_rawDesc), len(file_api_proto_warren_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   83,
+			NumMessages:   85,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

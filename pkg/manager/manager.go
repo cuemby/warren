@@ -2,7 +2,11 @@ package manager
 
 import (
 	"context"
+	"crypto/rsa"
+	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
+	"encoding/pem"
 	"fmt"
 	"net"
 	"os"
@@ -30,6 +34,7 @@ type Manager struct {
 	store          storage.Store
 	tokenManager   *TokenManager
 	secretsManager *security.SecretsManager
+	ca             *security.CertAuthority
 	eventBroker    *events.Broker
 	dnsServer      *dns.Server
 	dnsCtx         context.Context
@@ -68,6 +73,14 @@ func NewManager(cfg *Config) (*Manager, error) {
 		return nil, fmt.Errorf("failed to create secrets manager: %v", err)
 	}
 
+	// Set cluster encryption key for CA encryption
+	if err := security.SetClusterEncryptionKey(clusterKey); err != nil {
+		return nil, fmt.Errorf("failed to set cluster encryption key: %v", err)
+	}
+
+	// Create Certificate Authority
+	ca := security.NewCertAuthority(store)
+
 	// Create event broker
 	eventBroker := events.NewBroker()
 	eventBroker.Start()
@@ -83,6 +96,7 @@ func NewManager(cfg *Config) (*Manager, error) {
 		fsm:            fsm,
 		store:          store,
 		secretsManager: secretsManager,
+		ca:             ca,
 		tokenManager:   tokenManager,
 		eventBroker:    eventBroker,
 		dnsServer:      dnsServer,
@@ -168,6 +182,11 @@ func (m *Manager) Bootstrap() error {
 		return fmt.Errorf("failed to bootstrap cluster: %v", err)
 	}
 
+	// Initialize Certificate Authority
+	if err := m.initializeCA(); err != nil {
+		return fmt.Errorf("failed to initialize CA: %v", err)
+	}
+
 	// Start DNS server
 	go func() {
 		if err := m.dnsServer.Start(m.dnsCtx); err != nil {
@@ -248,6 +267,12 @@ func (m *Manager) Join(leaderAddr string, token string) error {
 	}
 
 	fmt.Println("✓ Successfully joined cluster")
+
+	// Load Certificate Authority from storage (already initialized by bootstrap node)
+	if err := m.ca.LoadFromStore(); err != nil {
+		return fmt.Errorf("failed to load CA: %v", err)
+	}
+	fmt.Println("✓ Loaded Certificate Authority from cluster")
 
 	// Start DNS server
 	go func() {
@@ -717,4 +742,118 @@ func (m *Manager) Shutdown() error {
 	}
 
 	return nil
+}
+
+// initializeCA initializes the Certificate Authority for a new cluster
+func (m *Manager) initializeCA() error {
+	// Check if CA already exists in storage
+	if m.ca.IsInitialized() {
+		fmt.Println("✓ Certificate Authority already initialized")
+		return nil
+	}
+
+	// Try to load existing CA from storage
+	err := m.ca.LoadFromStore()
+	if err == nil {
+		fmt.Println("✓ Loaded existing Certificate Authority")
+		return nil
+	}
+
+	// CA doesn't exist, create new one
+	fmt.Println("Initializing new Certificate Authority...")
+	if err := m.ca.Initialize(); err != nil {
+		return fmt.Errorf("failed to initialize CA: %v", err)
+	}
+
+	// Save CA to storage
+	if err := m.ca.SaveToStore(); err != nil {
+		return fmt.Errorf("failed to save CA: %v", err)
+	}
+
+	fmt.Println("✓ Certificate Authority initialized and saved")
+
+	// Issue certificate for this manager node
+	certDir, err := security.GetCertDir("manager", m.nodeID)
+	if err != nil {
+		return fmt.Errorf("failed to get cert directory: %v", err)
+	}
+
+	// Check if certificate already exists
+	if !security.CertExists(certDir) {
+		fmt.Printf("Issuing certificate for manager %s...\n", m.nodeID)
+		cert, err := m.ca.IssueNodeCertificate(m.nodeID, "manager")
+		if err != nil {
+			return fmt.Errorf("failed to issue node certificate: %v", err)
+		}
+
+		// Save certificate to file
+		if err := security.SaveCertToFile(cert, certDir); err != nil {
+			return fmt.Errorf("failed to save certificate: %v", err)
+		}
+
+		// Save CA certificate
+		caCert := m.ca.GetRootCACert()
+		if err := security.SaveCACertToFile(caCert, certDir); err != nil {
+			return fmt.Errorf("failed to save CA certificate: %v", err)
+		}
+
+		fmt.Printf("✓ Certificate issued and saved to %s\n", certDir)
+	} else {
+		fmt.Printf("✓ Certificate already exists at %s\n", certDir)
+	}
+
+	return nil
+}
+
+// IssueCertificate issues a certificate for a node
+func (m *Manager) IssueCertificate(nodeID, role string) (*tls.Certificate, error) {
+	if !m.ca.IsInitialized() {
+		return nil, fmt.Errorf("CA not initialized")
+	}
+
+	return m.ca.IssueNodeCertificate(nodeID, role)
+}
+
+// CertToPEM converts a TLS certificate to PEM format
+func (m *Manager) CertToPEM(cert *tls.Certificate) (certPEM, keyPEM []byte, err error) {
+	if cert == nil {
+		return nil, nil, fmt.Errorf("certificate is nil")
+	}
+
+	// Encode certificate
+	certPEM = pem.EncodeToMemory(&pem.Block{
+		Type:  "CERTIFICATE",
+		Bytes: cert.Certificate[0],
+	})
+
+	// Encode private key
+	privateKey, ok := cert.PrivateKey.(*rsa.PrivateKey)
+	if !ok {
+		return nil, nil, fmt.Errorf("private key is not RSA")
+	}
+
+	keyPEM = pem.EncodeToMemory(&pem.Block{
+		Type:  "RSA PRIVATE KEY",
+		Bytes: x509.MarshalPKCS1PrivateKey(privateKey),
+	})
+
+	return certPEM, keyPEM, nil
+}
+
+// GetCACertPEM returns the CA certificate in PEM format
+func (m *Manager) GetCACertPEM() []byte {
+	if !m.ca.IsInitialized() {
+		return nil
+	}
+
+	caCertDER := m.ca.GetRootCACert()
+	return pem.EncodeToMemory(&pem.Block{
+		Type:  "CERTIFICATE",
+		Bytes: caCertDER,
+	})
+}
+
+// ValidateToken validates a join token and returns the role
+func (m *Manager) ValidateToken(token string) (string, error) {
+	return m.tokenManager.ValidateToken(token)
 }

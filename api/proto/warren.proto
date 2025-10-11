@@ -50,6 +50,9 @@ service WarrenAPI {
   rpc JoinCluster(JoinClusterRequest) returns (JoinClusterResponse);
   rpc GetClusterInfo(GetClusterInfoRequest) returns (GetClusterInfoResponse);
 
+  // Certificate operations
+  rpc RequestCertificate(RequestCertificateRequest) returns (RequestCertificateResponse);
+
   // Event streaming
   rpc StreamEvents(StreamEventsRequest) returns (stream Event);
 }
@@ -489,4 +492,16 @@ message Event {
 
 message StreamEventsRequest {
   repeated string event_types = 1; // Filter by event types (empty = all events)
+}
+
+// Certificate messages
+message RequestCertificateRequest {
+  string node_id = 1;
+  string token = 2;
+}
+
+message RequestCertificateResponse {
+  bytes certificate = 1;
+  bytes private_key = 2;
+  bytes ca_cert = 3;
 }
