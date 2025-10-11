@@ -140,6 +140,15 @@ const (
 	HealthCheckExec HealthCheckType = "exec"
 )
 
+// HealthStatus tracks the current health state of a task
+type HealthStatus struct {
+	Healthy              bool
+	Message              string
+	CheckedAt            time.Time
+	ConsecutiveFailures  int
+	ConsecutiveSuccesses int
+}
+
 // RestartPolicy defines container restart behavior
 type RestartPolicy struct {
 	Condition   RestartCondition
@@ -182,6 +191,7 @@ type Task struct {
 	Mounts        []*VolumeMount
 	Secrets       []string // Secret names to mount
 	HealthCheck   *HealthCheck
+	HealthStatus  *HealthStatus // Current health check status
 	RestartPolicy *RestartPolicy
 	Resources     *ResourceRequirements
 	CreatedAt     time.Time

@@ -33,6 +33,7 @@ const (
 	WarrenAPI_ListTasks_FullMethodName         = "/warren.v1.WarrenAPI/ListTasks"
 	WarrenAPI_GetTask_FullMethodName           = "/warren.v1.WarrenAPI/GetTask"
 	WarrenAPI_WatchTasks_FullMethodName        = "/warren.v1.WarrenAPI/WatchTasks"
+	WarrenAPI_ReportTaskHealth_FullMethodName  = "/warren.v1.WarrenAPI/ReportTaskHealth"
 	WarrenAPI_CreateSecret_FullMethodName      = "/warren.v1.WarrenAPI/CreateSecret"
 	WarrenAPI_GetSecretByName_FullMethodName   = "/warren.v1.WarrenAPI/GetSecretByName"
 	WarrenAPI_DeleteSecret_FullMethodName      = "/warren.v1.WarrenAPI/DeleteSecret"
@@ -44,6 +45,7 @@ const (
 	WarrenAPI_GenerateJoinToken_FullMethodName = "/warren.v1.WarrenAPI/GenerateJoinToken"
 	WarrenAPI_JoinCluster_FullMethodName       = "/warren.v1.WarrenAPI/JoinCluster"
 	WarrenAPI_GetClusterInfo_FullMethodName    = "/warren.v1.WarrenAPI/GetClusterInfo"
+	WarrenAPI_StreamEvents_FullMethodName      = "/warren.v1.WarrenAPI/StreamEvents"
 )
 
 // WarrenAPIClient is the client API for WarrenAPI service.
@@ -70,6 +72,8 @@ type WarrenAPIClient interface {
 	GetTask(ctx context.Context, in *GetTaskRequest, opts ...grpc.CallOption) (*GetTaskResponse, error)
 	// Task assignment stream (worker watches for assigned tasks)
 	WatchTasks(ctx context.Context, in *WatchTasksRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[TaskEvent], error)
+	// Health check operations
+	ReportTaskHealth(ctx context.Context, in *ReportTaskHealthRequest, opts ...grpc.CallOption) (*ReportTaskHealthResponse, error)
 	// Secret operations
 	CreateSecret(ctx context.Context, in *CreateSecretRequest, opts ...grpc.CallOption) (*CreateSecretResponse, error)
 	GetSecretByName(ctx context.Context, in *GetSecretByNameRequest, opts ...grpc.CallOption) (*GetSecretByNameResponse, error)
@@ -84,6 +88,8 @@ type WarrenAPIClient interface {
 	GenerateJoinToken(ctx context.Context, in *GenerateJoinTokenRequest, opts ...grpc.CallOption) (*GenerateJoinTokenResponse, error)
 	JoinCluster(ctx context.Context, in *JoinClusterRequest, opts ...grpc.CallOption) (*JoinClusterResponse, error)
 	GetClusterInfo(ctx context.Context, in *GetClusterInfoRequest, opts ...grpc.CallOption) (*GetClusterInfoResponse, error)
+	// Event streaming
+	StreamEvents(ctx context.Context, in *StreamEventsRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[Event], error)
 }
 
 type warrenAPIClient struct {
@@ -243,6 +249,16 @@ func (c *warrenAPIClient) WatchTasks(ctx context.Context, in *WatchTasksRequest,
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type WarrenAPI_WatchTasksClient = grpc.ServerStreamingClient[TaskEvent]
 
+func (c *warrenAPIClient) ReportTaskHealth(ctx context.Context, in *ReportTaskHealthRequest, opts ...grpc.CallOption) (*ReportTaskHealthResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ReportTaskHealthResponse)
+	err := c.cc.Invoke(ctx, WarrenAPI_ReportTaskHealth_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *warrenAPIClient) CreateSecret(ctx context.Context, in *CreateSecretRequest, opts ...grpc.CallOption) (*CreateSecretResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(CreateSecretResponse)
@@ -353,6 +369,25 @@ func (c *warrenAPIClient) GetClusterInfo(ctx context.Context, in *GetClusterInfo
 	return out, nil
 }
 
+func (c *warrenAPIClient) StreamEvents(ctx context.Context, in *StreamEventsRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[Event], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &WarrenAPI_ServiceDesc.Streams[1], WarrenAPI_StreamEvents_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[StreamEventsRequest, Event]{ClientStream: stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type WarrenAPI_StreamEventsClient = grpc.ServerStreamingClient[Event]
+
 // WarrenAPIServer is the server API for WarrenAPI service.
 // All implementations must embed UnimplementedWarrenAPIServer
 // for forward compatibility.
@@ -377,6 +412,8 @@ type WarrenAPIServer interface {
 	GetTask(context.Context, *GetTaskRequest) (*GetTaskResponse, error)
 	// Task assignment stream (worker watches for assigned tasks)
 	WatchTasks(*WatchTasksRequest, grpc.ServerStreamingServer[TaskEvent]) error
+	// Health check operations
+	ReportTaskHealth(context.Context, *ReportTaskHealthRequest) (*ReportTaskHealthResponse, error)
 	// Secret operations
 	CreateSecret(context.Context, *CreateSecretRequest) (*CreateSecretResponse, error)
 	GetSecretByName(context.Context, *GetSecretByNameRequest) (*GetSecretByNameResponse, error)
@@ -391,6 +428,8 @@ type WarrenAPIServer interface {
 	GenerateJoinToken(context.Context, *GenerateJoinTokenRequest) (*GenerateJoinTokenResponse, error)
 	JoinCluster(context.Context, *JoinClusterRequest) (*JoinClusterResponse, error)
 	GetClusterInfo(context.Context, *GetClusterInfoRequest) (*GetClusterInfoResponse, error)
+	// Event streaming
+	StreamEvents(*StreamEventsRequest, grpc.ServerStreamingServer[Event]) error
 	mustEmbedUnimplementedWarrenAPIServer()
 }
 
@@ -443,6 +482,9 @@ func (UnimplementedWarrenAPIServer) GetTask(context.Context, *GetTaskRequest) (*
 func (UnimplementedWarrenAPIServer) WatchTasks(*WatchTasksRequest, grpc.ServerStreamingServer[TaskEvent]) error {
 	return status.Errorf(codes.Unimplemented, "method WatchTasks not implemented")
 }
+func (UnimplementedWarrenAPIServer) ReportTaskHealth(context.Context, *ReportTaskHealthRequest) (*ReportTaskHealthResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ReportTaskHealth not implemented")
+}
 func (UnimplementedWarrenAPIServer) CreateSecret(context.Context, *CreateSecretRequest) (*CreateSecretResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateSecret not implemented")
 }
@@ -475,6 +517,9 @@ func (UnimplementedWarrenAPIServer) JoinCluster(context.Context, *JoinClusterReq
 }
 func (UnimplementedWarrenAPIServer) GetClusterInfo(context.Context, *GetClusterInfoRequest) (*GetClusterInfoResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetClusterInfo not implemented")
+}
+func (UnimplementedWarrenAPIServer) StreamEvents(*StreamEventsRequest, grpc.ServerStreamingServer[Event]) error {
+	return status.Errorf(codes.Unimplemented, "method StreamEvents not implemented")
 }
 func (UnimplementedWarrenAPIServer) mustEmbedUnimplementedWarrenAPIServer() {}
 func (UnimplementedWarrenAPIServer) testEmbeddedByValue()                   {}
@@ -742,6 +787,24 @@ func _WarrenAPI_WatchTasks_Handler(srv interface{}, stream grpc.ServerStream) er
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type WarrenAPI_WatchTasksServer = grpc.ServerStreamingServer[TaskEvent]
 
+func _WarrenAPI_ReportTaskHealth_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReportTaskHealthRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WarrenAPIServer).ReportTaskHealth(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WarrenAPI_ReportTaskHealth_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WarrenAPIServer).ReportTaskHealth(ctx, req.(*ReportTaskHealthRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _WarrenAPI_CreateSecret_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(CreateSecretRequest)
 	if err := dec(in); err != nil {
@@ -940,6 +1003,17 @@ func _WarrenAPI_GetClusterInfo_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
+func _WarrenAPI_StreamEvents_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(StreamEventsRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(WarrenAPIServer).StreamEvents(m, &grpc.GenericServerStream[StreamEventsRequest, Event]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type WarrenAPI_StreamEventsServer = grpc.ServerStreamingServer[Event]
+
 // WarrenAPI_ServiceDesc is the grpc.ServiceDesc for WarrenAPI service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1000,6 +1074,10 @@ var WarrenAPI_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _WarrenAPI_GetTask_Handler,
 		},
 		{
+			MethodName: "ReportTaskHealth",
+			Handler:    _WarrenAPI_ReportTaskHealth_Handler,
+		},
+		{
 			MethodName: "CreateSecret",
 			Handler:    _WarrenAPI_CreateSecret_Handler,
 		},
@@ -1048,6 +1126,11 @@ var WarrenAPI_ServiceDesc = grpc.ServiceDesc{
 		{
 			StreamName:    "WatchTasks",
 			Handler:       _WarrenAPI_WatchTasks_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "StreamEvents",
+			Handler:       _WarrenAPI_StreamEvents_Handler,
 			ServerStreams: true,
 		},
 	},

@@ -231,13 +231,7 @@ func (s *Server) CreateService(ctx context.Context, req *proto.CreateServiceRequ
 	}
 
 	if req.HealthCheck != nil {
-		service.HealthCheck = &types.HealthCheck{
-			Type:     types.HealthCheckType(req.HealthCheck.Type),
-			Endpoint: req.HealthCheck.Endpoint,
-			Interval: time.Duration(req.HealthCheck.IntervalSeconds) * time.Second,
-			Timeout:  time.Duration(req.HealthCheck.TimeoutSeconds) * time.Second,
-			Retries:  int(req.HealthCheck.Retries),
-		}
+		service.HealthCheck = protoToHealthCheck(req.HealthCheck)
 	}
 
 	if req.RestartPolicy != nil {
@@ -372,6 +366,34 @@ func (s *Server) UpdateTaskStatus(ctx context.Context, req *proto.UpdateTaskStat
 	}
 
 	return &proto.UpdateTaskStatusResponse{
+		Status: "ok",
+	}, nil
+}
+
+// ReportTaskHealth reports the health status of a task
+func (s *Server) ReportTaskHealth(ctx context.Context, req *proto.ReportTaskHealthRequest) (*proto.ReportTaskHealthResponse, error) {
+	task, err := s.manager.GetTask(req.TaskId)
+	if err != nil {
+		return nil, fmt.Errorf("task not found: %v", err)
+	}
+
+	// Update task health status
+	if task.HealthStatus == nil {
+		task.HealthStatus = &types.HealthStatus{}
+	}
+
+	task.HealthStatus.Healthy = req.Healthy
+	task.HealthStatus.Message = req.Message
+	task.HealthStatus.CheckedAt = req.CheckedAt.AsTime()
+	task.HealthStatus.ConsecutiveFailures = int(req.ConsecutiveFailures)
+	task.HealthStatus.ConsecutiveSuccesses = int(req.ConsecutiveSuccesses)
+
+	// Update task in storage
+	if err := s.manager.UpdateTask(task); err != nil {
+		return nil, fmt.Errorf("failed to update task health: %v", err)
+	}
+
+	return &proto.ReportTaskHealthResponse{
 		Status: "ok",
 	}, nil
 }
@@ -705,13 +727,7 @@ func serviceToProto(s *types.Service) *proto.Service {
 	}
 
 	if s.HealthCheck != nil {
-		ps.HealthCheck = &proto.HealthCheck{
-			Type:            string(s.HealthCheck.Type),
-			Endpoint:        s.HealthCheck.Endpoint,
-			IntervalSeconds: int32(s.HealthCheck.Interval / time.Second),
-			TimeoutSeconds:  int32(s.HealthCheck.Timeout / time.Second),
-			Retries:         int32(s.HealthCheck.Retries),
-		}
+		ps.HealthCheck = healthCheckToProto(s.HealthCheck)
 	}
 
 	if s.RestartPolicy != nil {
@@ -773,13 +789,7 @@ func taskToProto(t *types.Task) *proto.Task {
 	}
 
 	if t.HealthCheck != nil {
-		pt.HealthCheck = &proto.HealthCheck{
-			Type:            string(t.HealthCheck.Type),
-			Endpoint:        t.HealthCheck.Endpoint,
-			IntervalSeconds: int32(t.HealthCheck.Interval / time.Second),
-			TimeoutSeconds:  int32(t.HealthCheck.Timeout / time.Second),
-			Retries:         int32(t.HealthCheck.Retries),
-		}
+		pt.HealthCheck = healthCheckToProto(t.HealthCheck)
 	}
 
 	if t.RestartPolicy != nil {
@@ -824,8 +834,86 @@ func volumeToProto(v *types.Volume) *proto.Volume {
 	}
 }
 
+// protoToHealthCheck converts proto HealthCheck to types.HealthCheck
+func protoToHealthCheck(ph *proto.HealthCheck) *types.HealthCheck {
+	if ph == nil {
+		return nil
+	}
+
+	hc := &types.HealthCheck{
+		Interval: time.Duration(ph.IntervalSeconds) * time.Second,
+		Timeout:  time.Duration(ph.TimeoutSeconds) * time.Second,
+		Retries:  int(ph.Retries),
+	}
+
+	switch ph.Type {
+	case proto.HealthCheck_HTTP:
+		hc.Type = types.HealthCheckHTTP
+		if ph.Http != nil {
+			// Construct endpoint from HTTP config
+			scheme := ph.Http.Scheme
+			if scheme == "" {
+				scheme = "http"
+			}
+			hc.Endpoint = fmt.Sprintf("%s://:%d%s", scheme, ph.Http.Port, ph.Http.Path)
+		}
+	case proto.HealthCheck_TCP:
+		hc.Type = types.HealthCheckTCP
+		if ph.Tcp != nil {
+			hc.Endpoint = fmt.Sprintf(":%d", ph.Tcp.Port)
+		}
+	case proto.HealthCheck_EXEC:
+		hc.Type = types.HealthCheckExec
+		if ph.Exec != nil {
+			hc.Command = ph.Exec.Command
+		}
+	}
+
+	return hc
+}
+
+// healthCheckToProto converts types.HealthCheck to proto HealthCheck
+func healthCheckToProto(hc *types.HealthCheck) *proto.HealthCheck {
+	if hc == nil {
+		return nil
+	}
+
+	ph := &proto.HealthCheck{
+		IntervalSeconds: int32(hc.Interval / time.Second),
+		TimeoutSeconds:  int32(hc.Timeout / time.Second),
+		Retries:         int32(hc.Retries),
+	}
+
+	switch hc.Type {
+	case types.HealthCheckHTTP:
+		ph.Type = proto.HealthCheck_HTTP
+		// Parse endpoint to extract path and port
+		// For now, keep it simple - just set basic HTTP config
+		ph.Http = &proto.HTTPHealthCheck{
+			Path:          "/health",
+			Port:          8080,
+			Scheme:        "http",
+			StatusCodeMin: 200,
+			StatusCodeMax: 399,
+		}
+	case types.HealthCheckTCP:
+		ph.Type = proto.HealthCheck_TCP
+		// Parse endpoint to extract port
+		ph.Tcp = &proto.TCPHealthCheck{
+			Port: 8080,
+		}
+	case types.HealthCheckExec:
+		ph.Type = proto.HealthCheck_EXEC
+		ph.Exec = &proto.ExecHealthCheck{
+			Command: hc.Command,
+		}
+	}
+
+	return ph
+}
+
 // StreamEvents streams cluster events to the client
-// TODO: Complete implementation after protobuf regeneration
-func (s *Server) StreamEvents(req interface{}, stream interface{}) error {
+// TODO: Complete implementation
+func (s *Server) StreamEvents(req *proto.StreamEventsRequest, stream proto.WarrenAPI_StreamEventsServer) error {
 	return fmt.Errorf("event streaming not yet implemented")
 }
