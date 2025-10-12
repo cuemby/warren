@@ -2,6 +2,7 @@ package security
 
 import (
 	"crypto/x509"
+	"net"
 	"os"
 	"testing"
 	"time"
@@ -153,7 +154,7 @@ func TestIssueNodeCertificate(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Issue certificate
-			cert, err := ca.IssueNodeCertificate(tt.nodeID, tt.role)
+			cert, err := ca.IssueNodeCertificate(tt.nodeID, tt.role, []string{}, []net.IP{})
 			if err != nil {
 				t.Fatalf("Failed to issue certificate: %v", err)
 			}
@@ -291,7 +292,7 @@ func TestVerifyCertificate(t *testing.T) {
 	}
 
 	// Issue a certificate
-	cert, err := ca.IssueNodeCertificate("test-node", "worker")
+	cert, err := ca.IssueNodeCertificate("test-node", "worker", []string{}, []net.IP{})
 	if err != nil {
 		t.Fatalf("Failed to issue certificate: %v", err)
 	}
@@ -373,7 +374,7 @@ func TestCertCache(t *testing.T) {
 
 	// Issue certificate (should be cached)
 	nodeID := "test-node"
-	_, err = ca.IssueNodeCertificate(nodeID, "worker")
+	_, err = ca.IssueNodeCertificate(nodeID, "worker", []string{}, []net.IP{})
 	if err != nil {
 		t.Fatalf("Failed to issue certificate: %v", err)
 	}

@@ -2,6 +2,7 @@ package security
 
 import (
 	"crypto/x509"
+	"net"
 	"os"
 	"path/filepath"
 	"testing"
@@ -42,7 +43,7 @@ func TestSaveLoadCertToFile(t *testing.T) {
 		t.Fatalf("Failed to initialize CA: %v", err)
 	}
 
-	cert, err := ca.IssueNodeCertificate("test-node", "worker")
+	cert, err := ca.IssueNodeCertificate("test-node", "worker", []string{}, []net.IP{})
 	if err != nil {
 		t.Fatalf("Failed to issue certificate: %v", err)
 	}
@@ -282,7 +283,7 @@ func TestValidateCertChain(t *testing.T) {
 		t.Fatalf("Failed to initialize CA: %v", err)
 	}
 
-	cert, err := ca.IssueNodeCertificate("test-node", "worker")
+	cert, err := ca.IssueNodeCertificate("test-node", "worker", []string{}, []net.IP{})
 	if err != nil {
 		t.Fatalf("Failed to issue certificate: %v", err)
 	}
@@ -329,7 +330,7 @@ func TestGetCertInfo(t *testing.T) {
 		t.Fatalf("Failed to initialize CA: %v", err)
 	}
 
-	cert, err := ca.IssueNodeCertificate("test-node", "worker")
+	cert, err := ca.IssueNodeCertificate("test-node", "worker", []string{}, []net.IP{})
 	if err != nil {
 		t.Fatalf("Failed to issue certificate: %v", err)
 	}
