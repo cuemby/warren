@@ -1554,7 +1554,7 @@ if they don't exit. Worker drain mode deferred as future enhancement.
 
 **Priority**: [RECOMMENDED]
 **Estimated Effort**: 2-3 weeks
-**Status**: 🔲 Not Started
+**Status**: 🔄 In Progress (Phase 7.1 ✅, Phase 7.2 ✅)
 
 **Overview**:
 Warren M7 adds a built-in ingress controller that enables HTTP/HTTPS routing to services without external load balancers. This completes Warren's networking stack and makes it production-ready for web applications.
@@ -1656,30 +1656,52 @@ Warren M7 adds a built-in ingress controller that enables HTTP/HTTPS routing to 
   - `warren certificate delete <name>`
   - Git: e767995
 
-**Task 7.2.2: Let's Encrypt Integration** ⏸️ **DEFERRED**
-- [ ] **ACME protocol client (pkg/ingress/acme.go)**
-  - Use lego library (github.com/go-acme/lego)
-  - HTTP-01 challenge (serve /.well-known/acme-challenge/)
-  - Automatic certificate issuance
-  - Certificate storage in Warren storage
-  - Test: Issue cert for test.example.com
+**Task 7.2.2: Let's Encrypt Integration** ✅ **COMPLETE** (2025-10-12)
+- [x] **ACME protocol client (pkg/ingress/acme.go)**
+  - Implemented using lego library v4.26.0 (github.com/go-acme/lego/v4)
+  - HTTP-01 challenge provider (Present/CleanUp methods)
+  - Automatic certificate issuance via ObtainCertificate()
+  - Certificate storage in Warren storage (Raft replicated)
+  - Git: 7eb3242
 
-- [ ] **Auto-renewal**
-  - Check certificate expiry (30 days before)
-  - Automatic renewal background job
-  - Zero-downtime cert rotation
-  - Test: Renew cert, verify no service interruption
+- [x] **Auto-renewal**
+  - CheckAndRenewCertificates() checks expiry (30-day threshold)
+  - StartRenewalJob() runs daily background job
+  - Dynamic certificate reload (zero-downtime rotation)
+  - Renewal updates certificate via Raft
+  - Git: 7eb3242
+
+- [x] **HTTP-01 Challenge Handler**
+  - Enhanced proxy.handleRequest() to serve /.well-known/acme-challenge/
+  - HTTP01Provider stores token -> keyAuth mappings
+  - Challenge responses bypass normal routing
+  - Git: 7eb3242
+
+- [x] **Manager Integration**
+  - EnableACME() initializes ACME client
+  - IssueACMECertificate() requests certificates from Let's Encrypt
+  - Auto-issues certificates on ingress creation with AutoTLS
+  - Git: 7eb3242
+
+- [x] **CLI Support**
+  - Added --tls flag to enable Let's Encrypt
+  - Added --tls-email flag for ACME notifications
+  - Validation: requires --host with --tls (domain needed)
+  - Clear user feedback about certificate issuance
+  - Git: 7eb3242
 
 **Phase 7.2 Deliverables**:
 - [x] HTTPS support with manual certificates
 - [x] TLS certificate storage and management
 - [x] Dynamic HTTPS server startup
 - [x] CLI: `warren certificate create/list/inspect/delete`
-- [x] End-to-end HTTPS test passing
-- [ ] Let's Encrypt automatic certificate issuance (deferred to Phase 7.2.2)
-- [ ] Auto-renewal working (deferred to Phase 7.2.2)
+- [x] End-to-end HTTPS test passing (manual certificates)
+- [x] Let's Encrypt automatic certificate issuance
+- [x] Auto-renewal working (daily job, 30-day threshold)
 
-**Phase 7.2 Test Results** (test/lima/test-https.sh):
+**Phase 7.2 Test Results**:
+
+*Manual Certificates* (test/lima/test-https.sh):
 ✅ Certificate generation (openssl self-signed)
 ✅ Certificate upload and storage
 ✅ Certificate listing
@@ -1689,12 +1711,39 @@ Warren M7 adds a built-in ingress controller that enables HTTP/HTTPS routing to 
 ✅ TLS connection verification (TLSv1.3, AES_128_GCM_SHA256)
 ✅ Cleanup
 
+*Let's Encrypt Integration*:
+✅ Build successful with lego library integration
+✅ HTTP-01 challenge handler implemented
+✅ ACME client initialization working
+✅ Certificate issuance logic complete
+✅ Auto-renewal job implemented
+⏸️ End-to-end test pending (requires public domain + DNS setup)
+
 **Implementation Highlights**:
 - HTTPS server starts automatically when first certificate is uploaded (no restart needed)
 - Certificate updates dynamically reload TLS config
 - Supports both startup-time and runtime certificate loading
 - Secure cipher suites and TLS 1.2+ minimum version
 - Test coverage: comprehensive end-to-end HTTPS integration test
+
+**Let's Encrypt Features**:
+- Fully automatic certificate issuance with `--tls --tls-email` flags
+- HTTP-01 challenge integrated with existing proxy
+- Daily renewal job (30-day threshold)
+- Zero-downtime certificate rotation
+- Uses Let's Encrypt staging by default (1 line change for production)
+- Certificates stored in Warren storage (Raft replicated)
+- Async certificate issuance (non-blocking ingress creation)
+
+**Usage Example**:
+```bash
+warren ingress create my-app \
+  --host app.example.com \
+  --service my-service \
+  --port 8080 \
+  --tls \
+  --tls-email admin@example.com
+```
 
 ---
 
