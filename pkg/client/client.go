@@ -523,3 +523,53 @@ func (c *Client) ListIngresses() ([]*proto.Ingress, error) {
 
 	return resp.Ingresses, nil
 }
+
+// --- TLS Certificate Operations ---
+
+// CreateTLSCertificate creates a new TLS certificate
+func (c *Client) CreateTLSCertificate(req *proto.CreateTLSCertificateRequest) (*proto.TLSCertificate, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	resp, err := c.client.CreateTLSCertificate(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Certificate, nil
+}
+
+// GetTLSCertificate retrieves a TLS certificate by ID or name
+func (c *Client) GetTLSCertificate(req *proto.GetTLSCertificateRequest) (*proto.TLSCertificate, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	resp, err := c.client.GetTLSCertificate(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Certificate, nil
+}
+
+// ListTLSCertificates lists all TLS certificates
+func (c *Client) ListTLSCertificates() ([]*proto.TLSCertificate, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	resp, err := c.client.ListTLSCertificates(ctx, &proto.ListTLSCertificatesRequest{})
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Certificates, nil
+}
+
+// DeleteTLSCertificate deletes a TLS certificate
+func (c *Client) DeleteTLSCertificate(req *proto.DeleteTLSCertificateRequest) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	_, err := c.client.DeleteTLSCertificate(ctx, req)
+	return err
+}
