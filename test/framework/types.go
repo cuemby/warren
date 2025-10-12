@@ -25,8 +25,14 @@ type ClusterConfig struct {
 	NumManagers int
 	// NumWorkers is the number of worker nodes to create
 	NumWorkers int
+	// UseLima indicates whether to use Lima VMs (default: true)
+	UseLima bool
 	// Runtime specifies which runtime to use (Lima, Docker, Local)
 	Runtime RuntimeType
+	// ManagerVMConfig is the VM configuration for manager nodes
+	ManagerVMConfig *VMConfig
+	// WorkerVMConfig is the VM configuration for worker nodes
+	WorkerVMConfig *VMConfig
 	// DataDir is the base directory for cluster data
 	DataDir string
 	// WarrenBinary is the path to the Warren binary
@@ -35,6 +41,16 @@ type ClusterConfig struct {
 	KeepOnFailure bool
 	// LogLevel sets the logging level for Warren processes
 	LogLevel string
+}
+
+// VMConfig defines the configuration for a VM
+type VMConfig struct {
+	// CPUs is the number of CPUs to allocate
+	CPUs int
+	// Memory is the amount of memory to allocate (e.g., "2GiB")
+	Memory string
+	// Disk is the disk size (e.g., "10GiB")
+	Disk string
 }
 
 // Cluster represents a test Warren cluster
@@ -62,7 +78,9 @@ type Manager struct {
 	// RaftAddr is the Raft consensus address (host:port)
 	RaftAddr string
 	// Client is the Warren client connected to this manager
-	Client *client.Client
+	Client *Client
+	// RawClient is the underlying Warren client (for advanced use)
+	RawClient *client.Client
 	// Process is the Warren process (if running locally)
 	Process *Process
 	// DataDir is the data directory for this manager
