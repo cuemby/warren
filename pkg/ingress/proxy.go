@@ -21,6 +21,7 @@ type Proxy struct {
 	store        storage.Store
 	router       *Router
 	lb           *LoadBalancer
+	middleware   *Middleware
 	httpServer   *http.Server
 	httpsServer  *http.Server
 	tlsConfig    *tls.Config
@@ -47,6 +48,10 @@ func NewProxy(store storage.Store, managerAddr string, grpcClient *grpc.ClientCo
 	p.router = NewRouter(ingresses)
 	p.lb = NewLoadBalancer(managerAddr, grpcClient)
 	p.acmeProvider = NewHTTP01Provider(p)
+	p.middleware = NewMiddleware()
+
+	// Start middleware cleanup job
+	p.middleware.StartCleanupJob()
 
 	return p
 }
@@ -156,14 +161,38 @@ func (p *Proxy) handleRequest(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Route the request
-	backend := p.router.Route(host, path)
-	if backend == nil {
+	ingressPath := p.router.Route(host, path)
+	if ingressPath == nil {
 		log.Warn(fmt.Sprintf("No backend found for %s%s", host, path))
 		http.Error(w, "Service not found", http.StatusNotFound)
 		return
 	}
 
+	backend := ingressPath.Backend
 	log.Debug(fmt.Sprintf("Matched backend: service=%s, port=%d", backend.ServiceName, backend.Port))
+
+	// Check access control
+	if allowed, reason := p.middleware.CheckAccessControl(r, ingressPath.AccessControl); !allowed {
+		log.Warn(fmt.Sprintf("Access denied for %s%s: %s", host, path, reason))
+		http.Error(w, "Forbidden", http.StatusForbidden)
+		return
+	}
+
+	// Check rate limit
+	if !p.middleware.CheckRateLimit(r, ingressPath.RateLimit) {
+		log.Warn(fmt.Sprintf("Rate limit exceeded for %s%s", host, path))
+		http.Error(w, "Too Many Requests", http.StatusTooManyRequests)
+		return
+	}
+
+	// Add standard proxy headers (X-Forwarded-For, X-Real-IP, etc.)
+	p.middleware.AddProxyHeaders(r)
+
+	// Apply custom header manipulation
+	p.middleware.ApplyHeaderManipulation(r, ingressPath.Headers)
+
+	// Apply path rewriting
+	p.middleware.ApplyPathRewrite(r, ingressPath.Rewrite)
 
 	// Select backend instance via load balancer
 	backendAddr, err := p.lb.SelectBackend(r.Context(), backend.ServiceName, backend.Port)

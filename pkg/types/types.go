@@ -292,9 +292,13 @@ type IngressRule struct {
 
 // IngressPath defines a path-based routing rule
 type IngressPath struct {
-	Path     string          // Path to match (e.g., "/api", "/web")
-	PathType PathType        // "Prefix" or "Exact"
-	Backend  *IngressBackend // Backend service to route to
+	Path         string               // Path to match (e.g., "/api", "/web")
+	PathType     PathType             // "Prefix" or "Exact"
+	Backend      *IngressBackend      // Backend service to route to
+	Rewrite      *PathRewrite         // Path rewriting configuration (M7.3)
+	Headers      *HeaderManipulation  // Header manipulation (M7.3)
+	RateLimit    *RateLimit           // Rate limiting configuration (M7.3)
+	AccessControl *AccessControl      // Access control rules (M7.3)
 }
 
 // PathType defines how paths are matched
@@ -318,6 +322,31 @@ type IngressTLS struct {
 	Hosts      []string // Hosts covered by this TLS config
 	AutoTLS    bool     // Enable Let's Encrypt automatic certificates (M7.3)
 	Email      string   // Email for Let's Encrypt notifications (M7.3)
+}
+
+// PathRewrite defines path rewriting rules
+type PathRewrite struct {
+	StripPrefix string // Strip this prefix from the path (e.g., "/api/v1" → "/")
+	ReplacePath string // Replace entire path with this (takes precedence over StripPrefix)
+}
+
+// HeaderManipulation defines header modification rules
+type HeaderManipulation struct {
+	Add    map[string]string // Headers to add (e.g., {"X-Custom": "value"})
+	Set    map[string]string // Headers to set/overwrite (e.g., {"X-Frame-Options": "DENY"})
+	Remove []string          // Headers to remove (e.g., ["X-Powered-By"])
+}
+
+// RateLimit defines rate limiting configuration
+type RateLimit struct {
+	RequestsPerSecond float64 // Requests allowed per second
+	Burst             int     // Burst capacity (token bucket size)
+}
+
+// AccessControl defines IP-based access control
+type AccessControl struct {
+	AllowedIPs []string // IP whitelist (CIDR notation, e.g., "192.168.1.0/24")
+	DeniedIPs  []string // IP blacklist (CIDR notation)
 }
 
 // TLSCertificate represents a TLS certificate for ingress

@@ -18,20 +18,20 @@ func NewRouter(ingresses []*types.Ingress) *Router {
 	}
 }
 
-// Route finds the matching backend for the given host and path
-// Returns the matched backend or nil if no match
-func (r *Router) Route(host, path string) *types.IngressBackend {
+// Route finds the matching path configuration for the given host and path
+// Returns the matched IngressPath or nil if no match
+func (r *Router) Route(host, path string) *types.IngressPath {
 	// Try each ingress
 	for _, ingress := range r.ingresses {
-		if backend := r.matchIngress(ingress, host, path); backend != nil {
-			return backend
+		if ingressPath := r.matchIngress(ingress, host, path); ingressPath != nil {
+			return ingressPath
 		}
 	}
 	return nil
 }
 
 // matchIngress tries to match a single ingress against host and path
-func (r *Router) matchIngress(ingress *types.Ingress, host, path string) *types.IngressBackend {
+func (r *Router) matchIngress(ingress *types.Ingress, host, path string) *types.IngressPath {
 	// Try each rule in the ingress
 	for _, rule := range ingress.Rules {
 		if !r.matchHost(rule.Host, host) {
@@ -54,7 +54,7 @@ func (r *Router) matchIngress(ingress *types.Ingress, host, path string) *types.
 		}
 
 		if bestMatch != nil {
-			return bestMatch.Backend
+			return bestMatch
 		}
 	}
 
