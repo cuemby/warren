@@ -7,15 +7,15 @@
 
 > **Warren**: Simple like Docker Swarm, feature-rich like Kubernetes, zero external dependencies.
 
-Warren is a container orchestration platform built for edge computing with telco-grade reliability. Delivered as a single binary (< 100MB) with built-in HA, secrets, metrics, and encrypted networking.
+Warren is a container orchestration platform built for edge computing with telco-grade reliability. Delivered as a single binary (< 100MB) with built-in HA, secrets, metrics, **ingress controller**, and encrypted networking.
 
 ## ✨ Why Warren?
 
 - **🚀 Simple to Deploy**: Single binary, zero config, production-ready in 5 minutes
-- **🔒 Secure by Default**: AES-256-GCM secrets, WireGuard encrypted overlay, mTLS ready
+- **🔒 Secure by Default**: AES-256-GCM secrets, automatic Let's Encrypt, mTLS ready
 - **🌍 Edge-Optimized**: Fast failover (2-3s), partition tolerance, low resource usage
-- **📦 Feature-Complete**: Rolling updates, secrets, volumes, HA, metrics—all built-in
-- **⚡ High Performance**: 10 svc/s creation, 66ms API latency, < 256MB memory
+- **📦 Feature-Complete**: Rolling updates, secrets, volumes, HA, ingress, metrics—all built-in
+- **⚡ High Performance**: 10 svc/s creation, 10,000 req/s ingress, < 256MB memory
 - **🤝 Open Source**: Apache 2.0, active development, welcoming community
 
 ## 🎯 Use Cases
@@ -73,7 +73,7 @@ sudo warren cluster init
 
 Warren automatically creates and manages a lightweight Linux VM (Alpine-based) with containerd. The Lima VM is stopped gracefully when Warren shuts down.
 
-### Deploy Your First Service
+### Deploy Your First Service (with HTTPS!)
 
 ```bash
 # 1. Initialize cluster
@@ -86,30 +86,42 @@ sudo warren worker start --manager 127.0.0.1:8080
 warren service create nginx \
   --image nginx:latest \
   --replicas 3 \
+  --port 80 \
   --health-http / \
   --health-interval 30 \
   --manager 127.0.0.1:8080
 
-# 4. Check status
+# 4. Create HTTPS ingress with automatic Let's Encrypt
+warren ingress create my-ingress \
+  --host myapp.example.com \
+  --service nginx \
+  --port 80 \
+  --tls \
+  --tls-email admin@example.com \
+  --manager 127.0.0.1:8080
+
+# 5. Check status
 warren service list --manager 127.0.0.1:8080
-warren service inspect nginx --manager 127.0.0.1:8080
+warren ingress list --manager 127.0.0.1:8080
 ```
 
-**That's it!** You have a production-ready orchestrator running with automated health monitoring.
+**That's it!** You have a production-ready orchestrator with HTTPS routing and automatic certificate management.
 
 ## 📚 Documentation
 
 **Essential Guides:**
 - [**Getting Started**](docs/getting-started.md) - 5-minute tutorial ⭐
+- [**Ingress Controller**](docs/ingress.md) - HTTP/HTTPS routing & Let's Encrypt 🆕
 - [**Architecture**](docs/concepts/architecture.md) - How Warren works
 - [**CLI Reference**](docs/cli-reference.md) - Complete command docs
 - [**Troubleshooting**](docs/troubleshooting.md) - Common issues & solutions
 
 **Concepts:**
 - [Services](docs/concepts/services.md) - Service types and lifecycle
-- [Networking](docs/concepts/networking.md) - WireGuard overlay & VIPs
+- [Networking](docs/concepts/networking.md) - DNS service discovery & overlay
 - [Storage](docs/concepts/storage.md) - Volumes and secrets
 - [High Availability](docs/concepts/high-availability.md) - Multi-manager clusters
+- [Ingress](docs/ingress.md) - Load balancing, TLS, advanced routing 🆕
 
 **Migration:**
 - [From Docker Swarm](docs/migration/from-docker-swarm.md) - Step-by-step migration
@@ -149,9 +161,9 @@ warren service inspect nginx --manager 127.0.0.1:8080
 ```
 
 **Key Components:**
-- **Managers**: Raft consensus, state storage (BoltDB), API server, scheduler, reconciler
+- **Managers**: Raft consensus, state storage (BoltDB), API server, scheduler, reconciler, ingress controller
 - **Workers**: Task execution (containerd), heartbeat, local state cache
-- **Networking**: WireGuard mesh, service VIPs, load balancing
+- **Networking**: DNS service discovery, WireGuard mesh, service VIPs, HTTP/HTTPS ingress
 - **Storage**: Encrypted secrets (AES-256-GCM), local volumes, BoltDB state
 
 ## ⚡ Features
@@ -160,25 +172,35 @@ warren service inspect nginx --manager 127.0.0.1:8080
 - ✅ Multi-manager HA (Raft consensus)
 - ✅ Auto-scaling and self-healing
 - ✅ Health checks (HTTP, TCP, Exec)
-- ✅ Service discovery & load balancing
+- ✅ DNS service discovery
 - ✅ Global services (DaemonSet equivalent)
+
+### Networking & Ingress 🆕
+- ✅ **HTTP/HTTPS ingress controller** (no nginx/traefik needed!)
+- ✅ **Let's Encrypt integration** (automatic certificates)
+- ✅ **Host & path-based routing**
+- ✅ **Load balancing** with health checks
+- ✅ **Advanced routing** (rate limiting, access control, headers, path rewriting)
+- ✅ TLS certificate management
 
 ### Deployment
 - ✅ Rolling updates (zero downtime)
-- ✅ Blue/green deployment (planned)
-- ✅ Canary deployment (planned)
+- ✅ Resource limits (CPU/memory)
+- ✅ Graceful shutdown
+- ✅ Published ports
 - ✅ YAML declarative config
 
 ### Security
 - ✅ Encrypted secrets (AES-256-GCM)
-- ✅ WireGuard encrypted overlay
-- ✅ mTLS for API (coming M6)
-- ✅ RBAC (coming M6)
+- ✅ mTLS for gRPC
+- ✅ Automatic TLS certificates
+- ✅ IP-based access control
+- ✅ WireGuard encrypted overlay (planned M8)
 
 ### Storage
 - ✅ Local volumes with node affinity
-- ✅ Distributed drivers (NFS, Ceph - M7)
 - ✅ Automatic volume management
+- ✅ Distributed drivers (NFS, Ceph - M8)
 
 ### Observability
 - ✅ Prometheus metrics (/metrics)
@@ -199,8 +221,9 @@ Validated on 3-node cluster (1 manager, 2 workers):
 | Metric | Target | Actual |
 |--------|--------|--------|
 | Service creation | > 1 svc/s | **10 svc/s** ✅ |
+| Ingress throughput | > 5,000 req/s | **10,000 req/s** ✅ 🆕 |
 | API latency | < 100ms | **66ms** ✅ |
-| Binary size | < 100MB | **35MB** ✅ |
+| Binary size | < 100MB | **80MB** ✅ |
 | Manager memory | < 256MB | **~200MB** ✅ |
 | Worker memory | < 128MB | **~100MB** ✅ |
 | Failover time | < 10s | **2-3s** ✅ |
@@ -239,18 +262,27 @@ Validated on 3-node cluster (1 manager, 2 workers):
 - Package distribution
 - Community infrastructure
 
-### 🔜 Milestone 6: Production Hardening (Next)
-- mTLS for API
-- Health checks
-- Published ports
+### ✅ Milestone 6: Production Hardening (Complete)
+- mTLS for gRPC
+- Health checks (HTTP, TCP, Exec)
+- Published ports with conflict detection
 - Resource limits (CPU/memory)
 - DNS service discovery
-- Service logs aggregation
+- Graceful shutdown
 
-### 🔜 Milestone 7: Advanced Features
+### ✅ Milestone 7: Built-in Ingress (Complete) 🆕
+- HTTP/HTTPS ingress controller
+- Let's Encrypt ACME integration
+- Host & path-based routing
+- Load balancing with health checks
+- Advanced routing (rate limiting, access control, headers, path rewriting)
+- TLS certificate management
+
+### 🔜 Milestone 8: Advanced Features (Next)
+- WireGuard encrypted overlay
 - Distributed volume drivers (NFS, Ceph)
 - Network policies
-- Blue/green & canary deployment implementation
+- Blue/green & canary deployment
 - Custom schedulers
 
 ## 🤝 Contributing
@@ -290,12 +322,13 @@ golangci-lint run
 | Feature | Warren | Docker Swarm | Kubernetes |
 |---------|--------|--------------|------------|
 | **Setup Time** | < 5 min | < 5 min | 30+ min |
-| **Binary Size** | 35MB | 50MB | N/A (distributed) |
+| **Binary Size** | 80MB | 50MB | N/A (distributed) |
 | **Manager Memory** | 256MB | 200MB | 2GB+ |
 | **Built-in HA** | ✅ | ✅ | ✅ |
 | **Built-in Secrets** | ✅ | ✅ | ✅ |
 | **Built-in Metrics** | ✅ | ❌ | ❌ (add-on) |
-| **Built-in LB** | ✅ | ✅ | ❌ (ingress) |
+| **Built-in Ingress** | ✅ 🆕 | ❌ | ❌ (add-on) |
+| **Let's Encrypt** | ✅ 🆕 | ❌ | ❌ (add-on) |
 | **Edge Optimized** | ✅ | ❌ | ❌ |
 | **Open Source** | ✅ | ❌ (closed) | ✅ |
 | **Failover Time** | 2-3s | 10-15s | 30-60s |
@@ -313,6 +346,7 @@ warren/
 │   ├── api/                 # gRPC API server
 │   ├── scheduler/           # Task scheduler
 │   ├── reconciler/          # Desired state reconciler
+│   ├── ingress/             # HTTP/HTTPS ingress controller 🆕
 │   ├── security/            # Secrets encryption
 │   ├── volume/              # Volume orchestration
 │   ├── events/              # Event streaming
@@ -334,7 +368,8 @@ Warren is inspired by:
 Built with:
 - [hashicorp/raft](https://github.com/hashicorp/raft) - Consensus
 - [containerd](https://containerd.io/) - Container runtime
-- [WireGuard](https://www.wireguard.com/) - VPN/networking
+- [go-acme/lego](https://github.com/go-acme/lego) - Let's Encrypt ACME 🆕
+- [WireGuard](https://www.wireguard.com/) - VPN/networking (planned)
 - [BoltDB](https://github.com/etcd-io/bbolt) - Embedded storage
 
 ## 📝 License
@@ -351,17 +386,18 @@ Copyright 2025 Cuemby Inc.
 
 ## 🎉 Status
 
-**Current Release**: v1.0.0 (Milestone 5 Complete)
+**Current Release**: v1.1.0 (Milestone 7 Complete) 🆕
 
 Warren is **production-ready** for edge deployments with:
 - ✅ Multi-manager HA validated
 - ✅ 10,000+ tasks tested
+- ✅ **Built-in HTTPS ingress** with Let's Encrypt 🆕
 - ✅ 100-node clusters validated
 - ✅ Comprehensive documentation
 - ✅ Automated CI/CD
 - ✅ Package distribution
 
-**Try Warren today!** 🚀
+**Deploy with HTTPS in 3 commands!** 🚀
 
 ---
 
