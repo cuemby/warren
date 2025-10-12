@@ -207,7 +207,7 @@ automatically form a Raft quorum once additional managers join.`,
 		if err := mgr.StartIngress(); err != nil {
 			fmt.Printf("Warning: Failed to start ingress proxy: %v\n", err)
 		} else {
-			fmt.Println("✓ Ingress proxy started on port 8000")
+			fmt.Println("✓ Ingress proxy started on ports 8000 (HTTP) and 8443 (HTTPS)")
 		}
 
 		// Generate and display join tokens for initial setup
@@ -635,7 +635,7 @@ var managerJoinCmd = &cobra.Command{
 		if err := mgr.StartIngress(); err != nil {
 			fmt.Printf("Warning: Failed to start ingress proxy: %v\n", err)
 		} else {
-			fmt.Println("✓ Ingress proxy started on port 8000")
+			fmt.Println("✓ Ingress proxy started on ports 8000 (HTTP) and 8443 (HTTPS)")
 		}
 
 		// Generate and display join tokens for initial setup

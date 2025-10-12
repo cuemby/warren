@@ -2,6 +2,7 @@ package ingress
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"net"
 	"net/http"
@@ -17,12 +18,14 @@ import (
 
 // Proxy is the main HTTP reverse proxy
 type Proxy struct {
-	store       storage.Store
-	router      *Router
-	lb          *LoadBalancer
-	httpServer  *http.Server
-	managerAddr string
-	grpcClient  *grpc.ClientConn
+	store        storage.Store
+	router       *Router
+	lb           *LoadBalancer
+	httpServer   *http.Server
+	httpsServer  *http.Server
+	tlsConfig    *tls.Config
+	managerAddr  string
+	grpcClient   *grpc.ClientConn
 }
 
 // NewProxy creates a new ingress proxy
@@ -46,10 +49,14 @@ func NewProxy(store storage.Store, managerAddr string, grpcClient *grpc.ClientCo
 	return p
 }
 
-// Start starts the HTTP proxy server on port 8000 (M7.1 MVP - port 80 in M7.2)
+// Start starts the HTTP and HTTPS proxy servers
 func (p *Proxy) Start(ctx context.Context) error {
-	// Create HTTP server
-	// TODO(M7.2): Change to port 80 with proper capabilities/permissions
+	// Load TLS certificates
+	if err := p.loadTLSCertificates(); err != nil {
+		log.Warn(fmt.Sprintf("Failed to load TLS certificates: %v", err))
+	}
+
+	// Create HTTP server on port 8000
 	p.httpServer = &http.Server{
 		Addr:         ":8000",
 		Handler:      http.HandlerFunc(p.handleRequest),
@@ -59,19 +66,49 @@ func (p *Proxy) Start(ctx context.Context) error {
 	}
 
 	// Start HTTP server
-	listener, err := net.Listen("tcp", p.httpServer.Addr)
+	httpListener, err := net.Listen("tcp", p.httpServer.Addr)
 	if err != nil {
 		return fmt.Errorf("failed to listen on :8000: %v", err)
 	}
 
-	log.Info(fmt.Sprintf("Ingress proxy listening on :8000"))
+	log.Info(fmt.Sprintf("Ingress proxy listening on :8000 (HTTP)"))
 
-	// Serve in goroutine
+	// Serve HTTP in goroutine
 	go func() {
-		if err := p.httpServer.Serve(listener); err != nil && err != http.ErrServerClosed {
+		if err := p.httpServer.Serve(httpListener); err != nil && err != http.ErrServerClosed {
 			log.Error(fmt.Sprintf("HTTP server error: %v", err))
 		}
 	}()
+
+	// Create HTTPS server on port 8443 if TLS is configured
+	if p.tlsConfig != nil && len(p.tlsConfig.Certificates) > 0 {
+		p.httpsServer = &http.Server{
+			Addr:         ":8443",
+			Handler:      http.HandlerFunc(p.handleRequest),
+			TLSConfig:    p.tlsConfig,
+			ReadTimeout:  30 * time.Second,
+			WriteTimeout: 30 * time.Second,
+			IdleTimeout:  120 * time.Second,
+		}
+
+		// Start HTTPS server
+		httpsListener, err := net.Listen("tcp", p.httpsServer.Addr)
+		if err != nil {
+			log.Warn(fmt.Sprintf("Failed to listen on :8443: %v", err))
+		} else {
+			log.Info(fmt.Sprintf("Ingress proxy listening on :8443 (HTTPS)"))
+
+			// Serve HTTPS in goroutine
+			go func() {
+				tlsListener := tls.NewListener(httpsListener, p.tlsConfig)
+				if err := p.httpsServer.Serve(tlsListener); err != nil && err != http.ErrServerClosed {
+					log.Error(fmt.Sprintf("HTTPS server error: %v", err))
+				}
+			}()
+		}
+	} else {
+		log.Info("No TLS certificates loaded, HTTPS disabled")
+	}
 
 	// Wait for context cancellation
 	<-ctx.Done()
@@ -81,8 +118,16 @@ func (p *Proxy) Start(ctx context.Context) error {
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
+	// Shutdown HTTP server
 	if err := p.httpServer.Shutdown(shutdownCtx); err != nil {
-		return fmt.Errorf("failed to shutdown HTTP server: %v", err)
+		log.Error(fmt.Sprintf("Failed to shutdown HTTP server: %v", err))
+	}
+
+	// Shutdown HTTPS server if running
+	if p.httpsServer != nil {
+		if err := p.httpsServer.Shutdown(shutdownCtx); err != nil {
+			log.Error(fmt.Sprintf("Failed to shutdown HTTPS server: %v", err))
+		}
 	}
 
 	return nil
@@ -167,6 +212,69 @@ func (p *Proxy) ReloadIngresses() error {
 
 	p.router.UpdateIngresses(ingresses)
 	log.Info(fmt.Sprintf("Reloaded %d ingress rules", len(ingresses)))
+
+	return nil
+}
+
+// loadTLSCertificates loads TLS certificates from storage and configures TLS
+func (p *Proxy) loadTLSCertificates() error {
+	// Get all TLS certificates from storage
+	certs, err := p.store.ListTLSCertificates()
+	if err != nil {
+		return fmt.Errorf("failed to list certificates: %v", err)
+	}
+
+	if len(certs) == 0 {
+		log.Debug("No TLS certificates found in storage")
+		return nil
+	}
+
+	// Create TLS config
+	tlsConfig := &tls.Config{
+		MinVersion: tls.VersionTLS12,
+		CipherSuites: []uint16{
+			tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
+			tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
+			tls.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
+			tls.TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
+		},
+		PreferServerCipherSuites: true,
+	}
+
+	// Load all certificates
+	var loadedCount int
+	for _, cert := range certs {
+		// Parse certificate and key
+		tlsCert, err := tls.X509KeyPair(cert.CertPEM, cert.KeyPEM)
+		if err != nil {
+			log.Warn(fmt.Sprintf("Failed to load certificate %s: %v", cert.Name, err))
+			continue
+		}
+
+		tlsConfig.Certificates = append(tlsConfig.Certificates, tlsCert)
+		loadedCount++
+		log.Debug(fmt.Sprintf("Loaded TLS certificate: %s (hosts: %v)", cert.Name, cert.Hosts))
+	}
+
+	if loadedCount > 0 {
+		p.tlsConfig = tlsConfig
+		log.Info(fmt.Sprintf("Loaded %d TLS certificate(s)", loadedCount))
+	}
+
+	return nil
+}
+
+// ReloadTLSCertificates reloads TLS certificates from storage
+func (p *Proxy) ReloadTLSCertificates() error {
+	if err := p.loadTLSCertificates(); err != nil {
+		return err
+	}
+
+	// If HTTPS server is running, update its TLS config
+	if p.httpsServer != nil && p.tlsConfig != nil {
+		p.httpsServer.TLSConfig = p.tlsConfig
+		log.Info("Reloaded TLS certificates for HTTPS server")
+	}
 
 	return nil
 }
