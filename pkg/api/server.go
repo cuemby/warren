@@ -1074,6 +1074,30 @@ func (s *Server) CreateIngress(ctx context.Context, req *proto.CreateIngressRequ
 		fmt.Printf("Warning: Failed to reload ingress proxy: %v\n", err)
 	}
 
+	// If AutoTLS is enabled, request Let's Encrypt certificate
+	if ingress.TLS != nil && ingress.TLS.AutoTLS && ingress.TLS.Email != "" {
+		// Enable ACME if not already enabled
+		if err := s.manager.EnableACME(ingress.TLS.Email); err != nil {
+			fmt.Printf("Warning: Failed to enable ACME: %v\n", err)
+		} else {
+			// Issue certificate for all hosts in the ingress
+			var domains []string
+			for _, rule := range ingress.Rules {
+				if rule.Host != "" {
+					domains = append(domains, rule.Host)
+				}
+			}
+			if len(domains) > 0 {
+				// Issue certificate asynchronously to avoid blocking ingress creation
+				go func() {
+					if err := s.manager.IssueACMECertificate(domains); err != nil {
+						fmt.Printf("Warning: Failed to issue ACME certificate: %v\n", err)
+					}
+				}()
+			}
+		}
+	}
+
 	// Convert back to proto
 	protoIngress := convertIngressToProto(ingress)
 

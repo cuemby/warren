@@ -1655,6 +1655,8 @@ var ingressCreateCmd = &cobra.Command{
 		serviceName, _ := cmd.Flags().GetString("service")
 		servicePort, _ := cmd.Flags().GetInt("port")
 		manager, _ := cmd.Flags().GetString("manager")
+		tls, _ := cmd.Flags().GetBool("tls")
+		tlsEmail, _ := cmd.Flags().GetString("tls-email")
 
 		// Validate required flags
 		if serviceName == "" {
@@ -1662,6 +1664,12 @@ var ingressCreateCmd = &cobra.Command{
 		}
 		if servicePort == 0 {
 			return fmt.Errorf("--port is required")
+		}
+		if tls && tlsEmail == "" {
+			return fmt.Errorf("--tls-email is required when --tls is enabled")
+		}
+		if tls && host == "" {
+			return fmt.Errorf("--host is required when --tls is enabled (Let's Encrypt requires a specific domain)")
 		}
 
 		// Default path
@@ -1700,6 +1708,16 @@ var ingressCreateCmd = &cobra.Command{
 			},
 		}
 
+		// Add TLS configuration if enabled
+		if tls {
+			req.Tls = &proto.IngressTLS{
+				Enabled: true,
+				AutoTls: true,
+				Email:   tlsEmail,
+				Hosts:   []string{host},
+			}
+		}
+
 		// Create ingress
 		ingress, err := c.CreateIngress(req)
 		if err != nil {
@@ -1713,6 +1731,11 @@ var ingressCreateCmd = &cobra.Command{
 		}
 		fmt.Printf("Path: %s (type: %s)\n", path, pathType)
 		fmt.Printf("Backend: %s:%d\n", serviceName, servicePort)
+		if tls {
+			fmt.Printf("TLS: Enabled (Let's Encrypt)\n")
+			fmt.Printf("Email: %s\n", tlsEmail)
+			fmt.Printf("Note: Certificate issuance is in progress. Check certificate list for status.\n")
+		}
 
 		return nil
 	},
@@ -2045,6 +2068,8 @@ func init() {
 	ingressCreateCmd.Flags().String("path-type", "Prefix", "Path type: Prefix or Exact (default: Prefix)")
 	ingressCreateCmd.Flags().String("service", "", "Backend service name (required)")
 	ingressCreateCmd.Flags().Int("port", 0, "Backend service port (required)")
+	ingressCreateCmd.Flags().Bool("tls", false, "Enable TLS with Let's Encrypt")
+	ingressCreateCmd.Flags().String("tls-email", "", "Email for Let's Encrypt notifications (required with --tls)")
 	ingressCreateCmd.MarkFlagRequired("service")
 	ingressCreateCmd.MarkFlagRequired("port")
 

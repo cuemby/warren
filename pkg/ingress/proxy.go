@@ -24,6 +24,7 @@ type Proxy struct {
 	httpServer   *http.Server
 	httpsServer  *http.Server
 	tlsConfig    *tls.Config
+	acmeProvider *HTTP01Provider
 	managerAddr  string
 	grpcClient   *grpc.ClientConn
 }
@@ -45,6 +46,7 @@ func NewProxy(store storage.Store, managerAddr string, grpcClient *grpc.ClientCo
 
 	p.router = NewRouter(ingresses)
 	p.lb = NewLoadBalancer(managerAddr, grpcClient)
+	p.acmeProvider = NewHTTP01Provider(p)
 
 	return p
 }
@@ -139,6 +141,19 @@ func (p *Proxy) handleRequest(w http.ResponseWriter, r *http.Request) {
 	path := r.URL.Path
 
 	log.Debug(fmt.Sprintf("Ingress request: %s %s%s", r.Method, host, path))
+
+	// Handle ACME HTTP-01 challenges (/.well-known/acme-challenge/)
+	if len(path) > 28 && path[:28] == "/.well-known/acme-challenge/" {
+		token := path[28:]
+		if keyAuth, ok := p.acmeProvider.GetKeyAuth(host, token); ok {
+			log.Info(fmt.Sprintf("ACME: Serving challenge for %s, token %s", host, token))
+			w.Header().Set("Content-Type", "text/plain")
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(keyAuth))
+			return
+		}
+		log.Warn(fmt.Sprintf("ACME: No challenge found for %s, token %s", host, token))
+	}
 
 	// Route the request
 	backend := p.router.Route(host, path)

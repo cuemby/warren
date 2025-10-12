@@ -17,6 +17,7 @@ import (
 	"github.com/cuemby/warren/pkg/dns"
 	"github.com/cuemby/warren/pkg/events"
 	"github.com/cuemby/warren/pkg/ingress"
+	"github.com/cuemby/warren/pkg/log"
 	"github.com/cuemby/warren/pkg/security"
 	"github.com/cuemby/warren/pkg/storage"
 	"github.com/cuemby/warren/pkg/types"
@@ -44,6 +45,8 @@ type Manager struct {
 	ingressProxy   *ingress.Proxy
 	ingressCtx     context.Context
 	ingressCancel  context.CancelFunc
+	acmeClient     *ingress.ACMEClient
+	acmeEmail      string
 }
 
 // Config holds configuration for creating a Manager
@@ -1062,4 +1065,48 @@ func (m *Manager) GetTLSCertificateByName(name string) (*types.TLSCertificate, e
 // ListTLSCertificates lists all TLS certificates
 func (m *Manager) ListTLSCertificates() ([]*types.TLSCertificate, error) {
 	return m.store.ListTLSCertificates()
+}
+
+// --- ACME / Let's Encrypt Operations ---
+
+// EnableACME initializes the ACME client for Let's Encrypt
+func (m *Manager) EnableACME(email string) error {
+	if m.ingressProxy == nil {
+		return fmt.Errorf("ingress proxy not running")
+	}
+
+	acmeClient, err := ingress.NewACMEClient(m.store, m.ingressProxy, email)
+	if err != nil {
+		return fmt.Errorf("failed to create ACME client: %v", err)
+	}
+
+	m.acmeClient = acmeClient
+	m.acmeEmail = email
+
+	// Start renewal job
+	m.acmeClient.StartRenewalJob()
+
+	log.Info(fmt.Sprintf("ACME client enabled with email: %s", email))
+	return nil
+}
+
+// IssueACMECertificate requests a new certificate from Let's Encrypt
+func (m *Manager) IssueACMECertificate(domains []string) error {
+	if m.acmeClient == nil {
+		return fmt.Errorf("ACME client not initialized")
+	}
+
+	// Request certificate
+	cert, err := m.acmeClient.ObtainCertificate(domains)
+	if err != nil {
+		return fmt.Errorf("failed to obtain certificate: %v", err)
+	}
+
+	// Store certificate
+	if err := m.CreateTLSCertificate(cert); err != nil {
+		return fmt.Errorf("failed to store certificate: %v", err)
+	}
+
+	log.Info(fmt.Sprintf("ACME certificate issued and stored for domains: %v", domains))
+	return nil
 }
