@@ -1,4 +1,4 @@
-.PHONY: build clean test lint fmt help install dev proto download-containerd embed-deps
+.PHONY: build clean test lint fmt help install dev proto download-containerd embed-deps act-test act-lint act-build act-all act-list act-install
 
 # Build variables
 VERSION ?= dev
@@ -212,5 +212,82 @@ size: build-release
 	else \
 		echo "  ✓ Binary size OK (target: <100MB)"; \
 	fi
+
+#
+# GitHub Actions Local Testing (act)
+# https://nektosact.com/
+#
+
+## act-install: Install act (GitHub Actions local runner)
+act-install:
+	@echo "Installing act..."
+	@if command -v brew >/dev/null 2>&1; then \
+		brew install act; \
+		echo "✓ act installed via Homebrew"; \
+	else \
+		echo "Installing act via script..."; \
+		curl -s https://raw.githubusercontent.com/nektos/act/master/install.sh | sudo bash; \
+		echo "✓ act installed"; \
+	fi
+	@echo ""
+	@echo "Setup complete! Configuration in .actrc"
+	@echo "Run 'make act-list' to see available GitHub Actions jobs"
+
+## act-list: List all GitHub Actions workflows and jobs
+act-list:
+	@echo "GitHub Actions Workflows and Jobs:"
+	@act --list 2>/dev/null || (echo "❌ act not found. Install with: make act-install" && exit 1)
+
+## act-lint: Run linter locally with act
+act-lint:
+	@echo "Running linter with act (GitHub Actions locally)..."
+	@act push --job lint --workflows .github/workflows/test.yml 2>/dev/null || \
+		(echo "❌ act not found. Install with: make act-install" && exit 1)
+
+## act-test: Run tests locally with act (Go 1.23)
+act-test:
+	@echo "Running tests with act (GitHub Actions locally)..."
+	@act push --job "test (1.23)" --workflows .github/workflows/test.yml 2>/dev/null || \
+		(echo "❌ act not found. Install with: make act-install" && exit 1)
+
+## act-test-all: Run tests for all Go versions (1.22 and 1.23)
+act-test-all:
+	@echo "Running tests for Go 1.22..."
+	@act push --job "test (1.22)" --workflows .github/workflows/test.yml
+	@echo ""
+	@echo "Running tests for Go 1.23..."
+	@act push --job "test (1.23)" --workflows .github/workflows/test.yml
+
+## act-build: Run build job locally with act
+act-build:
+	@echo "Running build with act (GitHub Actions locally)..."
+	@act push --job build --workflows .github/workflows/test.yml 2>/dev/null || \
+		(echo "❌ act not found. Install with: make act-install" && exit 1)
+
+## act-all: Run all GitHub Actions workflows locally
+act-all:
+	@echo "Running all GitHub Actions workflows locally..."
+	@act push --workflows .github/workflows/test.yml 2>/dev/null || \
+		(echo "❌ act not found. Install with: make act-install" && exit 1)
+
+## act-pr: Simulate pull request workflow locally
+act-pr:
+	@echo "Simulating pull request workflow..."
+	@act pull_request --workflows .github/workflows/pr.yml 2>/dev/null || \
+		(echo "❌ act not found. Install with: make act-install" && exit 1)
+
+## act-debug: Run tests with act in interactive mode
+act-debug:
+	@echo "Running tests in interactive mode (attach to container)..."
+	@echo "Use 'exit' to leave the container"
+	@act push --job "test (1.23)" --workflows .github/workflows/test.yml --bind
+
+## act-clean: Clean up act containers and images
+act-clean:
+	@echo "Cleaning up act containers..."
+	@docker ps -a --filter "label=act" -q | xargs -r docker rm -f 2>/dev/null || true
+	@echo "Cleaning up act images..."
+	@docker images "catthehacker/ubuntu" -q | xargs -r docker rmi -f 2>/dev/null || true
+	@echo "✓ Cleaned up act resources"
 
 .DEFAULT_GOAL := help

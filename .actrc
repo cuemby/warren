@@ -1,0 +1,18 @@
+# Warren - act (GitHub Actions local runner) configuration
+# https://nektosact.com/
+
+# Use medium image for balance of size (~500MB) and compatibility
+# Includes: Go, Docker CLI, common build tools, Git
+-P ubuntu-latest=catthehacker/ubuntu:act-latest
+
+# Enable verbose output for better debugging
+--verbose
+
+# Set default event to push (most common for Warren CI)
+--defaultbranch main
+
+# Container options
+--container-architecture linux/amd64
+
+# Reuse containers to speed up repeated runs
+--reuse
