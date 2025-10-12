@@ -60,6 +60,12 @@ service WarrenAPI {
   rpc GetIngress(GetIngressRequest) returns (GetIngressResponse);
   rpc ListIngresses(ListIngressesRequest) returns (ListIngressesResponse);
 
+  // TLS Certificate operations
+  rpc CreateTLSCertificate(CreateTLSCertificateRequest) returns (CreateTLSCertificateResponse);
+  rpc GetTLSCertificate(GetTLSCertificateRequest) returns (GetTLSCertificateResponse);
+  rpc ListTLSCertificates(ListTLSCertificatesRequest) returns (ListTLSCertificatesResponse);
+  rpc DeleteTLSCertificate(DeleteTLSCertificateRequest) returns (DeleteTLSCertificateResponse);
+
   // Event streaming
   rpc StreamEvents(StreamEventsRequest) returns (stream Event);
 }
@@ -596,4 +602,57 @@ message ListIngressesRequest {}
 
 message ListIngressesResponse {
   repeated Ingress ingresses = 1;
+}
+
+// TLS Certificate messages
+
+message TLSCertificate {
+  string id = 1;
+  string name = 2;
+  repeated string hosts = 3;
+  bytes cert_pem = 4;
+  bytes key_pem = 5;
+  string issuer = 6;
+  google.protobuf.Timestamp not_before = 7;
+  google.protobuf.Timestamp not_after = 8;
+  bool auto_renew = 9;
+  map<string, string> labels = 10;
+  google.protobuf.Timestamp created_at = 11;
+  google.protobuf.Timestamp updated_at = 12;
+}
+
+message CreateTLSCertificateRequest {
+  string name = 1;
+  repeated string hosts = 2;
+  bytes cert_pem = 3;
+  bytes key_pem = 4;
+  map<string, string> labels = 5;
+}
+
+message CreateTLSCertificateResponse {
+  TLSCertificate certificate = 1;
+}
+
+message GetTLSCertificateRequest {
+  string id = 1;
+  string name = 2; // Can query by ID or name
+}
+
+message GetTLSCertificateResponse {
+  TLSCertificate certificate = 1;
+}
+
+message ListTLSCertificatesRequest {}
+
+message ListTLSCertificatesResponse {
+  repeated TLSCertificate certificates = 1;
+}
+
+message DeleteTLSCertificateRequest {
+  string id = 1;
+  string name = 2; // Can delete by ID or name
+}
+
+message DeleteTLSCertificateResponse {
+  string status = 1;
 }

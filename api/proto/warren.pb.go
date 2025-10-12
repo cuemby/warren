@@ -5302,6 +5302,530 @@ func (x *ListIngressesResponse) GetIngresses() []*Ingress {
 	return nil
 }
 
+type TLSCertificate struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Hosts         []string               `protobuf:"bytes,3,rep,name=hosts,proto3" json:"hosts,omitempty"`
+	CertPem       []byte                 `protobuf:"bytes,4,opt,name=cert_pem,json=certPem,proto3" json:"cert_pem,omitempty"`
+	KeyPem        []byte                 `protobuf:"bytes,5,opt,name=key_pem,json=keyPem,proto3" json:"key_pem,omitempty"`
+	Issuer        string                 `protobuf:"bytes,6,opt,name=issuer,proto3" json:"issuer,omitempty"`
+	NotBefore     *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=not_before,json=notBefore,proto3" json:"not_before,omitempty"`
+	NotAfter      *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=not_after,json=notAfter,proto3" json:"not_after,omitempty"`
+	AutoRenew     bool                   `protobuf:"varint,9,opt,name=auto_renew,json=autoRenew,proto3" json:"auto_renew,omitempty"`
+	Labels        map[string]string      `protobuf:"bytes,10,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,11,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	UpdatedAt     *timestamppb.Timestamp `protobuf:"bytes,12,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *TLSCertificate) Reset() {
+	*x = TLSCertificate{}
+	mi := &file_api_proto_warren_proto_msgTypes[89]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TLSCertificate) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TLSCertificate) ProtoMessage() {}
+
+func (x *TLSCertificate) ProtoReflect() protoreflect.Message {
+	mi := &file_api_proto_warren_proto_msgTypes[89]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TLSCertificate.ProtoReflect.Descriptor instead.
+func (*TLSCertificate) Descriptor() ([]byte, []int) {
+	return file_api_proto_warren_proto_rawDescGZIP(), []int{89}
+}
+
+func (x *TLSCertificate) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *TLSCertificate) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *TLSCertificate) GetHosts() []string {
+	if x != nil {
+		return x.Hosts
+	}
+	return nil
+}
+
+func (x *TLSCertificate) GetCertPem() []byte {
+	if x != nil {
+		return x.CertPem
+	}
+	return nil
+}
+
+func (x *TLSCertificate) GetKeyPem() []byte {
+	if x != nil {
+		return x.KeyPem
+	}
+	return nil
+}
+
+func (x *TLSCertificate) GetIssuer() string {
+	if x != nil {
+		return x.Issuer
+	}
+	return ""
+}
+
+func (x *TLSCertificate) GetNotBefore() *timestamppb.Timestamp {
+	if x != nil {
+		return x.NotBefore
+	}
+	return nil
+}
+
+func (x *TLSCertificate) GetNotAfter() *timestamppb.Timestamp {
+	if x != nil {
+		return x.NotAfter
+	}
+	return nil
+}
+
+func (x *TLSCertificate) GetAutoRenew() bool {
+	if x != nil {
+		return x.AutoRenew
+	}
+	return false
+}
+
+func (x *TLSCertificate) GetLabels() map[string]string {
+	if x != nil {
+		return x.Labels
+	}
+	return nil
+}
+
+func (x *TLSCertificate) GetCreatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return nil
+}
+
+func (x *TLSCertificate) GetUpdatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.UpdatedAt
+	}
+	return nil
+}
+
+type CreateTLSCertificateRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Hosts         []string               `protobuf:"bytes,2,rep,name=hosts,proto3" json:"hosts,omitempty"`
+	CertPem       []byte                 `protobuf:"bytes,3,opt,name=cert_pem,json=certPem,proto3" json:"cert_pem,omitempty"`
+	KeyPem        []byte                 `protobuf:"bytes,4,opt,name=key_pem,json=keyPem,proto3" json:"key_pem,omitempty"`
+	Labels        map[string]string      `protobuf:"bytes,5,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CreateTLSCertificateRequest) Reset() {
+	*x = CreateTLSCertificateRequest{}
+	mi := &file_api_proto_warren_proto_msgTypes[90]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateTLSCertificateRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateTLSCertificateRequest) ProtoMessage() {}
+
+func (x *CreateTLSCertificateRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_api_proto_warren_proto_msgTypes[90]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateTLSCertificateRequest.ProtoReflect.Descriptor instead.
+func (*CreateTLSCertificateRequest) Descriptor() ([]byte, []int) {
+	return file_api_proto_warren_proto_rawDescGZIP(), []int{90}
+}
+
+func (x *CreateTLSCertificateRequest) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *CreateTLSCertificateRequest) GetHosts() []string {
+	if x != nil {
+		return x.Hosts
+	}
+	return nil
+}
+
+func (x *CreateTLSCertificateRequest) GetCertPem() []byte {
+	if x != nil {
+		return x.CertPem
+	}
+	return nil
+}
+
+func (x *CreateTLSCertificateRequest) GetKeyPem() []byte {
+	if x != nil {
+		return x.KeyPem
+	}
+	return nil
+}
+
+func (x *CreateTLSCertificateRequest) GetLabels() map[string]string {
+	if x != nil {
+		return x.Labels
+	}
+	return nil
+}
+
+type CreateTLSCertificateResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Certificate   *TLSCertificate        `protobuf:"bytes,1,opt,name=certificate,proto3" json:"certificate,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CreateTLSCertificateResponse) Reset() {
+	*x = CreateTLSCertificateResponse{}
+	mi := &file_api_proto_warren_proto_msgTypes[91]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateTLSCertificateResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateTLSCertificateResponse) ProtoMessage() {}
+
+func (x *CreateTLSCertificateResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_api_proto_warren_proto_msgTypes[91]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateTLSCertificateResponse.ProtoReflect.Descriptor instead.
+func (*CreateTLSCertificateResponse) Descriptor() ([]byte, []int) {
+	return file_api_proto_warren_proto_rawDescGZIP(), []int{91}
+}
+
+func (x *CreateTLSCertificateResponse) GetCertificate() *TLSCertificate {
+	if x != nil {
+		return x.Certificate
+	}
+	return nil
+}
+
+type GetTLSCertificateRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"` // Can query by ID or name
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetTLSCertificateRequest) Reset() {
+	*x = GetTLSCertificateRequest{}
+	mi := &file_api_proto_warren_proto_msgTypes[92]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetTLSCertificateRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetTLSCertificateRequest) ProtoMessage() {}
+
+func (x *GetTLSCertificateRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_api_proto_warren_proto_msgTypes[92]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetTLSCertificateRequest.ProtoReflect.Descriptor instead.
+func (*GetTLSCertificateRequest) Descriptor() ([]byte, []int) {
+	return file_api_proto_warren_proto_rawDescGZIP(), []int{92}
+}
+
+func (x *GetTLSCertificateRequest) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *GetTLSCertificateRequest) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+type GetTLSCertificateResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Certificate   *TLSCertificate        `protobuf:"bytes,1,opt,name=certificate,proto3" json:"certificate,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetTLSCertificateResponse) Reset() {
+	*x = GetTLSCertificateResponse{}
+	mi := &file_api_proto_warren_proto_msgTypes[93]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetTLSCertificateResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetTLSCertificateResponse) ProtoMessage() {}
+
+func (x *GetTLSCertificateResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_api_proto_warren_proto_msgTypes[93]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetTLSCertificateResponse.ProtoReflect.Descriptor instead.
+func (*GetTLSCertificateResponse) Descriptor() ([]byte, []int) {
+	return file_api_proto_warren_proto_rawDescGZIP(), []int{93}
+}
+
+func (x *GetTLSCertificateResponse) GetCertificate() *TLSCertificate {
+	if x != nil {
+		return x.Certificate
+	}
+	return nil
+}
+
+type ListTLSCertificatesRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListTLSCertificatesRequest) Reset() {
+	*x = ListTLSCertificatesRequest{}
+	mi := &file_api_proto_warren_proto_msgTypes[94]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListTLSCertificatesRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListTLSCertificatesRequest) ProtoMessage() {}
+
+func (x *ListTLSCertificatesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_api_proto_warren_proto_msgTypes[94]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListTLSCertificatesRequest.ProtoReflect.Descriptor instead.
+func (*ListTLSCertificatesRequest) Descriptor() ([]byte, []int) {
+	return file_api_proto_warren_proto_rawDescGZIP(), []int{94}
+}
+
+type ListTLSCertificatesResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Certificates  []*TLSCertificate      `protobuf:"bytes,1,rep,name=certificates,proto3" json:"certificates,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListTLSCertificatesResponse) Reset() {
+	*x = ListTLSCertificatesResponse{}
+	mi := &file_api_proto_warren_proto_msgTypes[95]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListTLSCertificatesResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListTLSCertificatesResponse) ProtoMessage() {}
+
+func (x *ListTLSCertificatesResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_api_proto_warren_proto_msgTypes[95]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListTLSCertificatesResponse.ProtoReflect.Descriptor instead.
+func (*ListTLSCertificatesResponse) Descriptor() ([]byte, []int) {
+	return file_api_proto_warren_proto_rawDescGZIP(), []int{95}
+}
+
+func (x *ListTLSCertificatesResponse) GetCertificates() []*TLSCertificate {
+	if x != nil {
+		return x.Certificates
+	}
+	return nil
+}
+
+type DeleteTLSCertificateRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"` // Can delete by ID or name
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteTLSCertificateRequest) Reset() {
+	*x = DeleteTLSCertificateRequest{}
+	mi := &file_api_proto_warren_proto_msgTypes[96]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteTLSCertificateRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteTLSCertificateRequest) ProtoMessage() {}
+
+func (x *DeleteTLSCertificateRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_api_proto_warren_proto_msgTypes[96]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteTLSCertificateRequest.ProtoReflect.Descriptor instead.
+func (*DeleteTLSCertificateRequest) Descriptor() ([]byte, []int) {
+	return file_api_proto_warren_proto_rawDescGZIP(), []int{96}
+}
+
+func (x *DeleteTLSCertificateRequest) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *DeleteTLSCertificateRequest) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+type DeleteTLSCertificateResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Status        string                 `protobuf:"bytes,1,opt,name=status,proto3" json:"status,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteTLSCertificateResponse) Reset() {
+	*x = DeleteTLSCertificateResponse{}
+	mi := &file_api_proto_warren_proto_msgTypes[97]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteTLSCertificateResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteTLSCertificateResponse) ProtoMessage() {}
+
+func (x *DeleteTLSCertificateResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_api_proto_warren_proto_msgTypes[97]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteTLSCertificateResponse.ProtoReflect.Descriptor instead.
+func (*DeleteTLSCertificateResponse) Descriptor() ([]byte, []int) {
+	return file_api_proto_warren_proto_rawDescGZIP(), []int{97}
+}
+
+func (x *DeleteTLSCertificateResponse) GetStatus() string {
+	if x != nil {
+		return x.Status
+	}
+	return ""
+}
+
 var File_api_proto_warren_proto protoreflect.FileDescriptor
 
 const file_api_proto_warren_proto_rawDesc = "" +
@@ -5721,7 +6245,52 @@ const file_api_proto_warren_proto_rawDesc = "" +
 	"\aingress\x18\x01 \x01(\v2\x12.warren.v1.IngressR\aingress\"\x16\n" +
 	"\x14ListIngressesRequest\"I\n" +
 	"\x15ListIngressesResponse\x120\n" +
-	"\tingresses\x18\x01 \x03(\v2\x12.warren.v1.IngressR\tingresses2\xf4\x14\n" +
+	"\tingresses\x18\x01 \x03(\v2\x12.warren.v1.IngressR\tingresses\"\x99\x04\n" +
+	"\x0eTLSCertificate\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12\x14\n" +
+	"\x05hosts\x18\x03 \x03(\tR\x05hosts\x12\x19\n" +
+	"\bcert_pem\x18\x04 \x01(\fR\acertPem\x12\x17\n" +
+	"\akey_pem\x18\x05 \x01(\fR\x06keyPem\x12\x16\n" +
+	"\x06issuer\x18\x06 \x01(\tR\x06issuer\x129\n" +
+	"\n" +
+	"not_before\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\tnotBefore\x127\n" +
+	"\tnot_after\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\bnotAfter\x12\x1d\n" +
+	"\n" +
+	"auto_renew\x18\t \x01(\bR\tautoRenew\x12=\n" +
+	"\x06labels\x18\n" +
+	" \x03(\v2%.warren.v1.TLSCertificate.LabelsEntryR\x06labels\x129\n" +
+	"\n" +
+	"created_at\x18\v \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
+	"\n" +
+	"updated_at\x18\f \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\x1a9\n" +
+	"\vLabelsEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\x82\x02\n" +
+	"\x1bCreateTLSCertificateRequest\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12\x14\n" +
+	"\x05hosts\x18\x02 \x03(\tR\x05hosts\x12\x19\n" +
+	"\bcert_pem\x18\x03 \x01(\fR\acertPem\x12\x17\n" +
+	"\akey_pem\x18\x04 \x01(\fR\x06keyPem\x12J\n" +
+	"\x06labels\x18\x05 \x03(\v22.warren.v1.CreateTLSCertificateRequest.LabelsEntryR\x06labels\x1a9\n" +
+	"\vLabelsEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"[\n" +
+	"\x1cCreateTLSCertificateResponse\x12;\n" +
+	"\vcertificate\x18\x01 \x01(\v2\x19.warren.v1.TLSCertificateR\vcertificate\">\n" +
+	"\x18GetTLSCertificateRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\"X\n" +
+	"\x19GetTLSCertificateResponse\x12;\n" +
+	"\vcertificate\x18\x01 \x01(\v2\x19.warren.v1.TLSCertificateR\vcertificate\"\x1c\n" +
+	"\x1aListTLSCertificatesRequest\"\\\n" +
+	"\x1bListTLSCertificatesResponse\x12=\n" +
+	"\fcertificates\x18\x01 \x03(\v2\x19.warren.v1.TLSCertificateR\fcertificates\"A\n" +
+	"\x1bDeleteTLSCertificateRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\"6\n" +
+	"\x1cDeleteTLSCertificateResponse\x12\x16\n" +
+	"\x06status\x18\x01 \x01(\tR\x06status2\x8c\x18\n" +
 	"\tWarrenAPI\x12O\n" +
 	"\fRegisterNode\x12\x1e.warren.v1.RegisterNodeRequest\x1a\x1f.warren.v1.RegisterNodeResponse\x12F\n" +
 	"\tHeartbeat\x12\x1b.warren.v1.HeartbeatRequest\x1a\x1c.warren.v1.HeartbeatResponse\x12F\n" +
@@ -5758,7 +6327,11 @@ const file_api_proto_warren_proto_rawDesc = "" +
 	"\rDeleteIngress\x12\x1f.warren.v1.DeleteIngressRequest\x1a .warren.v1.DeleteIngressResponse\x12I\n" +
 	"\n" +
 	"GetIngress\x12\x1c.warren.v1.GetIngressRequest\x1a\x1d.warren.v1.GetIngressResponse\x12R\n" +
-	"\rListIngresses\x12\x1f.warren.v1.ListIngressesRequest\x1a .warren.v1.ListIngressesResponse\x12B\n" +
+	"\rListIngresses\x12\x1f.warren.v1.ListIngressesRequest\x1a .warren.v1.ListIngressesResponse\x12g\n" +
+	"\x14CreateTLSCertificate\x12&.warren.v1.CreateTLSCertificateRequest\x1a'.warren.v1.CreateTLSCertificateResponse\x12^\n" +
+	"\x11GetTLSCertificate\x12#.warren.v1.GetTLSCertificateRequest\x1a$.warren.v1.GetTLSCertificateResponse\x12d\n" +
+	"\x13ListTLSCertificates\x12%.warren.v1.ListTLSCertificatesRequest\x1a&.warren.v1.ListTLSCertificatesResponse\x12g\n" +
+	"\x14DeleteTLSCertificate\x12&.warren.v1.DeleteTLSCertificateRequest\x1a'.warren.v1.DeleteTLSCertificateResponse\x12B\n" +
 	"\fStreamEvents\x12\x1e.warren.v1.StreamEventsRequest\x1a\x10.warren.v1.Event0\x01B$Z\"github.com/cuemby/warren/api/protob\x06proto3"
 
 var (
@@ -5774,122 +6347,133 @@ func file_api_proto_warren_proto_rawDescGZIP() []byte {
 }
 
 var file_api_proto_warren_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_api_proto_warren_proto_msgTypes = make([]protoimpl.MessageInfo, 103)
+var file_api_proto_warren_proto_msgTypes = make([]protoimpl.MessageInfo, 114)
 var file_api_proto_warren_proto_goTypes = []any{
-	(HealthCheck_Type)(0),              // 0: warren.v1.HealthCheck.Type
-	(PortMapping_PublishMode)(0),       // 1: warren.v1.PortMapping.PublishMode
-	(*Node)(nil),                       // 2: warren.v1.Node
-	(*NodeResources)(nil),              // 3: warren.v1.NodeResources
-	(*RegisterNodeRequest)(nil),        // 4: warren.v1.RegisterNodeRequest
-	(*RegisterNodeResponse)(nil),       // 5: warren.v1.RegisterNodeResponse
-	(*HeartbeatRequest)(nil),           // 6: warren.v1.HeartbeatRequest
-	(*HeartbeatResponse)(nil),          // 7: warren.v1.HeartbeatResponse
-	(*TaskStatus)(nil),                 // 8: warren.v1.TaskStatus
-	(*ListNodesRequest)(nil),           // 9: warren.v1.ListNodesRequest
-	(*ListNodesResponse)(nil),          // 10: warren.v1.ListNodesResponse
-	(*GetNodeRequest)(nil),             // 11: warren.v1.GetNodeRequest
-	(*GetNodeResponse)(nil),            // 12: warren.v1.GetNodeResponse
-	(*RemoveNodeRequest)(nil),          // 13: warren.v1.RemoveNodeRequest
-	(*RemoveNodeResponse)(nil),         // 14: warren.v1.RemoveNodeResponse
-	(*Service)(nil),                    // 15: warren.v1.Service
-	(*UpdateConfig)(nil),               // 16: warren.v1.UpdateConfig
-	(*HealthCheck)(nil),                // 17: warren.v1.HealthCheck
-	(*HTTPHealthCheck)(nil),            // 18: warren.v1.HTTPHealthCheck
-	(*Header)(nil),                     // 19: warren.v1.Header
-	(*TCPHealthCheck)(nil),             // 20: warren.v1.TCPHealthCheck
-	(*ExecHealthCheck)(nil),            // 21: warren.v1.ExecHealthCheck
-	(*RestartPolicy)(nil),              // 22: warren.v1.RestartPolicy
-	(*ResourceRequirements)(nil),       // 23: warren.v1.ResourceRequirements
-	(*VolumeMount)(nil),                // 24: warren.v1.VolumeMount
-	(*PortMapping)(nil),                // 25: warren.v1.PortMapping
-	(*CreateServiceRequest)(nil),       // 26: warren.v1.CreateServiceRequest
-	(*CreateServiceResponse)(nil),      // 27: warren.v1.CreateServiceResponse
-	(*UpdateServiceRequest)(nil),       // 28: warren.v1.UpdateServiceRequest
-	(*UpdateServiceResponse)(nil),      // 29: warren.v1.UpdateServiceResponse
-	(*DeleteServiceRequest)(nil),       // 30: warren.v1.DeleteServiceRequest
-	(*DeleteServiceResponse)(nil),      // 31: warren.v1.DeleteServiceResponse
-	(*GetServiceRequest)(nil),          // 32: warren.v1.GetServiceRequest
-	(*GetServiceResponse)(nil),         // 33: warren.v1.GetServiceResponse
-	(*ListServicesRequest)(nil),        // 34: warren.v1.ListServicesRequest
-	(*ListServicesResponse)(nil),       // 35: warren.v1.ListServicesResponse
-	(*Task)(nil),                       // 36: warren.v1.Task
-	(*UpdateTaskStatusRequest)(nil),    // 37: warren.v1.UpdateTaskStatusRequest
-	(*UpdateTaskStatusResponse)(nil),   // 38: warren.v1.UpdateTaskStatusResponse
-	(*ListTasksRequest)(nil),           // 39: warren.v1.ListTasksRequest
-	(*ListTasksResponse)(nil),          // 40: warren.v1.ListTasksResponse
-	(*GetTaskRequest)(nil),             // 41: warren.v1.GetTaskRequest
-	(*GetTaskResponse)(nil),            // 42: warren.v1.GetTaskResponse
-	(*WatchTasksRequest)(nil),          // 43: warren.v1.WatchTasksRequest
-	(*TaskEvent)(nil),                  // 44: warren.v1.TaskEvent
-	(*Secret)(nil),                     // 45: warren.v1.Secret
-	(*CreateSecretRequest)(nil),        // 46: warren.v1.CreateSecretRequest
-	(*CreateSecretResponse)(nil),       // 47: warren.v1.CreateSecretResponse
-	(*DeleteSecretRequest)(nil),        // 48: warren.v1.DeleteSecretRequest
-	(*DeleteSecretResponse)(nil),       // 49: warren.v1.DeleteSecretResponse
-	(*GetSecretByNameRequest)(nil),     // 50: warren.v1.GetSecretByNameRequest
-	(*GetSecretByNameResponse)(nil),    // 51: warren.v1.GetSecretByNameResponse
-	(*ListSecretsRequest)(nil),         // 52: warren.v1.ListSecretsRequest
-	(*ListSecretsResponse)(nil),        // 53: warren.v1.ListSecretsResponse
-	(*Volume)(nil),                     // 54: warren.v1.Volume
-	(*CreateVolumeRequest)(nil),        // 55: warren.v1.CreateVolumeRequest
-	(*CreateVolumeResponse)(nil),       // 56: warren.v1.CreateVolumeResponse
-	(*DeleteVolumeRequest)(nil),        // 57: warren.v1.DeleteVolumeRequest
-	(*DeleteVolumeResponse)(nil),       // 58: warren.v1.DeleteVolumeResponse
-	(*GetVolumeByNameRequest)(nil),     // 59: warren.v1.GetVolumeByNameRequest
-	(*GetVolumeByNameResponse)(nil),    // 60: warren.v1.GetVolumeByNameResponse
-	(*ListVolumesRequest)(nil),         // 61: warren.v1.ListVolumesRequest
-	(*ListVolumesResponse)(nil),        // 62: warren.v1.ListVolumesResponse
-	(*GenerateJoinTokenRequest)(nil),   // 63: warren.v1.GenerateJoinTokenRequest
-	(*GenerateJoinTokenResponse)(nil),  // 64: warren.v1.GenerateJoinTokenResponse
-	(*JoinClusterRequest)(nil),         // 65: warren.v1.JoinClusterRequest
-	(*JoinClusterResponse)(nil),        // 66: warren.v1.JoinClusterResponse
-	(*GetClusterInfoRequest)(nil),      // 67: warren.v1.GetClusterInfoRequest
-	(*GetClusterInfoResponse)(nil),     // 68: warren.v1.GetClusterInfoResponse
-	(*ClusterServer)(nil),              // 69: warren.v1.ClusterServer
-	(*ReportTaskHealthRequest)(nil),    // 70: warren.v1.ReportTaskHealthRequest
-	(*ReportTaskHealthResponse)(nil),   // 71: warren.v1.ReportTaskHealthResponse
-	(*Event)(nil),                      // 72: warren.v1.Event
-	(*StreamEventsRequest)(nil),        // 73: warren.v1.StreamEventsRequest
-	(*RequestCertificateRequest)(nil),  // 74: warren.v1.RequestCertificateRequest
-	(*RequestCertificateResponse)(nil), // 75: warren.v1.RequestCertificateResponse
-	(*Ingress)(nil),                    // 76: warren.v1.Ingress
-	(*IngressRule)(nil),                // 77: warren.v1.IngressRule
-	(*IngressPath)(nil),                // 78: warren.v1.IngressPath
-	(*IngressBackend)(nil),             // 79: warren.v1.IngressBackend
-	(*IngressTLS)(nil),                 // 80: warren.v1.IngressTLS
-	(*CreateIngressRequest)(nil),       // 81: warren.v1.CreateIngressRequest
-	(*CreateIngressResponse)(nil),      // 82: warren.v1.CreateIngressResponse
-	(*UpdateIngressRequest)(nil),       // 83: warren.v1.UpdateIngressRequest
-	(*UpdateIngressResponse)(nil),      // 84: warren.v1.UpdateIngressResponse
-	(*DeleteIngressRequest)(nil),       // 85: warren.v1.DeleteIngressRequest
-	(*DeleteIngressResponse)(nil),      // 86: warren.v1.DeleteIngressResponse
-	(*GetIngressRequest)(nil),          // 87: warren.v1.GetIngressRequest
-	(*GetIngressResponse)(nil),         // 88: warren.v1.GetIngressResponse
-	(*ListIngressesRequest)(nil),       // 89: warren.v1.ListIngressesRequest
-	(*ListIngressesResponse)(nil),      // 90: warren.v1.ListIngressesResponse
-	nil,                                // 91: warren.v1.Node.LabelsEntry
-	nil,                                // 92: warren.v1.RegisterNodeRequest.LabelsEntry
-	nil,                                // 93: warren.v1.Service.EnvEntry
-	nil,                                // 94: warren.v1.CreateServiceRequest.EnvEntry
-	nil,                                // 95: warren.v1.UpdateServiceRequest.EnvEntry
-	nil,                                // 96: warren.v1.Task.EnvEntry
-	nil,                                // 97: warren.v1.Volume.DriverOptsEntry
-	nil,                                // 98: warren.v1.Volume.LabelsEntry
-	nil,                                // 99: warren.v1.CreateVolumeRequest.DriverOptsEntry
-	nil,                                // 100: warren.v1.CreateVolumeRequest.LabelsEntry
-	nil,                                // 101: warren.v1.Event.MetadataEntry
-	nil,                                // 102: warren.v1.Ingress.LabelsEntry
-	nil,                                // 103: warren.v1.CreateIngressRequest.LabelsEntry
-	nil,                                // 104: warren.v1.UpdateIngressRequest.LabelsEntry
-	(*timestamppb.Timestamp)(nil),      // 105: google.protobuf.Timestamp
+	(HealthCheck_Type)(0),                // 0: warren.v1.HealthCheck.Type
+	(PortMapping_PublishMode)(0),         // 1: warren.v1.PortMapping.PublishMode
+	(*Node)(nil),                         // 2: warren.v1.Node
+	(*NodeResources)(nil),                // 3: warren.v1.NodeResources
+	(*RegisterNodeRequest)(nil),          // 4: warren.v1.RegisterNodeRequest
+	(*RegisterNodeResponse)(nil),         // 5: warren.v1.RegisterNodeResponse
+	(*HeartbeatRequest)(nil),             // 6: warren.v1.HeartbeatRequest
+	(*HeartbeatResponse)(nil),            // 7: warren.v1.HeartbeatResponse
+	(*TaskStatus)(nil),                   // 8: warren.v1.TaskStatus
+	(*ListNodesRequest)(nil),             // 9: warren.v1.ListNodesRequest
+	(*ListNodesResponse)(nil),            // 10: warren.v1.ListNodesResponse
+	(*GetNodeRequest)(nil),               // 11: warren.v1.GetNodeRequest
+	(*GetNodeResponse)(nil),              // 12: warren.v1.GetNodeResponse
+	(*RemoveNodeRequest)(nil),            // 13: warren.v1.RemoveNodeRequest
+	(*RemoveNodeResponse)(nil),           // 14: warren.v1.RemoveNodeResponse
+	(*Service)(nil),                      // 15: warren.v1.Service
+	(*UpdateConfig)(nil),                 // 16: warren.v1.UpdateConfig
+	(*HealthCheck)(nil),                  // 17: warren.v1.HealthCheck
+	(*HTTPHealthCheck)(nil),              // 18: warren.v1.HTTPHealthCheck
+	(*Header)(nil),                       // 19: warren.v1.Header
+	(*TCPHealthCheck)(nil),               // 20: warren.v1.TCPHealthCheck
+	(*ExecHealthCheck)(nil),              // 21: warren.v1.ExecHealthCheck
+	(*RestartPolicy)(nil),                // 22: warren.v1.RestartPolicy
+	(*ResourceRequirements)(nil),         // 23: warren.v1.ResourceRequirements
+	(*VolumeMount)(nil),                  // 24: warren.v1.VolumeMount
+	(*PortMapping)(nil),                  // 25: warren.v1.PortMapping
+	(*CreateServiceRequest)(nil),         // 26: warren.v1.CreateServiceRequest
+	(*CreateServiceResponse)(nil),        // 27: warren.v1.CreateServiceResponse
+	(*UpdateServiceRequest)(nil),         // 28: warren.v1.UpdateServiceRequest
+	(*UpdateServiceResponse)(nil),        // 29: warren.v1.UpdateServiceResponse
+	(*DeleteServiceRequest)(nil),         // 30: warren.v1.DeleteServiceRequest
+	(*DeleteServiceResponse)(nil),        // 31: warren.v1.DeleteServiceResponse
+	(*GetServiceRequest)(nil),            // 32: warren.v1.GetServiceRequest
+	(*GetServiceResponse)(nil),           // 33: warren.v1.GetServiceResponse
+	(*ListServicesRequest)(nil),          // 34: warren.v1.ListServicesRequest
+	(*ListServicesResponse)(nil),         // 35: warren.v1.ListServicesResponse
+	(*Task)(nil),                         // 36: warren.v1.Task
+	(*UpdateTaskStatusRequest)(nil),      // 37: warren.v1.UpdateTaskStatusRequest
+	(*UpdateTaskStatusResponse)(nil),     // 38: warren.v1.UpdateTaskStatusResponse
+	(*ListTasksRequest)(nil),             // 39: warren.v1.ListTasksRequest
+	(*ListTasksResponse)(nil),            // 40: warren.v1.ListTasksResponse
+	(*GetTaskRequest)(nil),               // 41: warren.v1.GetTaskRequest
+	(*GetTaskResponse)(nil),              // 42: warren.v1.GetTaskResponse
+	(*WatchTasksRequest)(nil),            // 43: warren.v1.WatchTasksRequest
+	(*TaskEvent)(nil),                    // 44: warren.v1.TaskEvent
+	(*Secret)(nil),                       // 45: warren.v1.Secret
+	(*CreateSecretRequest)(nil),          // 46: warren.v1.CreateSecretRequest
+	(*CreateSecretResponse)(nil),         // 47: warren.v1.CreateSecretResponse
+	(*DeleteSecretRequest)(nil),          // 48: warren.v1.DeleteSecretRequest
+	(*DeleteSecretResponse)(nil),         // 49: warren.v1.DeleteSecretResponse
+	(*GetSecretByNameRequest)(nil),       // 50: warren.v1.GetSecretByNameRequest
+	(*GetSecretByNameResponse)(nil),      // 51: warren.v1.GetSecretByNameResponse
+	(*ListSecretsRequest)(nil),           // 52: warren.v1.ListSecretsRequest
+	(*ListSecretsResponse)(nil),          // 53: warren.v1.ListSecretsResponse
+	(*Volume)(nil),                       // 54: warren.v1.Volume
+	(*CreateVolumeRequest)(nil),          // 55: warren.v1.CreateVolumeRequest
+	(*CreateVolumeResponse)(nil),         // 56: warren.v1.CreateVolumeResponse
+	(*DeleteVolumeRequest)(nil),          // 57: warren.v1.DeleteVolumeRequest
+	(*DeleteVolumeResponse)(nil),         // 58: warren.v1.DeleteVolumeResponse
+	(*GetVolumeByNameRequest)(nil),       // 59: warren.v1.GetVolumeByNameRequest
+	(*GetVolumeByNameResponse)(nil),      // 60: warren.v1.GetVolumeByNameResponse
+	(*ListVolumesRequest)(nil),           // 61: warren.v1.ListVolumesRequest
+	(*ListVolumesResponse)(nil),          // 62: warren.v1.ListVolumesResponse
+	(*GenerateJoinTokenRequest)(nil),     // 63: warren.v1.GenerateJoinTokenRequest
+	(*GenerateJoinTokenResponse)(nil),    // 64: warren.v1.GenerateJoinTokenResponse
+	(*JoinClusterRequest)(nil),           // 65: warren.v1.JoinClusterRequest
+	(*JoinClusterResponse)(nil),          // 66: warren.v1.JoinClusterResponse
+	(*GetClusterInfoRequest)(nil),        // 67: warren.v1.GetClusterInfoRequest
+	(*GetClusterInfoResponse)(nil),       // 68: warren.v1.GetClusterInfoResponse
+	(*ClusterServer)(nil),                // 69: warren.v1.ClusterServer
+	(*ReportTaskHealthRequest)(nil),      // 70: warren.v1.ReportTaskHealthRequest
+	(*ReportTaskHealthResponse)(nil),     // 71: warren.v1.ReportTaskHealthResponse
+	(*Event)(nil),                        // 72: warren.v1.Event
+	(*StreamEventsRequest)(nil),          // 73: warren.v1.StreamEventsRequest
+	(*RequestCertificateRequest)(nil),    // 74: warren.v1.RequestCertificateRequest
+	(*RequestCertificateResponse)(nil),   // 75: warren.v1.RequestCertificateResponse
+	(*Ingress)(nil),                      // 76: warren.v1.Ingress
+	(*IngressRule)(nil),                  // 77: warren.v1.IngressRule
+	(*IngressPath)(nil),                  // 78: warren.v1.IngressPath
+	(*IngressBackend)(nil),               // 79: warren.v1.IngressBackend
+	(*IngressTLS)(nil),                   // 80: warren.v1.IngressTLS
+	(*CreateIngressRequest)(nil),         // 81: warren.v1.CreateIngressRequest
+	(*CreateIngressResponse)(nil),        // 82: warren.v1.CreateIngressResponse
+	(*UpdateIngressRequest)(nil),         // 83: warren.v1.UpdateIngressRequest
+	(*UpdateIngressResponse)(nil),        // 84: warren.v1.UpdateIngressResponse
+	(*DeleteIngressRequest)(nil),         // 85: warren.v1.DeleteIngressRequest
+	(*DeleteIngressResponse)(nil),        // 86: warren.v1.DeleteIngressResponse
+	(*GetIngressRequest)(nil),            // 87: warren.v1.GetIngressRequest
+	(*GetIngressResponse)(nil),           // 88: warren.v1.GetIngressResponse
+	(*ListIngressesRequest)(nil),         // 89: warren.v1.ListIngressesRequest
+	(*ListIngressesResponse)(nil),        // 90: warren.v1.ListIngressesResponse
+	(*TLSCertificate)(nil),               // 91: warren.v1.TLSCertificate
+	(*CreateTLSCertificateRequest)(nil),  // 92: warren.v1.CreateTLSCertificateRequest
+	(*CreateTLSCertificateResponse)(nil), // 93: warren.v1.CreateTLSCertificateResponse
+	(*GetTLSCertificateRequest)(nil),     // 94: warren.v1.GetTLSCertificateRequest
+	(*GetTLSCertificateResponse)(nil),    // 95: warren.v1.GetTLSCertificateResponse
+	(*ListTLSCertificatesRequest)(nil),   // 96: warren.v1.ListTLSCertificatesRequest
+	(*ListTLSCertificatesResponse)(nil),  // 97: warren.v1.ListTLSCertificatesResponse
+	(*DeleteTLSCertificateRequest)(nil),  // 98: warren.v1.DeleteTLSCertificateRequest
+	(*DeleteTLSCertificateResponse)(nil), // 99: warren.v1.DeleteTLSCertificateResponse
+	nil,                                  // 100: warren.v1.Node.LabelsEntry
+	nil,                                  // 101: warren.v1.RegisterNodeRequest.LabelsEntry
+	nil,                                  // 102: warren.v1.Service.EnvEntry
+	nil,                                  // 103: warren.v1.CreateServiceRequest.EnvEntry
+	nil,                                  // 104: warren.v1.UpdateServiceRequest.EnvEntry
+	nil,                                  // 105: warren.v1.Task.EnvEntry
+	nil,                                  // 106: warren.v1.Volume.DriverOptsEntry
+	nil,                                  // 107: warren.v1.Volume.LabelsEntry
+	nil,                                  // 108: warren.v1.CreateVolumeRequest.DriverOptsEntry
+	nil,                                  // 109: warren.v1.CreateVolumeRequest.LabelsEntry
+	nil,                                  // 110: warren.v1.Event.MetadataEntry
+	nil,                                  // 111: warren.v1.Ingress.LabelsEntry
+	nil,                                  // 112: warren.v1.CreateIngressRequest.LabelsEntry
+	nil,                                  // 113: warren.v1.UpdateIngressRequest.LabelsEntry
+	nil,                                  // 114: warren.v1.TLSCertificate.LabelsEntry
+	nil,                                  // 115: warren.v1.CreateTLSCertificateRequest.LabelsEntry
+	(*timestamppb.Timestamp)(nil),        // 116: google.protobuf.Timestamp
 }
 var file_api_proto_warren_proto_depIdxs = []int32{
 	3,   // 0: warren.v1.Node.resources:type_name -> warren.v1.NodeResources
-	105, // 1: warren.v1.Node.last_heartbeat:type_name -> google.protobuf.Timestamp
-	105, // 2: warren.v1.Node.created_at:type_name -> google.protobuf.Timestamp
-	91,  // 3: warren.v1.Node.labels:type_name -> warren.v1.Node.LabelsEntry
+	116, // 1: warren.v1.Node.last_heartbeat:type_name -> google.protobuf.Timestamp
+	116, // 2: warren.v1.Node.created_at:type_name -> google.protobuf.Timestamp
+	100, // 3: warren.v1.Node.labels:type_name -> warren.v1.Node.LabelsEntry
 	3,   // 4: warren.v1.RegisterNodeRequest.resources:type_name -> warren.v1.NodeResources
-	92,  // 5: warren.v1.RegisterNodeRequest.labels:type_name -> warren.v1.RegisterNodeRequest.LabelsEntry
+	101, // 5: warren.v1.RegisterNodeRequest.labels:type_name -> warren.v1.RegisterNodeRequest.LabelsEntry
 	2,   // 6: warren.v1.RegisterNodeResponse.node:type_name -> warren.v1.Node
 	3,   // 7: warren.v1.HeartbeatRequest.available_resources:type_name -> warren.v1.NodeResources
 	8,   // 8: warren.v1.HeartbeatRequest.task_statuses:type_name -> warren.v1.TaskStatus
@@ -5900,9 +6484,9 @@ var file_api_proto_warren_proto_depIdxs = []int32{
 	22,  // 13: warren.v1.Service.restart_policy:type_name -> warren.v1.RestartPolicy
 	23,  // 14: warren.v1.Service.resources:type_name -> warren.v1.ResourceRequirements
 	24,  // 15: warren.v1.Service.volumes:type_name -> warren.v1.VolumeMount
-	93,  // 16: warren.v1.Service.env:type_name -> warren.v1.Service.EnvEntry
-	105, // 17: warren.v1.Service.created_at:type_name -> google.protobuf.Timestamp
-	105, // 18: warren.v1.Service.updated_at:type_name -> google.protobuf.Timestamp
+	102, // 16: warren.v1.Service.env:type_name -> warren.v1.Service.EnvEntry
+	116, // 17: warren.v1.Service.created_at:type_name -> google.protobuf.Timestamp
+	116, // 18: warren.v1.Service.updated_at:type_name -> google.protobuf.Timestamp
 	25,  // 19: warren.v1.Service.ports:type_name -> warren.v1.PortMapping
 	0,   // 20: warren.v1.HealthCheck.type:type_name -> warren.v1.HealthCheck.Type
 	18,  // 21: warren.v1.HealthCheck.http:type_name -> warren.v1.HTTPHealthCheck
@@ -5915,128 +6499,145 @@ var file_api_proto_warren_proto_depIdxs = []int32{
 	22,  // 28: warren.v1.CreateServiceRequest.restart_policy:type_name -> warren.v1.RestartPolicy
 	23,  // 29: warren.v1.CreateServiceRequest.resources:type_name -> warren.v1.ResourceRequirements
 	24,  // 30: warren.v1.CreateServiceRequest.volumes:type_name -> warren.v1.VolumeMount
-	94,  // 31: warren.v1.CreateServiceRequest.env:type_name -> warren.v1.CreateServiceRequest.EnvEntry
+	103, // 31: warren.v1.CreateServiceRequest.env:type_name -> warren.v1.CreateServiceRequest.EnvEntry
 	25,  // 32: warren.v1.CreateServiceRequest.ports:type_name -> warren.v1.PortMapping
 	15,  // 33: warren.v1.CreateServiceResponse.service:type_name -> warren.v1.Service
-	95,  // 34: warren.v1.UpdateServiceRequest.env:type_name -> warren.v1.UpdateServiceRequest.EnvEntry
+	104, // 34: warren.v1.UpdateServiceRequest.env:type_name -> warren.v1.UpdateServiceRequest.EnvEntry
 	15,  // 35: warren.v1.UpdateServiceResponse.service:type_name -> warren.v1.Service
 	15,  // 36: warren.v1.GetServiceResponse.service:type_name -> warren.v1.Service
 	15,  // 37: warren.v1.ListServicesResponse.services:type_name -> warren.v1.Service
-	96,  // 38: warren.v1.Task.env:type_name -> warren.v1.Task.EnvEntry
+	105, // 38: warren.v1.Task.env:type_name -> warren.v1.Task.EnvEntry
 	23,  // 39: warren.v1.Task.resources:type_name -> warren.v1.ResourceRequirements
 	24,  // 40: warren.v1.Task.volumes:type_name -> warren.v1.VolumeMount
 	17,  // 41: warren.v1.Task.health_check:type_name -> warren.v1.HealthCheck
 	22,  // 42: warren.v1.Task.restart_policy:type_name -> warren.v1.RestartPolicy
-	105, // 43: warren.v1.Task.created_at:type_name -> google.protobuf.Timestamp
-	105, // 44: warren.v1.Task.updated_at:type_name -> google.protobuf.Timestamp
+	116, // 43: warren.v1.Task.created_at:type_name -> google.protobuf.Timestamp
+	116, // 44: warren.v1.Task.updated_at:type_name -> google.protobuf.Timestamp
 	36,  // 45: warren.v1.ListTasksResponse.tasks:type_name -> warren.v1.Task
 	36,  // 46: warren.v1.GetTaskResponse.task:type_name -> warren.v1.Task
 	36,  // 47: warren.v1.TaskEvent.task:type_name -> warren.v1.Task
-	105, // 48: warren.v1.Secret.created_at:type_name -> google.protobuf.Timestamp
+	116, // 48: warren.v1.Secret.created_at:type_name -> google.protobuf.Timestamp
 	45,  // 49: warren.v1.CreateSecretResponse.secret:type_name -> warren.v1.Secret
 	45,  // 50: warren.v1.GetSecretByNameResponse.secret:type_name -> warren.v1.Secret
 	45,  // 51: warren.v1.ListSecretsResponse.secrets:type_name -> warren.v1.Secret
-	97,  // 52: warren.v1.Volume.driver_opts:type_name -> warren.v1.Volume.DriverOptsEntry
-	98,  // 53: warren.v1.Volume.labels:type_name -> warren.v1.Volume.LabelsEntry
-	105, // 54: warren.v1.Volume.created_at:type_name -> google.protobuf.Timestamp
-	99,  // 55: warren.v1.CreateVolumeRequest.driver_opts:type_name -> warren.v1.CreateVolumeRequest.DriverOptsEntry
-	100, // 56: warren.v1.CreateVolumeRequest.labels:type_name -> warren.v1.CreateVolumeRequest.LabelsEntry
+	106, // 52: warren.v1.Volume.driver_opts:type_name -> warren.v1.Volume.DriverOptsEntry
+	107, // 53: warren.v1.Volume.labels:type_name -> warren.v1.Volume.LabelsEntry
+	116, // 54: warren.v1.Volume.created_at:type_name -> google.protobuf.Timestamp
+	108, // 55: warren.v1.CreateVolumeRequest.driver_opts:type_name -> warren.v1.CreateVolumeRequest.DriverOptsEntry
+	109, // 56: warren.v1.CreateVolumeRequest.labels:type_name -> warren.v1.CreateVolumeRequest.LabelsEntry
 	54,  // 57: warren.v1.CreateVolumeResponse.volume:type_name -> warren.v1.Volume
 	54,  // 58: warren.v1.GetVolumeByNameResponse.volume:type_name -> warren.v1.Volume
 	54,  // 59: warren.v1.ListVolumesResponse.volumes:type_name -> warren.v1.Volume
-	105, // 60: warren.v1.GenerateJoinTokenResponse.expires_at:type_name -> google.protobuf.Timestamp
+	116, // 60: warren.v1.GenerateJoinTokenResponse.expires_at:type_name -> google.protobuf.Timestamp
 	69,  // 61: warren.v1.GetClusterInfoResponse.servers:type_name -> warren.v1.ClusterServer
-	105, // 62: warren.v1.ReportTaskHealthRequest.checked_at:type_name -> google.protobuf.Timestamp
-	105, // 63: warren.v1.Event.timestamp:type_name -> google.protobuf.Timestamp
-	101, // 64: warren.v1.Event.metadata:type_name -> warren.v1.Event.MetadataEntry
+	116, // 62: warren.v1.ReportTaskHealthRequest.checked_at:type_name -> google.protobuf.Timestamp
+	116, // 63: warren.v1.Event.timestamp:type_name -> google.protobuf.Timestamp
+	110, // 64: warren.v1.Event.metadata:type_name -> warren.v1.Event.MetadataEntry
 	77,  // 65: warren.v1.Ingress.rules:type_name -> warren.v1.IngressRule
 	80,  // 66: warren.v1.Ingress.tls:type_name -> warren.v1.IngressTLS
-	102, // 67: warren.v1.Ingress.labels:type_name -> warren.v1.Ingress.LabelsEntry
-	105, // 68: warren.v1.Ingress.created_at:type_name -> google.protobuf.Timestamp
-	105, // 69: warren.v1.Ingress.updated_at:type_name -> google.protobuf.Timestamp
+	111, // 67: warren.v1.Ingress.labels:type_name -> warren.v1.Ingress.LabelsEntry
+	116, // 68: warren.v1.Ingress.created_at:type_name -> google.protobuf.Timestamp
+	116, // 69: warren.v1.Ingress.updated_at:type_name -> google.protobuf.Timestamp
 	78,  // 70: warren.v1.IngressRule.paths:type_name -> warren.v1.IngressPath
 	79,  // 71: warren.v1.IngressPath.backend:type_name -> warren.v1.IngressBackend
 	77,  // 72: warren.v1.CreateIngressRequest.rules:type_name -> warren.v1.IngressRule
 	80,  // 73: warren.v1.CreateIngressRequest.tls:type_name -> warren.v1.IngressTLS
-	103, // 74: warren.v1.CreateIngressRequest.labels:type_name -> warren.v1.CreateIngressRequest.LabelsEntry
+	112, // 74: warren.v1.CreateIngressRequest.labels:type_name -> warren.v1.CreateIngressRequest.LabelsEntry
 	76,  // 75: warren.v1.CreateIngressResponse.ingress:type_name -> warren.v1.Ingress
 	77,  // 76: warren.v1.UpdateIngressRequest.rules:type_name -> warren.v1.IngressRule
 	80,  // 77: warren.v1.UpdateIngressRequest.tls:type_name -> warren.v1.IngressTLS
-	104, // 78: warren.v1.UpdateIngressRequest.labels:type_name -> warren.v1.UpdateIngressRequest.LabelsEntry
+	113, // 78: warren.v1.UpdateIngressRequest.labels:type_name -> warren.v1.UpdateIngressRequest.LabelsEntry
 	76,  // 79: warren.v1.UpdateIngressResponse.ingress:type_name -> warren.v1.Ingress
 	76,  // 80: warren.v1.GetIngressResponse.ingress:type_name -> warren.v1.Ingress
 	76,  // 81: warren.v1.ListIngressesResponse.ingresses:type_name -> warren.v1.Ingress
-	4,   // 82: warren.v1.WarrenAPI.RegisterNode:input_type -> warren.v1.RegisterNodeRequest
-	6,   // 83: warren.v1.WarrenAPI.Heartbeat:input_type -> warren.v1.HeartbeatRequest
-	9,   // 84: warren.v1.WarrenAPI.ListNodes:input_type -> warren.v1.ListNodesRequest
-	11,  // 85: warren.v1.WarrenAPI.GetNode:input_type -> warren.v1.GetNodeRequest
-	13,  // 86: warren.v1.WarrenAPI.RemoveNode:input_type -> warren.v1.RemoveNodeRequest
-	26,  // 87: warren.v1.WarrenAPI.CreateService:input_type -> warren.v1.CreateServiceRequest
-	28,  // 88: warren.v1.WarrenAPI.UpdateService:input_type -> warren.v1.UpdateServiceRequest
-	30,  // 89: warren.v1.WarrenAPI.DeleteService:input_type -> warren.v1.DeleteServiceRequest
-	32,  // 90: warren.v1.WarrenAPI.GetService:input_type -> warren.v1.GetServiceRequest
-	34,  // 91: warren.v1.WarrenAPI.ListServices:input_type -> warren.v1.ListServicesRequest
-	37,  // 92: warren.v1.WarrenAPI.UpdateTaskStatus:input_type -> warren.v1.UpdateTaskStatusRequest
-	39,  // 93: warren.v1.WarrenAPI.ListTasks:input_type -> warren.v1.ListTasksRequest
-	41,  // 94: warren.v1.WarrenAPI.GetTask:input_type -> warren.v1.GetTaskRequest
-	43,  // 95: warren.v1.WarrenAPI.WatchTasks:input_type -> warren.v1.WatchTasksRequest
-	70,  // 96: warren.v1.WarrenAPI.ReportTaskHealth:input_type -> warren.v1.ReportTaskHealthRequest
-	46,  // 97: warren.v1.WarrenAPI.CreateSecret:input_type -> warren.v1.CreateSecretRequest
-	50,  // 98: warren.v1.WarrenAPI.GetSecretByName:input_type -> warren.v1.GetSecretByNameRequest
-	48,  // 99: warren.v1.WarrenAPI.DeleteSecret:input_type -> warren.v1.DeleteSecretRequest
-	52,  // 100: warren.v1.WarrenAPI.ListSecrets:input_type -> warren.v1.ListSecretsRequest
-	55,  // 101: warren.v1.WarrenAPI.CreateVolume:input_type -> warren.v1.CreateVolumeRequest
-	59,  // 102: warren.v1.WarrenAPI.GetVolumeByName:input_type -> warren.v1.GetVolumeByNameRequest
-	57,  // 103: warren.v1.WarrenAPI.DeleteVolume:input_type -> warren.v1.DeleteVolumeRequest
-	61,  // 104: warren.v1.WarrenAPI.ListVolumes:input_type -> warren.v1.ListVolumesRequest
-	63,  // 105: warren.v1.WarrenAPI.GenerateJoinToken:input_type -> warren.v1.GenerateJoinTokenRequest
-	65,  // 106: warren.v1.WarrenAPI.JoinCluster:input_type -> warren.v1.JoinClusterRequest
-	67,  // 107: warren.v1.WarrenAPI.GetClusterInfo:input_type -> warren.v1.GetClusterInfoRequest
-	74,  // 108: warren.v1.WarrenAPI.RequestCertificate:input_type -> warren.v1.RequestCertificateRequest
-	81,  // 109: warren.v1.WarrenAPI.CreateIngress:input_type -> warren.v1.CreateIngressRequest
-	83,  // 110: warren.v1.WarrenAPI.UpdateIngress:input_type -> warren.v1.UpdateIngressRequest
-	85,  // 111: warren.v1.WarrenAPI.DeleteIngress:input_type -> warren.v1.DeleteIngressRequest
-	87,  // 112: warren.v1.WarrenAPI.GetIngress:input_type -> warren.v1.GetIngressRequest
-	89,  // 113: warren.v1.WarrenAPI.ListIngresses:input_type -> warren.v1.ListIngressesRequest
-	73,  // 114: warren.v1.WarrenAPI.StreamEvents:input_type -> warren.v1.StreamEventsRequest
-	5,   // 115: warren.v1.WarrenAPI.RegisterNode:output_type -> warren.v1.RegisterNodeResponse
-	7,   // 116: warren.v1.WarrenAPI.Heartbeat:output_type -> warren.v1.HeartbeatResponse
-	10,  // 117: warren.v1.WarrenAPI.ListNodes:output_type -> warren.v1.ListNodesResponse
-	12,  // 118: warren.v1.WarrenAPI.GetNode:output_type -> warren.v1.GetNodeResponse
-	14,  // 119: warren.v1.WarrenAPI.RemoveNode:output_type -> warren.v1.RemoveNodeResponse
-	27,  // 120: warren.v1.WarrenAPI.CreateService:output_type -> warren.v1.CreateServiceResponse
-	29,  // 121: warren.v1.WarrenAPI.UpdateService:output_type -> warren.v1.UpdateServiceResponse
-	31,  // 122: warren.v1.WarrenAPI.DeleteService:output_type -> warren.v1.DeleteServiceResponse
-	33,  // 123: warren.v1.WarrenAPI.GetService:output_type -> warren.v1.GetServiceResponse
-	35,  // 124: warren.v1.WarrenAPI.ListServices:output_type -> warren.v1.ListServicesResponse
-	38,  // 125: warren.v1.WarrenAPI.UpdateTaskStatus:output_type -> warren.v1.UpdateTaskStatusResponse
-	40,  // 126: warren.v1.WarrenAPI.ListTasks:output_type -> warren.v1.ListTasksResponse
-	42,  // 127: warren.v1.WarrenAPI.GetTask:output_type -> warren.v1.GetTaskResponse
-	44,  // 128: warren.v1.WarrenAPI.WatchTasks:output_type -> warren.v1.TaskEvent
-	71,  // 129: warren.v1.WarrenAPI.ReportTaskHealth:output_type -> warren.v1.ReportTaskHealthResponse
-	47,  // 130: warren.v1.WarrenAPI.CreateSecret:output_type -> warren.v1.CreateSecretResponse
-	51,  // 131: warren.v1.WarrenAPI.GetSecretByName:output_type -> warren.v1.GetSecretByNameResponse
-	49,  // 132: warren.v1.WarrenAPI.DeleteSecret:output_type -> warren.v1.DeleteSecretResponse
-	53,  // 133: warren.v1.WarrenAPI.ListSecrets:output_type -> warren.v1.ListSecretsResponse
-	56,  // 134: warren.v1.WarrenAPI.CreateVolume:output_type -> warren.v1.CreateVolumeResponse
-	60,  // 135: warren.v1.WarrenAPI.GetVolumeByName:output_type -> warren.v1.GetVolumeByNameResponse
-	58,  // 136: warren.v1.WarrenAPI.DeleteVolume:output_type -> warren.v1.DeleteVolumeResponse
-	62,  // 137: warren.v1.WarrenAPI.ListVolumes:output_type -> warren.v1.ListVolumesResponse
-	64,  // 138: warren.v1.WarrenAPI.GenerateJoinToken:output_type -> warren.v1.GenerateJoinTokenResponse
-	66,  // 139: warren.v1.WarrenAPI.JoinCluster:output_type -> warren.v1.JoinClusterResponse
-	68,  // 140: warren.v1.WarrenAPI.GetClusterInfo:output_type -> warren.v1.GetClusterInfoResponse
-	75,  // 141: warren.v1.WarrenAPI.RequestCertificate:output_type -> warren.v1.RequestCertificateResponse
-	82,  // 142: warren.v1.WarrenAPI.CreateIngress:output_type -> warren.v1.CreateIngressResponse
-	84,  // 143: warren.v1.WarrenAPI.UpdateIngress:output_type -> warren.v1.UpdateIngressResponse
-	86,  // 144: warren.v1.WarrenAPI.DeleteIngress:output_type -> warren.v1.DeleteIngressResponse
-	88,  // 145: warren.v1.WarrenAPI.GetIngress:output_type -> warren.v1.GetIngressResponse
-	90,  // 146: warren.v1.WarrenAPI.ListIngresses:output_type -> warren.v1.ListIngressesResponse
-	72,  // 147: warren.v1.WarrenAPI.StreamEvents:output_type -> warren.v1.Event
-	115, // [115:148] is the sub-list for method output_type
-	82,  // [82:115] is the sub-list for method input_type
-	82,  // [82:82] is the sub-list for extension type_name
-	82,  // [82:82] is the sub-list for extension extendee
-	0,   // [0:82] is the sub-list for field type_name
+	116, // 82: warren.v1.TLSCertificate.not_before:type_name -> google.protobuf.Timestamp
+	116, // 83: warren.v1.TLSCertificate.not_after:type_name -> google.protobuf.Timestamp
+	114, // 84: warren.v1.TLSCertificate.labels:type_name -> warren.v1.TLSCertificate.LabelsEntry
+	116, // 85: warren.v1.TLSCertificate.created_at:type_name -> google.protobuf.Timestamp
+	116, // 86: warren.v1.TLSCertificate.updated_at:type_name -> google.protobuf.Timestamp
+	115, // 87: warren.v1.CreateTLSCertificateRequest.labels:type_name -> warren.v1.CreateTLSCertificateRequest.LabelsEntry
+	91,  // 88: warren.v1.CreateTLSCertificateResponse.certificate:type_name -> warren.v1.TLSCertificate
+	91,  // 89: warren.v1.GetTLSCertificateResponse.certificate:type_name -> warren.v1.TLSCertificate
+	91,  // 90: warren.v1.ListTLSCertificatesResponse.certificates:type_name -> warren.v1.TLSCertificate
+	4,   // 91: warren.v1.WarrenAPI.RegisterNode:input_type -> warren.v1.RegisterNodeRequest
+	6,   // 92: warren.v1.WarrenAPI.Heartbeat:input_type -> warren.v1.HeartbeatRequest
+	9,   // 93: warren.v1.WarrenAPI.ListNodes:input_type -> warren.v1.ListNodesRequest
+	11,  // 94: warren.v1.WarrenAPI.GetNode:input_type -> warren.v1.GetNodeRequest
+	13,  // 95: warren.v1.WarrenAPI.RemoveNode:input_type -> warren.v1.RemoveNodeRequest
+	26,  // 96: warren.v1.WarrenAPI.CreateService:input_type -> warren.v1.CreateServiceRequest
+	28,  // 97: warren.v1.WarrenAPI.UpdateService:input_type -> warren.v1.UpdateServiceRequest
+	30,  // 98: warren.v1.WarrenAPI.DeleteService:input_type -> warren.v1.DeleteServiceRequest
+	32,  // 99: warren.v1.WarrenAPI.GetService:input_type -> warren.v1.GetServiceRequest
+	34,  // 100: warren.v1.WarrenAPI.ListServices:input_type -> warren.v1.ListServicesRequest
+	37,  // 101: warren.v1.WarrenAPI.UpdateTaskStatus:input_type -> warren.v1.UpdateTaskStatusRequest
+	39,  // 102: warren.v1.WarrenAPI.ListTasks:input_type -> warren.v1.ListTasksRequest
+	41,  // 103: warren.v1.WarrenAPI.GetTask:input_type -> warren.v1.GetTaskRequest
+	43,  // 104: warren.v1.WarrenAPI.WatchTasks:input_type -> warren.v1.WatchTasksRequest
+	70,  // 105: warren.v1.WarrenAPI.ReportTaskHealth:input_type -> warren.v1.ReportTaskHealthRequest
+	46,  // 106: warren.v1.WarrenAPI.CreateSecret:input_type -> warren.v1.CreateSecretRequest
+	50,  // 107: warren.v1.WarrenAPI.GetSecretByName:input_type -> warren.v1.GetSecretByNameRequest
+	48,  // 108: warren.v1.WarrenAPI.DeleteSecret:input_type -> warren.v1.DeleteSecretRequest
+	52,  // 109: warren.v1.WarrenAPI.ListSecrets:input_type -> warren.v1.ListSecretsRequest
+	55,  // 110: warren.v1.WarrenAPI.CreateVolume:input_type -> warren.v1.CreateVolumeRequest
+	59,  // 111: warren.v1.WarrenAPI.GetVolumeByName:input_type -> warren.v1.GetVolumeByNameRequest
+	57,  // 112: warren.v1.WarrenAPI.DeleteVolume:input_type -> warren.v1.DeleteVolumeRequest
+	61,  // 113: warren.v1.WarrenAPI.ListVolumes:input_type -> warren.v1.ListVolumesRequest
+	63,  // 114: warren.v1.WarrenAPI.GenerateJoinToken:input_type -> warren.v1.GenerateJoinTokenRequest
+	65,  // 115: warren.v1.WarrenAPI.JoinCluster:input_type -> warren.v1.JoinClusterRequest
+	67,  // 116: warren.v1.WarrenAPI.GetClusterInfo:input_type -> warren.v1.GetClusterInfoRequest
+	74,  // 117: warren.v1.WarrenAPI.RequestCertificate:input_type -> warren.v1.RequestCertificateRequest
+	81,  // 118: warren.v1.WarrenAPI.CreateIngress:input_type -> warren.v1.CreateIngressRequest
+	83,  // 119: warren.v1.WarrenAPI.UpdateIngress:input_type -> warren.v1.UpdateIngressRequest
+	85,  // 120: warren.v1.WarrenAPI.DeleteIngress:input_type -> warren.v1.DeleteIngressRequest
+	87,  // 121: warren.v1.WarrenAPI.GetIngress:input_type -> warren.v1.GetIngressRequest
+	89,  // 122: warren.v1.WarrenAPI.ListIngresses:input_type -> warren.v1.ListIngressesRequest
+	92,  // 123: warren.v1.WarrenAPI.CreateTLSCertificate:input_type -> warren.v1.CreateTLSCertificateRequest
+	94,  // 124: warren.v1.WarrenAPI.GetTLSCertificate:input_type -> warren.v1.GetTLSCertificateRequest
+	96,  // 125: warren.v1.WarrenAPI.ListTLSCertificates:input_type -> warren.v1.ListTLSCertificatesRequest
+	98,  // 126: warren.v1.WarrenAPI.DeleteTLSCertificate:input_type -> warren.v1.DeleteTLSCertificateRequest
+	73,  // 127: warren.v1.WarrenAPI.StreamEvents:input_type -> warren.v1.StreamEventsRequest
+	5,   // 128: warren.v1.WarrenAPI.RegisterNode:output_type -> warren.v1.RegisterNodeResponse
+	7,   // 129: warren.v1.WarrenAPI.Heartbeat:output_type -> warren.v1.HeartbeatResponse
+	10,  // 130: warren.v1.WarrenAPI.ListNodes:output_type -> warren.v1.ListNodesResponse
+	12,  // 131: warren.v1.WarrenAPI.GetNode:output_type -> warren.v1.GetNodeResponse
+	14,  // 132: warren.v1.WarrenAPI.RemoveNode:output_type -> warren.v1.RemoveNodeResponse
+	27,  // 133: warren.v1.WarrenAPI.CreateService:output_type -> warren.v1.CreateServiceResponse
+	29,  // 134: warren.v1.WarrenAPI.UpdateService:output_type -> warren.v1.UpdateServiceResponse
+	31,  // 135: warren.v1.WarrenAPI.DeleteService:output_type -> warren.v1.DeleteServiceResponse
+	33,  // 136: warren.v1.WarrenAPI.GetService:output_type -> warren.v1.GetServiceResponse
+	35,  // 137: warren.v1.WarrenAPI.ListServices:output_type -> warren.v1.ListServicesResponse
+	38,  // 138: warren.v1.WarrenAPI.UpdateTaskStatus:output_type -> warren.v1.UpdateTaskStatusResponse
+	40,  // 139: warren.v1.WarrenAPI.ListTasks:output_type -> warren.v1.ListTasksResponse
+	42,  // 140: warren.v1.WarrenAPI.GetTask:output_type -> warren.v1.GetTaskResponse
+	44,  // 141: warren.v1.WarrenAPI.WatchTasks:output_type -> warren.v1.TaskEvent
+	71,  // 142: warren.v1.WarrenAPI.ReportTaskHealth:output_type -> warren.v1.ReportTaskHealthResponse
+	47,  // 143: warren.v1.WarrenAPI.CreateSecret:output_type -> warren.v1.CreateSecretResponse
+	51,  // 144: warren.v1.WarrenAPI.GetSecretByName:output_type -> warren.v1.GetSecretByNameResponse
+	49,  // 145: warren.v1.WarrenAPI.DeleteSecret:output_type -> warren.v1.DeleteSecretResponse
+	53,  // 146: warren.v1.WarrenAPI.ListSecrets:output_type -> warren.v1.ListSecretsResponse
+	56,  // 147: warren.v1.WarrenAPI.CreateVolume:output_type -> warren.v1.CreateVolumeResponse
+	60,  // 148: warren.v1.WarrenAPI.GetVolumeByName:output_type -> warren.v1.GetVolumeByNameResponse
+	58,  // 149: warren.v1.WarrenAPI.DeleteVolume:output_type -> warren.v1.DeleteVolumeResponse
+	62,  // 150: warren.v1.WarrenAPI.ListVolumes:output_type -> warren.v1.ListVolumesResponse
+	64,  // 151: warren.v1.WarrenAPI.GenerateJoinToken:output_type -> warren.v1.GenerateJoinTokenResponse
+	66,  // 152: warren.v1.WarrenAPI.JoinCluster:output_type -> warren.v1.JoinClusterResponse
+	68,  // 153: warren.v1.WarrenAPI.GetClusterInfo:output_type -> warren.v1.GetClusterInfoResponse
+	75,  // 154: warren.v1.WarrenAPI.RequestCertificate:output_type -> warren.v1.RequestCertificateResponse
+	82,  // 155: warren.v1.WarrenAPI.CreateIngress:output_type -> warren.v1.CreateIngressResponse
+	84,  // 156: warren.v1.WarrenAPI.UpdateIngress:output_type -> warren.v1.UpdateIngressResponse
+	86,  // 157: warren.v1.WarrenAPI.DeleteIngress:output_type -> warren.v1.DeleteIngressResponse
+	88,  // 158: warren.v1.WarrenAPI.GetIngress:output_type -> warren.v1.GetIngressResponse
+	90,  // 159: warren.v1.WarrenAPI.ListIngresses:output_type -> warren.v1.ListIngressesResponse
+	93,  // 160: warren.v1.WarrenAPI.CreateTLSCertificate:output_type -> warren.v1.CreateTLSCertificateResponse
+	95,  // 161: warren.v1.WarrenAPI.GetTLSCertificate:output_type -> warren.v1.GetTLSCertificateResponse
+	97,  // 162: warren.v1.WarrenAPI.ListTLSCertificates:output_type -> warren.v1.ListTLSCertificatesResponse
+	99,  // 163: warren.v1.WarrenAPI.DeleteTLSCertificate:output_type -> warren.v1.DeleteTLSCertificateResponse
+	72,  // 164: warren.v1.WarrenAPI.StreamEvents:output_type -> warren.v1.Event
+	128, // [128:165] is the sub-list for method output_type
+	91,  // [91:128] is the sub-list for method input_type
+	91,  // [91:91] is the sub-list for extension type_name
+	91,  // [91:91] is the sub-list for extension extendee
+	0,   // [0:91] is the sub-list for field type_name
 }
 
 func init() { file_api_proto_warren_proto_init() }
@@ -6050,7 +6651,7 @@ func file_api_proto_warren_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_api_proto_warren_proto_rawDesc), len(file_api_proto_warren_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   103,
+			NumMessages:   114,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

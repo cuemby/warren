@@ -63,6 +63,15 @@ type Store interface {
 	UpdateIngress(ingress *types.Ingress) error
 	DeleteIngress(id string) error
 
+	// TLS Certificates
+	CreateTLSCertificate(cert *types.TLSCertificate) error
+	GetTLSCertificate(id string) (*types.TLSCertificate, error)
+	GetTLSCertificateByName(name string) (*types.TLSCertificate, error)
+	GetTLSCertificatesByHost(host string) ([]*types.TLSCertificate, error)
+	ListTLSCertificates() ([]*types.TLSCertificate, error)
+	UpdateTLSCertificate(cert *types.TLSCertificate) error
+	DeleteTLSCertificate(id string) error
+
 	// Utility
 	Close() error
 }

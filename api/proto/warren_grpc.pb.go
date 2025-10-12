@@ -19,39 +19,43 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	WarrenAPI_RegisterNode_FullMethodName       = "/warren.v1.WarrenAPI/RegisterNode"
-	WarrenAPI_Heartbeat_FullMethodName          = "/warren.v1.WarrenAPI/Heartbeat"
-	WarrenAPI_ListNodes_FullMethodName          = "/warren.v1.WarrenAPI/ListNodes"
-	WarrenAPI_GetNode_FullMethodName            = "/warren.v1.WarrenAPI/GetNode"
-	WarrenAPI_RemoveNode_FullMethodName         = "/warren.v1.WarrenAPI/RemoveNode"
-	WarrenAPI_CreateService_FullMethodName      = "/warren.v1.WarrenAPI/CreateService"
-	WarrenAPI_UpdateService_FullMethodName      = "/warren.v1.WarrenAPI/UpdateService"
-	WarrenAPI_DeleteService_FullMethodName      = "/warren.v1.WarrenAPI/DeleteService"
-	WarrenAPI_GetService_FullMethodName         = "/warren.v1.WarrenAPI/GetService"
-	WarrenAPI_ListServices_FullMethodName       = "/warren.v1.WarrenAPI/ListServices"
-	WarrenAPI_UpdateTaskStatus_FullMethodName   = "/warren.v1.WarrenAPI/UpdateTaskStatus"
-	WarrenAPI_ListTasks_FullMethodName          = "/warren.v1.WarrenAPI/ListTasks"
-	WarrenAPI_GetTask_FullMethodName            = "/warren.v1.WarrenAPI/GetTask"
-	WarrenAPI_WatchTasks_FullMethodName         = "/warren.v1.WarrenAPI/WatchTasks"
-	WarrenAPI_ReportTaskHealth_FullMethodName   = "/warren.v1.WarrenAPI/ReportTaskHealth"
-	WarrenAPI_CreateSecret_FullMethodName       = "/warren.v1.WarrenAPI/CreateSecret"
-	WarrenAPI_GetSecretByName_FullMethodName    = "/warren.v1.WarrenAPI/GetSecretByName"
-	WarrenAPI_DeleteSecret_FullMethodName       = "/warren.v1.WarrenAPI/DeleteSecret"
-	WarrenAPI_ListSecrets_FullMethodName        = "/warren.v1.WarrenAPI/ListSecrets"
-	WarrenAPI_CreateVolume_FullMethodName       = "/warren.v1.WarrenAPI/CreateVolume"
-	WarrenAPI_GetVolumeByName_FullMethodName    = "/warren.v1.WarrenAPI/GetVolumeByName"
-	WarrenAPI_DeleteVolume_FullMethodName       = "/warren.v1.WarrenAPI/DeleteVolume"
-	WarrenAPI_ListVolumes_FullMethodName        = "/warren.v1.WarrenAPI/ListVolumes"
-	WarrenAPI_GenerateJoinToken_FullMethodName  = "/warren.v1.WarrenAPI/GenerateJoinToken"
-	WarrenAPI_JoinCluster_FullMethodName        = "/warren.v1.WarrenAPI/JoinCluster"
-	WarrenAPI_GetClusterInfo_FullMethodName     = "/warren.v1.WarrenAPI/GetClusterInfo"
-	WarrenAPI_RequestCertificate_FullMethodName = "/warren.v1.WarrenAPI/RequestCertificate"
-	WarrenAPI_CreateIngress_FullMethodName      = "/warren.v1.WarrenAPI/CreateIngress"
-	WarrenAPI_UpdateIngress_FullMethodName      = "/warren.v1.WarrenAPI/UpdateIngress"
-	WarrenAPI_DeleteIngress_FullMethodName      = "/warren.v1.WarrenAPI/DeleteIngress"
-	WarrenAPI_GetIngress_FullMethodName         = "/warren.v1.WarrenAPI/GetIngress"
-	WarrenAPI_ListIngresses_FullMethodName      = "/warren.v1.WarrenAPI/ListIngresses"
-	WarrenAPI_StreamEvents_FullMethodName       = "/warren.v1.WarrenAPI/StreamEvents"
+	WarrenAPI_RegisterNode_FullMethodName         = "/warren.v1.WarrenAPI/RegisterNode"
+	WarrenAPI_Heartbeat_FullMethodName            = "/warren.v1.WarrenAPI/Heartbeat"
+	WarrenAPI_ListNodes_FullMethodName            = "/warren.v1.WarrenAPI/ListNodes"
+	WarrenAPI_GetNode_FullMethodName              = "/warren.v1.WarrenAPI/GetNode"
+	WarrenAPI_RemoveNode_FullMethodName           = "/warren.v1.WarrenAPI/RemoveNode"
+	WarrenAPI_CreateService_FullMethodName        = "/warren.v1.WarrenAPI/CreateService"
+	WarrenAPI_UpdateService_FullMethodName        = "/warren.v1.WarrenAPI/UpdateService"
+	WarrenAPI_DeleteService_FullMethodName        = "/warren.v1.WarrenAPI/DeleteService"
+	WarrenAPI_GetService_FullMethodName           = "/warren.v1.WarrenAPI/GetService"
+	WarrenAPI_ListServices_FullMethodName         = "/warren.v1.WarrenAPI/ListServices"
+	WarrenAPI_UpdateTaskStatus_FullMethodName     = "/warren.v1.WarrenAPI/UpdateTaskStatus"
+	WarrenAPI_ListTasks_FullMethodName            = "/warren.v1.WarrenAPI/ListTasks"
+	WarrenAPI_GetTask_FullMethodName              = "/warren.v1.WarrenAPI/GetTask"
+	WarrenAPI_WatchTasks_FullMethodName           = "/warren.v1.WarrenAPI/WatchTasks"
+	WarrenAPI_ReportTaskHealth_FullMethodName     = "/warren.v1.WarrenAPI/ReportTaskHealth"
+	WarrenAPI_CreateSecret_FullMethodName         = "/warren.v1.WarrenAPI/CreateSecret"
+	WarrenAPI_GetSecretByName_FullMethodName      = "/warren.v1.WarrenAPI/GetSecretByName"
+	WarrenAPI_DeleteSecret_FullMethodName         = "/warren.v1.WarrenAPI/DeleteSecret"
+	WarrenAPI_ListSecrets_FullMethodName          = "/warren.v1.WarrenAPI/ListSecrets"
+	WarrenAPI_CreateVolume_FullMethodName         = "/warren.v1.WarrenAPI/CreateVolume"
+	WarrenAPI_GetVolumeByName_FullMethodName      = "/warren.v1.WarrenAPI/GetVolumeByName"
+	WarrenAPI_DeleteVolume_FullMethodName         = "/warren.v1.WarrenAPI/DeleteVolume"
+	WarrenAPI_ListVolumes_FullMethodName          = "/warren.v1.WarrenAPI/ListVolumes"
+	WarrenAPI_GenerateJoinToken_FullMethodName    = "/warren.v1.WarrenAPI/GenerateJoinToken"
+	WarrenAPI_JoinCluster_FullMethodName          = "/warren.v1.WarrenAPI/JoinCluster"
+	WarrenAPI_GetClusterInfo_FullMethodName       = "/warren.v1.WarrenAPI/GetClusterInfo"
+	WarrenAPI_RequestCertificate_FullMethodName   = "/warren.v1.WarrenAPI/RequestCertificate"
+	WarrenAPI_CreateIngress_FullMethodName        = "/warren.v1.WarrenAPI/CreateIngress"
+	WarrenAPI_UpdateIngress_FullMethodName        = "/warren.v1.WarrenAPI/UpdateIngress"
+	WarrenAPI_DeleteIngress_FullMethodName        = "/warren.v1.WarrenAPI/DeleteIngress"
+	WarrenAPI_GetIngress_FullMethodName           = "/warren.v1.WarrenAPI/GetIngress"
+	WarrenAPI_ListIngresses_FullMethodName        = "/warren.v1.WarrenAPI/ListIngresses"
+	WarrenAPI_CreateTLSCertificate_FullMethodName = "/warren.v1.WarrenAPI/CreateTLSCertificate"
+	WarrenAPI_GetTLSCertificate_FullMethodName    = "/warren.v1.WarrenAPI/GetTLSCertificate"
+	WarrenAPI_ListTLSCertificates_FullMethodName  = "/warren.v1.WarrenAPI/ListTLSCertificates"
+	WarrenAPI_DeleteTLSCertificate_FullMethodName = "/warren.v1.WarrenAPI/DeleteTLSCertificate"
+	WarrenAPI_StreamEvents_FullMethodName         = "/warren.v1.WarrenAPI/StreamEvents"
 )
 
 // WarrenAPIClient is the client API for WarrenAPI service.
@@ -102,6 +106,11 @@ type WarrenAPIClient interface {
 	DeleteIngress(ctx context.Context, in *DeleteIngressRequest, opts ...grpc.CallOption) (*DeleteIngressResponse, error)
 	GetIngress(ctx context.Context, in *GetIngressRequest, opts ...grpc.CallOption) (*GetIngressResponse, error)
 	ListIngresses(ctx context.Context, in *ListIngressesRequest, opts ...grpc.CallOption) (*ListIngressesResponse, error)
+	// TLS Certificate operations
+	CreateTLSCertificate(ctx context.Context, in *CreateTLSCertificateRequest, opts ...grpc.CallOption) (*CreateTLSCertificateResponse, error)
+	GetTLSCertificate(ctx context.Context, in *GetTLSCertificateRequest, opts ...grpc.CallOption) (*GetTLSCertificateResponse, error)
+	ListTLSCertificates(ctx context.Context, in *ListTLSCertificatesRequest, opts ...grpc.CallOption) (*ListTLSCertificatesResponse, error)
+	DeleteTLSCertificate(ctx context.Context, in *DeleteTLSCertificateRequest, opts ...grpc.CallOption) (*DeleteTLSCertificateResponse, error)
 	// Event streaming
 	StreamEvents(ctx context.Context, in *StreamEventsRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[Event], error)
 }
@@ -443,6 +452,46 @@ func (c *warrenAPIClient) ListIngresses(ctx context.Context, in *ListIngressesRe
 	return out, nil
 }
 
+func (c *warrenAPIClient) CreateTLSCertificate(ctx context.Context, in *CreateTLSCertificateRequest, opts ...grpc.CallOption) (*CreateTLSCertificateResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CreateTLSCertificateResponse)
+	err := c.cc.Invoke(ctx, WarrenAPI_CreateTLSCertificate_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *warrenAPIClient) GetTLSCertificate(ctx context.Context, in *GetTLSCertificateRequest, opts ...grpc.CallOption) (*GetTLSCertificateResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetTLSCertificateResponse)
+	err := c.cc.Invoke(ctx, WarrenAPI_GetTLSCertificate_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *warrenAPIClient) ListTLSCertificates(ctx context.Context, in *ListTLSCertificatesRequest, opts ...grpc.CallOption) (*ListTLSCertificatesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListTLSCertificatesResponse)
+	err := c.cc.Invoke(ctx, WarrenAPI_ListTLSCertificates_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *warrenAPIClient) DeleteTLSCertificate(ctx context.Context, in *DeleteTLSCertificateRequest, opts ...grpc.CallOption) (*DeleteTLSCertificateResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(DeleteTLSCertificateResponse)
+	err := c.cc.Invoke(ctx, WarrenAPI_DeleteTLSCertificate_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *warrenAPIClient) StreamEvents(ctx context.Context, in *StreamEventsRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[Event], error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	stream, err := c.cc.NewStream(ctx, &WarrenAPI_ServiceDesc.Streams[1], WarrenAPI_StreamEvents_FullMethodName, cOpts...)
@@ -510,6 +559,11 @@ type WarrenAPIServer interface {
 	DeleteIngress(context.Context, *DeleteIngressRequest) (*DeleteIngressResponse, error)
 	GetIngress(context.Context, *GetIngressRequest) (*GetIngressResponse, error)
 	ListIngresses(context.Context, *ListIngressesRequest) (*ListIngressesResponse, error)
+	// TLS Certificate operations
+	CreateTLSCertificate(context.Context, *CreateTLSCertificateRequest) (*CreateTLSCertificateResponse, error)
+	GetTLSCertificate(context.Context, *GetTLSCertificateRequest) (*GetTLSCertificateResponse, error)
+	ListTLSCertificates(context.Context, *ListTLSCertificatesRequest) (*ListTLSCertificatesResponse, error)
+	DeleteTLSCertificate(context.Context, *DeleteTLSCertificateRequest) (*DeleteTLSCertificateResponse, error)
 	// Event streaming
 	StreamEvents(*StreamEventsRequest, grpc.ServerStreamingServer[Event]) error
 	mustEmbedUnimplementedWarrenAPIServer()
@@ -617,6 +671,18 @@ func (UnimplementedWarrenAPIServer) GetIngress(context.Context, *GetIngressReque
 }
 func (UnimplementedWarrenAPIServer) ListIngresses(context.Context, *ListIngressesRequest) (*ListIngressesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListIngresses not implemented")
+}
+func (UnimplementedWarrenAPIServer) CreateTLSCertificate(context.Context, *CreateTLSCertificateRequest) (*CreateTLSCertificateResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateTLSCertificate not implemented")
+}
+func (UnimplementedWarrenAPIServer) GetTLSCertificate(context.Context, *GetTLSCertificateRequest) (*GetTLSCertificateResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetTLSCertificate not implemented")
+}
+func (UnimplementedWarrenAPIServer) ListTLSCertificates(context.Context, *ListTLSCertificatesRequest) (*ListTLSCertificatesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListTLSCertificates not implemented")
+}
+func (UnimplementedWarrenAPIServer) DeleteTLSCertificate(context.Context, *DeleteTLSCertificateRequest) (*DeleteTLSCertificateResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteTLSCertificate not implemented")
 }
 func (UnimplementedWarrenAPIServer) StreamEvents(*StreamEventsRequest, grpc.ServerStreamingServer[Event]) error {
 	return status.Errorf(codes.Unimplemented, "method StreamEvents not implemented")
@@ -1211,6 +1277,78 @@ func _WarrenAPI_ListIngresses_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _WarrenAPI_CreateTLSCertificate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateTLSCertificateRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WarrenAPIServer).CreateTLSCertificate(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WarrenAPI_CreateTLSCertificate_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WarrenAPIServer).CreateTLSCertificate(ctx, req.(*CreateTLSCertificateRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WarrenAPI_GetTLSCertificate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetTLSCertificateRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WarrenAPIServer).GetTLSCertificate(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WarrenAPI_GetTLSCertificate_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WarrenAPIServer).GetTLSCertificate(ctx, req.(*GetTLSCertificateRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WarrenAPI_ListTLSCertificates_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListTLSCertificatesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WarrenAPIServer).ListTLSCertificates(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WarrenAPI_ListTLSCertificates_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WarrenAPIServer).ListTLSCertificates(ctx, req.(*ListTLSCertificatesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WarrenAPI_DeleteTLSCertificate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteTLSCertificateRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WarrenAPIServer).DeleteTLSCertificate(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WarrenAPI_DeleteTLSCertificate_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WarrenAPIServer).DeleteTLSCertificate(ctx, req.(*DeleteTLSCertificateRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _WarrenAPI_StreamEvents_Handler(srv interface{}, stream grpc.ServerStream) error {
 	m := new(StreamEventsRequest)
 	if err := stream.RecvMsg(m); err != nil {
@@ -1352,6 +1490,22 @@ var WarrenAPI_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListIngresses",
 			Handler:    _WarrenAPI_ListIngresses_Handler,
+		},
+		{
+			MethodName: "CreateTLSCertificate",
+			Handler:    _WarrenAPI_CreateTLSCertificate_Handler,
+		},
+		{
+			MethodName: "GetTLSCertificate",
+			Handler:    _WarrenAPI_GetTLSCertificate_Handler,
+		},
+		{
+			MethodName: "ListTLSCertificates",
+			Handler:    _WarrenAPI_ListTLSCertificates_Handler,
+		},
+		{
+			MethodName: "DeleteTLSCertificate",
+			Handler:    _WarrenAPI_DeleteTLSCertificate_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

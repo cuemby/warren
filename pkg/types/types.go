@@ -316,6 +316,22 @@ type IngressTLS struct {
 	Enabled    bool     // Enable HTTPS
 	SecretName string   // Secret containing TLS cert/key (PEM format)
 	Hosts      []string // Hosts covered by this TLS config
-	AutoTLS    bool     // Enable Let's Encrypt automatic certificates
-	Email      string   // Email for Let's Encrypt notifications
+	AutoTLS    bool     // Enable Let's Encrypt automatic certificates (M7.3)
+	Email      string   // Email for Let's Encrypt notifications (M7.3)
+}
+
+// TLSCertificate represents a TLS certificate for ingress
+type TLSCertificate struct {
+	ID          string            // Unique identifier
+	Name        string            // Certificate name (e.g., "example-com-cert")
+	Hosts       []string          // Hostnames covered by this cert (e.g., ["example.com", "*.example.com"])
+	CertPEM     []byte            // Certificate in PEM format
+	KeyPEM      []byte            // Private key in PEM format (encrypted in storage)
+	Issuer      string            // Certificate issuer (e.g., "Let's Encrypt", "self-signed", "manual")
+	NotBefore   time.Time         // Certificate valid from
+	NotAfter    time.Time         // Certificate valid until
+	AutoRenew   bool              // Enable automatic renewal (M7.3)
+	Labels      map[string]string // Labels for organization
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
 }

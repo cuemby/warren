@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"path/filepath"
+	"strings"
 
 	"github.com/cuemby/warren/pkg/types"
 	bolt "go.etcd.io/bbolt"
@@ -11,14 +12,15 @@ import (
 
 var (
 	// Bucket names
-	bucketNodes     = []byte("nodes")
-	bucketServices  = []byte("services")
-	bucketTasks     = []byte("tasks")
-	bucketSecrets   = []byte("secrets")
-	bucketVolumes   = []byte("volumes")
-	bucketNetworks  = []byte("networks")
-	bucketCA        = []byte("ca")
-	bucketIngresses = []byte("ingresses")
+	bucketNodes          = []byte("nodes")
+	bucketServices       = []byte("services")
+	bucketTasks          = []byte("tasks")
+	bucketSecrets        = []byte("secrets")
+	bucketVolumes        = []byte("volumes")
+	bucketNetworks       = []byte("networks")
+	bucketCA             = []byte("ca")
+	bucketIngresses      = []byte("ingresses")
+	bucketTLSCertificates = []byte("tls_certificates")
 )
 
 // BoltStore implements Store interface using BoltDB
@@ -46,6 +48,7 @@ func NewBoltStore(dataDir string) (*BoltStore, error) {
 			bucketNetworks,
 			bucketCA,
 			bucketIngresses,
+			bucketTLSCertificates,
 		}
 
 		for _, bucket := range buckets {
@@ -574,6 +577,130 @@ func (s *BoltStore) UpdateIngress(ingress *types.Ingress) error {
 func (s *BoltStore) DeleteIngress(id string) error {
 	return s.db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket(bucketIngresses)
+		return b.Delete([]byte(id))
+	})
+}
+
+// --- TLS Certificates ---
+
+// CreateTLSCertificate creates a new TLS certificate
+func (s *BoltStore) CreateTLSCertificate(cert *types.TLSCertificate) error {
+	return s.db.Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket(bucketTLSCertificates)
+		data, err := json.Marshal(cert)
+		if err != nil {
+			return err
+		}
+		return b.Put([]byte(cert.ID), data)
+	})
+}
+
+// GetTLSCertificate retrieves a TLS certificate by ID
+func (s *BoltStore) GetTLSCertificate(id string) (*types.TLSCertificate, error) {
+	var cert types.TLSCertificate
+	err := s.db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket(bucketTLSCertificates)
+		data := b.Get([]byte(id))
+		if data == nil {
+			return fmt.Errorf("certificate not found")
+		}
+		return json.Unmarshal(data, &cert)
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &cert, nil
+}
+
+// GetTLSCertificateByName retrieves a TLS certificate by name
+func (s *BoltStore) GetTLSCertificateByName(name string) (*types.TLSCertificate, error) {
+	var cert *types.TLSCertificate
+	err := s.db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket(bucketTLSCertificates)
+		c := b.Cursor()
+		for k, v := c.First(); k != nil; k, v = c.Next() {
+			var c types.TLSCertificate
+			if err := json.Unmarshal(v, &c); err != nil {
+				continue
+			}
+			if c.Name == name {
+				cert = &c
+				return nil
+			}
+		}
+		return fmt.Errorf("certificate not found")
+	})
+	return cert, err
+}
+
+// GetTLSCertificatesByHost retrieves all TLS certificates that cover a specific host
+func (s *BoltStore) GetTLSCertificatesByHost(host string) ([]*types.TLSCertificate, error) {
+	var certs []*types.TLSCertificate
+	err := s.db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket(bucketTLSCertificates)
+		c := b.Cursor()
+		for k, v := c.First(); k != nil; k, v = c.Next() {
+			var cert types.TLSCertificate
+			if err := json.Unmarshal(v, &cert); err != nil {
+				continue
+			}
+			// Check if this cert covers the requested host
+			for _, h := range cert.Hosts {
+				if h == host || matchWildcard(h, host) {
+					certs = append(certs, &cert)
+					break
+				}
+			}
+		}
+		return nil
+	})
+	return certs, err
+}
+
+// matchWildcard checks if a wildcard pattern matches a host
+func matchWildcard(pattern, host string) bool {
+	// Simple wildcard matching: *.example.com matches foo.example.com
+	if !strings.HasPrefix(pattern, "*.") {
+		return false
+	}
+	suffix := pattern[1:] // Remove * to get .example.com
+	return strings.HasSuffix(host, suffix)
+}
+
+// ListTLSCertificates lists all TLS certificates
+func (s *BoltStore) ListTLSCertificates() ([]*types.TLSCertificate, error) {
+	var certs []*types.TLSCertificate
+	err := s.db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket(bucketTLSCertificates)
+		c := b.Cursor()
+		for k, v := c.First(); k != nil; k, v = c.Next() {
+			var cert types.TLSCertificate
+			if err := json.Unmarshal(v, &cert); err != nil {
+				continue
+			}
+			certs = append(certs, &cert)
+		}
+		return nil
+	})
+	return certs, err
+}
+
+// UpdateTLSCertificate updates an existing TLS certificate
+func (s *BoltStore) UpdateTLSCertificate(cert *types.TLSCertificate) error {
+	return s.db.Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket(bucketTLSCertificates)
+		data, err := json.Marshal(cert)
+		if err != nil {
+			return err
+		}
+		return b.Put([]byte(cert.ID), data)
+	})
+}
+
+// DeleteTLSCertificate deletes a TLS certificate
+func (s *BoltStore) DeleteTLSCertificate(id string) error {
+	return s.db.Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket(bucketTLSCertificates)
 		return b.Delete([]byte(id))
 	})
 }
