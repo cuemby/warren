@@ -274,6 +274,36 @@ func (p *Proxy) ReloadTLSCertificates() error {
 	if p.httpsServer != nil && p.tlsConfig != nil {
 		p.httpsServer.TLSConfig = p.tlsConfig
 		log.Info("Reloaded TLS certificates for HTTPS server")
+		return nil
+	}
+
+	// If HTTPS server is not running but we now have certificates, start it
+	if p.httpsServer == nil && p.tlsConfig != nil && len(p.tlsConfig.Certificates) > 0 {
+		p.httpsServer = &http.Server{
+			Addr:         ":8443",
+			Handler:      http.HandlerFunc(p.handleRequest),
+			TLSConfig:    p.tlsConfig,
+			ReadTimeout:  30 * time.Second,
+			WriteTimeout: 30 * time.Second,
+			IdleTimeout:  120 * time.Second,
+		}
+
+		// Start HTTPS server
+		httpsListener, err := net.Listen("tcp", p.httpsServer.Addr)
+		if err != nil {
+			log.Warn(fmt.Sprintf("Failed to listen on :8443: %v", err))
+			return err
+		}
+
+		log.Info(fmt.Sprintf("Starting HTTPS server on :8443"))
+
+		// Serve HTTPS in goroutine
+		go func() {
+			tlsListener := tls.NewListener(httpsListener, p.tlsConfig)
+			if err := p.httpsServer.Serve(tlsListener); err != nil && err != http.ErrServerClosed {
+				log.Error(fmt.Sprintf("HTTPS server error: %v", err))
+			}
+		}()
 	}
 
 	return nil

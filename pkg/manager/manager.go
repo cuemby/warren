@@ -1006,7 +1006,19 @@ func (m *Manager) CreateTLSCertificate(cert *types.TLSCertificate) error {
 		Data: data,
 	}
 
-	return m.Apply(cmd)
+	if err := m.Apply(cmd); err != nil {
+		return err
+	}
+
+	// Reload TLS certificates in ingress proxy if it's running
+	if m.ingressProxy != nil {
+		if err := m.ingressProxy.ReloadTLSCertificates(); err != nil {
+			// Log warning but don't fail the operation
+			fmt.Printf("Warning: failed to reload TLS certificates: %v\n", err)
+		}
+	}
+
+	return nil
 }
 
 // DeleteTLSCertificate deletes a TLS certificate via Raft
@@ -1022,7 +1034,19 @@ func (m *Manager) DeleteTLSCertificate(certID string) error {
 		Data: data,
 	}
 
-	return m.Apply(cmd)
+	if err := m.Apply(cmd); err != nil {
+		return err
+	}
+
+	// Reload TLS certificates in ingress proxy if it's running
+	if m.ingressProxy != nil {
+		if err := m.ingressProxy.ReloadTLSCertificates(); err != nil {
+			// Log warning but don't fail the operation
+			fmt.Printf("Warning: failed to reload TLS certificates: %v\n", err)
+		}
+	}
+
+	return nil
 }
 
 // GetTLSCertificate retrieves a TLS certificate by ID
