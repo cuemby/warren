@@ -6,8 +6,8 @@
 **Type**: Container Orchestration Platform
 **Purpose**: Simple yet feature-rich container orchestrator for edge computing, combining Docker Swarm's simplicity with Kubernetes-level features in a single binary with zero external dependencies.
 
-**Last Updated**: 2025-10-11
-**Implementation Status**: Milestones 0-6 In Progress ✅
+**Last Updated**: 2025-10-12
+**Implementation Status**: Milestones 0-6 Complete ✅, M7 (Ingress) Complete ✅
 
 ---
 
@@ -15,7 +15,7 @@
 
 Warren is a **production-ready container orchestration system** for edge computing:
 
-**Current Status (M0-M6 IN PROGRESS)**:
+**Current Status (M0-M7 COMPLETE)**:
 1. **Multi-manager HA cluster** - 3-5 node Raft quorum with 2-3s failover
 2. **Real container runtime** - containerd integration with full lifecycle management
 3. **Secrets & volumes** - AES-256-GCM encrypted secrets, local volume driver
@@ -23,8 +23,9 @@ Warren is a **production-ready container orchestration system** for edge computi
 5. **Production observability** - Prometheus metrics, structured logging, profiling
 6. **Open source ready** - Complete docs, CI/CD, package distribution setup
 7. **Production hardening (M6)** - Health checks, mTLS, DNS, resource limits, graceful shutdown
+8. **Built-in Ingress (M7)** - HTTP/HTTPS routing, Let's Encrypt, advanced routing, rate limiting
 
-**Implemented Features (M0-M6)**:
+**Implemented Features (M0-M7)**:
 - ✅ Multi-manager Raft cluster with automatic failover (< 3s)
 - ✅ Containerd integration for real container execution
 - ✅ Worker join and heartbeat with token-based security
@@ -48,11 +49,23 @@ Warren is a **production-ready container orchestration system** for edge computi
   - ✅ mTLS security (CA, certificate management, TLS 1.3)
   - ✅ Resource limits (CPU shares, CFS quota, memory limits)
   - ✅ Graceful shutdown (configurable SIGTERM timeout)
+- ✅ **M7 Built-in Ingress**:
+  - ✅ HTTP reverse proxy (port 8000)
+  - ✅ HTTPS server (port 8443)
+  - ✅ Host-based routing (api.example.com, *.example.com)
+  - ✅ Path-based routing (/api, /web)
+  - ✅ TLS certificate management (manual upload)
+  - ✅ Let's Encrypt ACME integration (HTTP-01 challenge)
+  - ✅ Auto-renewal (30-day threshold, daily job)
+  - ✅ Advanced routing (headers, path rewriting, rate limiting, access control)
+  - ✅ Load balancing across service replicas
+  - ✅ Automatic proxy headers (X-Forwarded-For, X-Real-IP, etc.)
 
-**Future Enhancements (M7+)**:
+**Future Enhancements (M8+)**:
 - ⏳ WireGuard mesh networking (deferred)
 - ⏳ Blue/green and canary deployments (backlog)
-- ⏳ Ingress mode port publishing (backlog)
+- ⏳ Service mesh (mTLS between services, circuit breaking, tracing)
+- ⏳ Multi-cluster federation
 
 **Philosophy**: "Docker Swarm simplicity + Kubernetes features - Kubernetes complexity"
 
@@ -124,6 +137,13 @@ warren/
 │   │   ├── server_test.go             # ✅ DNS server tests (9/9 passing)
 │   │   ├── resolver.go                # ✅ Service/instance name resolver (M6)
 │   │   └── instance.go                # ✅ Instance name parsing (M6)
+│   │
+│   ├── ingress/
+│   │   ├── proxy.go                   # ✅ HTTP/HTTPS reverse proxy (M7)
+│   │   ├── router.go                  # ✅ Host/path routing engine (M7)
+│   │   ├── loadbalancer.go            # ✅ Backend selection and health checks (M7)
+│   │   ├── middleware.go              # ✅ Headers, rewriting, rate limiting, access control (M7)
+│   │   └── acme.go                    # ✅ Let's Encrypt ACME client (M7)
 │   │
 │   ├── deploy/
 │   │   └── deploy.go                  # ✅ Deployment strategy foundation
