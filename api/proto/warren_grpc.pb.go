@@ -46,6 +46,11 @@ const (
 	WarrenAPI_JoinCluster_FullMethodName        = "/warren.v1.WarrenAPI/JoinCluster"
 	WarrenAPI_GetClusterInfo_FullMethodName     = "/warren.v1.WarrenAPI/GetClusterInfo"
 	WarrenAPI_RequestCertificate_FullMethodName = "/warren.v1.WarrenAPI/RequestCertificate"
+	WarrenAPI_CreateIngress_FullMethodName      = "/warren.v1.WarrenAPI/CreateIngress"
+	WarrenAPI_UpdateIngress_FullMethodName      = "/warren.v1.WarrenAPI/UpdateIngress"
+	WarrenAPI_DeleteIngress_FullMethodName      = "/warren.v1.WarrenAPI/DeleteIngress"
+	WarrenAPI_GetIngress_FullMethodName         = "/warren.v1.WarrenAPI/GetIngress"
+	WarrenAPI_ListIngresses_FullMethodName      = "/warren.v1.WarrenAPI/ListIngresses"
 	WarrenAPI_StreamEvents_FullMethodName       = "/warren.v1.WarrenAPI/StreamEvents"
 )
 
@@ -91,6 +96,12 @@ type WarrenAPIClient interface {
 	GetClusterInfo(ctx context.Context, in *GetClusterInfoRequest, opts ...grpc.CallOption) (*GetClusterInfoResponse, error)
 	// Certificate operations
 	RequestCertificate(ctx context.Context, in *RequestCertificateRequest, opts ...grpc.CallOption) (*RequestCertificateResponse, error)
+	// Ingress operations
+	CreateIngress(ctx context.Context, in *CreateIngressRequest, opts ...grpc.CallOption) (*CreateIngressResponse, error)
+	UpdateIngress(ctx context.Context, in *UpdateIngressRequest, opts ...grpc.CallOption) (*UpdateIngressResponse, error)
+	DeleteIngress(ctx context.Context, in *DeleteIngressRequest, opts ...grpc.CallOption) (*DeleteIngressResponse, error)
+	GetIngress(ctx context.Context, in *GetIngressRequest, opts ...grpc.CallOption) (*GetIngressResponse, error)
+	ListIngresses(ctx context.Context, in *ListIngressesRequest, opts ...grpc.CallOption) (*ListIngressesResponse, error)
 	// Event streaming
 	StreamEvents(ctx context.Context, in *StreamEventsRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[Event], error)
 }
@@ -382,6 +393,56 @@ func (c *warrenAPIClient) RequestCertificate(ctx context.Context, in *RequestCer
 	return out, nil
 }
 
+func (c *warrenAPIClient) CreateIngress(ctx context.Context, in *CreateIngressRequest, opts ...grpc.CallOption) (*CreateIngressResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CreateIngressResponse)
+	err := c.cc.Invoke(ctx, WarrenAPI_CreateIngress_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *warrenAPIClient) UpdateIngress(ctx context.Context, in *UpdateIngressRequest, opts ...grpc.CallOption) (*UpdateIngressResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UpdateIngressResponse)
+	err := c.cc.Invoke(ctx, WarrenAPI_UpdateIngress_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *warrenAPIClient) DeleteIngress(ctx context.Context, in *DeleteIngressRequest, opts ...grpc.CallOption) (*DeleteIngressResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(DeleteIngressResponse)
+	err := c.cc.Invoke(ctx, WarrenAPI_DeleteIngress_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *warrenAPIClient) GetIngress(ctx context.Context, in *GetIngressRequest, opts ...grpc.CallOption) (*GetIngressResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetIngressResponse)
+	err := c.cc.Invoke(ctx, WarrenAPI_GetIngress_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *warrenAPIClient) ListIngresses(ctx context.Context, in *ListIngressesRequest, opts ...grpc.CallOption) (*ListIngressesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListIngressesResponse)
+	err := c.cc.Invoke(ctx, WarrenAPI_ListIngresses_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *warrenAPIClient) StreamEvents(ctx context.Context, in *StreamEventsRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[Event], error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	stream, err := c.cc.NewStream(ctx, &WarrenAPI_ServiceDesc.Streams[1], WarrenAPI_StreamEvents_FullMethodName, cOpts...)
@@ -443,6 +504,12 @@ type WarrenAPIServer interface {
 	GetClusterInfo(context.Context, *GetClusterInfoRequest) (*GetClusterInfoResponse, error)
 	// Certificate operations
 	RequestCertificate(context.Context, *RequestCertificateRequest) (*RequestCertificateResponse, error)
+	// Ingress operations
+	CreateIngress(context.Context, *CreateIngressRequest) (*CreateIngressResponse, error)
+	UpdateIngress(context.Context, *UpdateIngressRequest) (*UpdateIngressResponse, error)
+	DeleteIngress(context.Context, *DeleteIngressRequest) (*DeleteIngressResponse, error)
+	GetIngress(context.Context, *GetIngressRequest) (*GetIngressResponse, error)
+	ListIngresses(context.Context, *ListIngressesRequest) (*ListIngressesResponse, error)
 	// Event streaming
 	StreamEvents(*StreamEventsRequest, grpc.ServerStreamingServer[Event]) error
 	mustEmbedUnimplementedWarrenAPIServer()
@@ -535,6 +602,21 @@ func (UnimplementedWarrenAPIServer) GetClusterInfo(context.Context, *GetClusterI
 }
 func (UnimplementedWarrenAPIServer) RequestCertificate(context.Context, *RequestCertificateRequest) (*RequestCertificateResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RequestCertificate not implemented")
+}
+func (UnimplementedWarrenAPIServer) CreateIngress(context.Context, *CreateIngressRequest) (*CreateIngressResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateIngress not implemented")
+}
+func (UnimplementedWarrenAPIServer) UpdateIngress(context.Context, *UpdateIngressRequest) (*UpdateIngressResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateIngress not implemented")
+}
+func (UnimplementedWarrenAPIServer) DeleteIngress(context.Context, *DeleteIngressRequest) (*DeleteIngressResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteIngress not implemented")
+}
+func (UnimplementedWarrenAPIServer) GetIngress(context.Context, *GetIngressRequest) (*GetIngressResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetIngress not implemented")
+}
+func (UnimplementedWarrenAPIServer) ListIngresses(context.Context, *ListIngressesRequest) (*ListIngressesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListIngresses not implemented")
 }
 func (UnimplementedWarrenAPIServer) StreamEvents(*StreamEventsRequest, grpc.ServerStreamingServer[Event]) error {
 	return status.Errorf(codes.Unimplemented, "method StreamEvents not implemented")
@@ -1039,6 +1121,96 @@ func _WarrenAPI_RequestCertificate_Handler(srv interface{}, ctx context.Context,
 	return interceptor(ctx, in, info, handler)
 }
 
+func _WarrenAPI_CreateIngress_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateIngressRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WarrenAPIServer).CreateIngress(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WarrenAPI_CreateIngress_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WarrenAPIServer).CreateIngress(ctx, req.(*CreateIngressRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WarrenAPI_UpdateIngress_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateIngressRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WarrenAPIServer).UpdateIngress(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WarrenAPI_UpdateIngress_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WarrenAPIServer).UpdateIngress(ctx, req.(*UpdateIngressRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WarrenAPI_DeleteIngress_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteIngressRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WarrenAPIServer).DeleteIngress(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WarrenAPI_DeleteIngress_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WarrenAPIServer).DeleteIngress(ctx, req.(*DeleteIngressRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WarrenAPI_GetIngress_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetIngressRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WarrenAPIServer).GetIngress(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WarrenAPI_GetIngress_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WarrenAPIServer).GetIngress(ctx, req.(*GetIngressRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WarrenAPI_ListIngresses_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListIngressesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WarrenAPIServer).ListIngresses(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WarrenAPI_ListIngresses_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WarrenAPIServer).ListIngresses(ctx, req.(*ListIngressesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _WarrenAPI_StreamEvents_Handler(srv interface{}, stream grpc.ServerStream) error {
 	m := new(StreamEventsRequest)
 	if err := stream.RecvMsg(m); err != nil {
@@ -1160,6 +1332,26 @@ var WarrenAPI_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RequestCertificate",
 			Handler:    _WarrenAPI_RequestCertificate_Handler,
+		},
+		{
+			MethodName: "CreateIngress",
+			Handler:    _WarrenAPI_CreateIngress_Handler,
+		},
+		{
+			MethodName: "UpdateIngress",
+			Handler:    _WarrenAPI_UpdateIngress_Handler,
+		},
+		{
+			MethodName: "DeleteIngress",
+			Handler:    _WarrenAPI_DeleteIngress_Handler,
+		},
+		{
+			MethodName: "GetIngress",
+			Handler:    _WarrenAPI_GetIngress_Handler,
+		},
+		{
+			MethodName: "ListIngresses",
+			Handler:    _WarrenAPI_ListIngresses_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

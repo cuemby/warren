@@ -55,6 +55,14 @@ type Store interface {
 	SaveCA(data []byte) error
 	GetCA() ([]byte, error)
 
+	// Ingresses
+	CreateIngress(ingress *types.Ingress) error
+	GetIngress(id string) (*types.Ingress, error)
+	GetIngressByName(name string) (*types.Ingress, error)
+	ListIngresses() ([]*types.Ingress, error)
+	UpdateIngress(ingress *types.Ingress) error
+	DeleteIngress(id string) error
+
 	// Utility
 	Close() error
 }

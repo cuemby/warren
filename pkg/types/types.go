@@ -272,3 +272,50 @@ type Event struct {
 	Message   string
 	Data      map[string]string
 }
+
+// Ingress represents HTTP/HTTPS routing rules for external access
+type Ingress struct {
+	ID        string
+	Name      string
+	Rules     []*IngressRule
+	TLS       *IngressTLS
+	Labels    map[string]string
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
+
+// IngressRule defines routing rules for an ingress
+type IngressRule struct {
+	Host  string         // Hostname to match (e.g., "api.example.com", "*.example.com")
+	Paths []*IngressPath // Path-based routing rules
+}
+
+// IngressPath defines a path-based routing rule
+type IngressPath struct {
+	Path     string          // Path to match (e.g., "/api", "/web")
+	PathType PathType        // "Prefix" or "Exact"
+	Backend  *IngressBackend // Backend service to route to
+}
+
+// PathType defines how paths are matched
+type PathType string
+
+const (
+	PathTypePrefix PathType = "Prefix" // Prefix match (e.g., /api matches /api/*)
+	PathTypeExact  PathType = "Exact"  // Exact match only
+)
+
+// IngressBackend defines the backend service for routing
+type IngressBackend struct {
+	ServiceName string // Service to route to
+	Port        int    // Service port to connect to
+}
+
+// IngressTLS defines TLS configuration for HTTPS
+type IngressTLS struct {
+	Enabled    bool     // Enable HTTPS
+	SecretName string   // Secret containing TLS cert/key (PEM format)
+	Hosts      []string // Hosts covered by this TLS config
+	AutoTLS    bool     // Enable Let's Encrypt automatic certificates
+	Email      string   // Email for Let's Encrypt notifications
+}

@@ -11,13 +11,14 @@ import (
 
 var (
 	// Bucket names
-	bucketNodes    = []byte("nodes")
-	bucketServices = []byte("services")
-	bucketTasks    = []byte("tasks")
-	bucketSecrets  = []byte("secrets")
-	bucketVolumes  = []byte("volumes")
-	bucketNetworks = []byte("networks")
-	bucketCA       = []byte("ca")
+	bucketNodes     = []byte("nodes")
+	bucketServices  = []byte("services")
+	bucketTasks     = []byte("tasks")
+	bucketSecrets   = []byte("secrets")
+	bucketVolumes   = []byte("volumes")
+	bucketNetworks  = []byte("networks")
+	bucketCA        = []byte("ca")
+	bucketIngresses = []byte("ingresses")
 )
 
 // BoltStore implements Store interface using BoltDB
@@ -44,6 +45,7 @@ func NewBoltStore(dataDir string) (*BoltStore, error) {
 			bucketVolumes,
 			bucketNetworks,
 			bucketCA,
+			bucketIngresses,
 		}
 
 		for _, bucket := range buckets {
@@ -487,4 +489,91 @@ func (s *BoltStore) GetCA() ([]byte, error) {
 		return nil
 	})
 	return data, err
+}
+
+// --- Ingress Operations ---
+
+// CreateIngress creates a new ingress
+func (s *BoltStore) CreateIngress(ingress *types.Ingress) error {
+	return s.db.Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket(bucketIngresses)
+		data, err := json.Marshal(ingress)
+		if err != nil {
+			return err
+		}
+		return b.Put([]byte(ingress.ID), data)
+	})
+}
+
+// GetIngress retrieves an ingress by ID
+func (s *BoltStore) GetIngress(id string) (*types.Ingress, error) {
+	var ingress *types.Ingress
+	err := s.db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket(bucketIngresses)
+		data := b.Get([]byte(id))
+		if data == nil {
+			return fmt.Errorf("ingress not found: %s", id)
+		}
+		return json.Unmarshal(data, &ingress)
+	})
+	return ingress, err
+}
+
+// GetIngressByName retrieves an ingress by name
+func (s *BoltStore) GetIngressByName(name string) (*types.Ingress, error) {
+	var result *types.Ingress
+	err := s.db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket(bucketIngresses)
+		c := b.Cursor()
+		for k, v := c.First(); k != nil; k, v = c.Next() {
+			var ingress types.Ingress
+			if err := json.Unmarshal(v, &ingress); err != nil {
+				continue
+			}
+			if ingress.Name == name {
+				result = &ingress
+				return nil
+			}
+		}
+		return fmt.Errorf("ingress not found: %s", name)
+	})
+	return result, err
+}
+
+// ListIngresses returns all ingresses
+func (s *BoltStore) ListIngresses() ([]*types.Ingress, error) {
+	var ingresses []*types.Ingress
+	err := s.db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket(bucketIngresses)
+		c := b.Cursor()
+		for k, v := c.First(); k != nil; k, v = c.Next() {
+			var ingress types.Ingress
+			if err := json.Unmarshal(v, &ingress); err != nil {
+				return err
+			}
+			ingresses = append(ingresses, &ingress)
+		}
+		return nil
+	})
+	return ingresses, err
+}
+
+// UpdateIngress updates an existing ingress
+func (s *BoltStore) UpdateIngress(ingress *types.Ingress) error {
+	return s.db.Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket(bucketIngresses)
+		data, err := json.Marshal(ingress)
+		if err != nil {
+			return err
+		}
+		return b.Put([]byte(ingress.ID), data)
+	})
+}
+
+// DeleteIngress deletes an ingress
+func (s *BoltStore) DeleteIngress(id string) error {
+	return s.db.Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket(bucketIngresses)
+		return b.Delete([]byte(id))
+	})
 }
