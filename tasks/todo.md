@@ -92,7 +92,153 @@
 - Fix scheduler race condition tests (pre-existing, non-blocking)
 - Fix integration test certificate paths in CI environment
 
-**Next Steps**: Proceed with Phase 1 - Stabilization & Production Hardening
+**Next Steps**: Proceed with Test Framework Migration + Phase 1 Stabilization
+
+---
+
+## Phase 0.5: Go Testing Framework (Post v1.1.0)
+
+**Goal**: Replace bash-based tests with type-safe Go testing framework
+**Priority**: [HIGH] - Technical Debt Reduction
+**Estimated Effort**: 2-3 weeks
+**Status**: 🔄 **IN PROGRESS** (Week 1/3 Complete)
+**Context**: Migrate ~3000 lines of bash tests (13 scripts) to maintainable Go framework
+
+### Strategic Rationale
+
+**Current State (Bash Tests)**:
+- 13 bash scripts in `test/lima/` (~3000 lines)
+- Tests: cluster formation, HA, failover, load testing, ingress
+- Manual cluster management with Lima VMs
+- String parsing of CLI output
+- No type safety, poor error messages
+- Hard to debug, maintain, and extend
+
+**Target State (Go Framework)**:
+- Type-safe test framework with first-class cluster management
+- Rich assertions and polling utilities
+- Automatic log capture for debugging
+- Parallel test execution
+- Integration with `go test` ecosystem
+
+### Week 1: Foundation (COMPLETE ✅)
+
+**Tasks Completed**:
+- [x] Design comprehensive test framework architecture
+- [x] Create `test/framework/` package (7 files, 2531 lines)
+  - `types.go`: Core definitions (Cluster, Manager, Worker, VM)
+  - `cluster.go`: Cluster lifecycle management (~500 lines)
+  - `process.go`: Process management with log capture (~300 lines)
+  - `assertions.go`: Rich test assertions (~400 lines)
+  - `waiters.go`: Polling utilities with timeouts (~360 lines)
+  - `README.md`: Comprehensive documentation
+  - `FIXME.md`: Known issues and fixes
+- [x] Fix proto field mismatches (Status vs ActualState, Managers vs Servers)
+- [x] Create first E2E test example (`test/e2e/cluster_test.go`)
+  - TestBasicCluster: Service creation, scaling, deletion
+  - TestMultiManagerCluster: 3-manager HA cluster with leader failover
+- [x] Update test/README.md with framework documentation
+- [x] Verify framework compiles cleanly
+
+**Commits**:
+1. `14ea17c` - Initial test framework foundation (WIP with known issues)
+2. `e2c8da3` - Fix proto field mismatches, add E2E test examples
+
+**Deliverables**:
+- ✅ Complete test framework package ready for use
+- ✅ Example E2E tests demonstrating framework capabilities
+- ✅ Comprehensive documentation (README + inline comments)
+- ✅ Zero compilation errors
+
+### Week 2: First Test Migrations (IN PROGRESS 🔄)
+
+**Goal**: Migrate 3-4 critical bash tests to Go framework
+
+**Tasks**:
+- [ ] Migrate `test-cluster.sh` → `test/e2e/cluster_formation_test.go`
+  - Single manager cluster initialization
+  - Worker joining cluster
+  - Basic service operations
+  - **Estimated**: 4-6 hours
+
+- [ ] Migrate `test-failover.sh` → `test/e2e/ha_failover_test.go`
+  - 3-manager cluster setup
+  - Leader election verification
+  - Leader kill and failover
+  - Service continuity during failover
+  - **Estimated**: 6-8 hours
+
+- [ ] Migrate `test-load.sh` → `test/e2e/load_test.go`
+  - High replica count services (50-100 tasks)
+  - Scheduler performance validation
+  - Task distribution across workers
+  - **Estimated**: 4-6 hours
+
+- [ ] Test and debug migrated tests
+  - Run tests locally with Lima VMs
+  - Fix any timing/race issues
+  - Validate log capture works
+  - **Estimated**: 4-6 hours
+
+**Deliverables**:
+- [ ] 3-4 bash tests converted to Go
+- [ ] Tests pass consistently in local environment
+- [ ] Framework refinements from real-world usage
+
+### Week 3: Complete Migration & Cleanup
+
+**Goal**: Migrate remaining tests, cleanup bash scripts
+
+**Tasks**:
+- [ ] Migrate ingress tests → `test/e2e/ingress_test.go`
+  - HTTP routing validation
+  - HTTPS with TLS validation
+  - Path-based and host-based routing
+  - **Estimated**: 6-8 hours
+
+- [ ] Migrate integration tests → `test/integration/`
+  - Health check tests
+  - Secret/volume tests
+  - Network tests
+  - **Estimated**: 4-6 hours
+
+- [ ] Cleanup and documentation
+  - Archive bash scripts to `test/lima-legacy/`
+  - Update CI/CD to use Go tests
+  - Update development docs
+  - **Estimated**: 2-3 hours
+
+**Deliverables**:
+- [ ] All critical bash tests migrated to Go
+- [ ] CI/CD using Go tests exclusively
+- [ ] Bash scripts archived (not deleted, for reference)
+- [ ] Updated documentation
+
+### Phase 0.5 Success Criteria
+
+**Technical**:
+- ✅ Test framework compiles and works with Lima VMs
+- ✅ E2E tests demonstrate all framework features
+- [ ] At least 80% of bash test coverage migrated
+- [ ] Tests run in parallel where possible
+- [ ] All tests pass consistently (<5% flake rate)
+
+**Maintainability**:
+- [ ] New tests easier to write than bash equivalents
+- [ ] Debugging improved with automatic log capture
+- [ ] Framework documented with examples
+- [ ] Team can extend framework independently
+
+**Performance**:
+- [ ] Test suite runs in ≤ 15 minutes (full suite)
+- [ ] Individual tests provide fast feedback (<2 min)
+- [ ] Parallel execution reduces overall time
+
+### Next Steps After Phase 0.5
+
+Once test migration is complete:
+1. **Phase 1**: Stabilization & Production Hardening (with better test coverage!)
+2. Continue with Warren feature development
 
 ---
 
