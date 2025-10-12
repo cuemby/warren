@@ -350,12 +350,12 @@ func (c *Cluster) startManagerLocal(manager *Manager, index int) error {
 	}
 
 	// Create client
-	client, err := client.NewClient(manager.APIAddr)
+	warrenClient, err := client.NewClient(manager.APIAddr)
 	if err != nil {
 		return fmt.Errorf("failed to create client: %w", err)
 	}
 
-	manager.Client = client
+	manager.Client = NewClient(warrenClient)
 	c.Managers = append(c.Managers, manager)
 
 	return nil

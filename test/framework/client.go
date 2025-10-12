@@ -31,18 +31,16 @@ func (c *Client) CreateServiceWithEnv(name, image string, replicas int, env map[
 func (c *Client) CreateIngress(name string, spec *IngressSpec) error {
 	req := &proto.CreateIngressRequest{
 		Name: name,
-		Spec: &proto.IngressSpec{
-			Rules: []*proto.IngressRule{
-				{
-					Host: spec.Host,
-					Paths: []*proto.IngressPath{
-						{
-							Path:     spec.Path,
-							PathType: spec.PathType,
-							Backend: &proto.IngressBackend{
-								ServiceName: spec.Backend.Service,
-								ServicePort: int32(spec.Backend.Port),
-							},
+		Rules: []*proto.IngressRule{
+			{
+				Host: spec.Host,
+				Paths: []*proto.IngressPath{
+					{
+						Path:     spec.Path,
+						PathType: spec.PathType,
+						Backend: &proto.IngressBackend{
+							ServiceName: spec.Backend.Service,
+							Port:        int32(spec.Backend.Port),
 						},
 					},
 				},
@@ -51,11 +49,10 @@ func (c *Client) CreateIngress(name string, spec *IngressSpec) error {
 	}
 
 	if spec.TLS != nil && spec.TLS.Enabled {
-		req.Spec.Tls = []*proto.IngressTLS{
-			{
-				Hosts:      []string{spec.Host},
-				SecretName: spec.TLS.SecretName,
-			},
+		req.Tls = &proto.IngressTLS{
+			Enabled:    true,
+			SecretName: spec.TLS.SecretName,
+			Hosts:      []string{spec.Host},
 		}
 	}
 
