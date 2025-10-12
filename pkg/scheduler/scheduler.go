@@ -65,13 +65,13 @@ func (s *Scheduler) schedule() error {
 	// Get all services
 	services, err := s.manager.ListServices()
 	if err != nil {
-		return fmt.Errorf("failed to list services: %v", err)
+		return fmt.Errorf("failed to list services: %w", err)
 	}
 
 	// Get all nodes
 	nodes, err := s.manager.ListNodes()
 	if err != nil {
-		return fmt.Errorf("failed to list nodes: %v", err)
+		return fmt.Errorf("failed to list nodes: %w", err)
 	}
 
 	// Filter ready worker nodes
@@ -97,7 +97,7 @@ func (s *Scheduler) scheduleService(service *types.Service, nodes []*types.Node)
 	// Get existing tasks for this service
 	tasks, err := s.manager.ListTasksByService(service.ID)
 	if err != nil {
-		return fmt.Errorf("failed to list tasks: %v", err)
+		return fmt.Errorf("failed to list tasks: %w", err)
 	}
 
 	if service.Mode == types.ServiceModeGlobal {
@@ -140,7 +140,7 @@ func (s *Scheduler) scheduleGlobalService(service *types.Service, nodes []*types
 			}
 
 			if err := s.manager.CreateTask(task); err != nil {
-				return fmt.Errorf("failed to create task: %v", err)
+				return fmt.Errorf("failed to create task: %w", err)
 			}
 
 			s.logger.Info().
@@ -201,7 +201,7 @@ func (s *Scheduler) scheduleReplicatedService(service *types.Service, nodes []*t
 			// Check if service has volume requirements
 			node, err := s.selectNodeForService(service, nodes, tasks)
 			if err != nil {
-				return fmt.Errorf("failed to select node: %v", err)
+				return fmt.Errorf("failed to select node: %w", err)
 			}
 			if node == nil {
 				return fmt.Errorf("no suitable node found")
@@ -226,7 +226,7 @@ func (s *Scheduler) scheduleReplicatedService(service *types.Service, nodes []*t
 			}
 
 			if err := s.manager.CreateTask(task); err != nil {
-				return fmt.Errorf("failed to create task: %v", err)
+				return fmt.Errorf("failed to create task: %w", err)
 			}
 
 			s.logger.Info().

@@ -34,7 +34,7 @@ func NewBoltStore(dataDir string) (*BoltStore, error) {
 
 	db, err := bolt.Open(dbPath, 0600, nil)
 	if err != nil {
-		return nil, fmt.Errorf("failed to open database: %v", err)
+		return nil, fmt.Errorf("failed to open database: %w", err)
 	}
 
 	// Create buckets
@@ -53,7 +53,7 @@ func NewBoltStore(dataDir string) (*BoltStore, error) {
 
 		for _, bucket := range buckets {
 			if _, err := tx.CreateBucketIfNotExists(bucket); err != nil {
-				return fmt.Errorf("failed to create bucket %s: %v", bucket, err)
+				return fmt.Errorf("failed to create bucket %s: %w", bucket, err)
 			}
 		}
 		return nil

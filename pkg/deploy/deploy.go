@@ -24,7 +24,7 @@ func NewDeployer(mgr *manager.Manager) *Deployer {
 func (d *Deployer) UpdateService(serviceID string, newImage string) error {
 	service, err := d.manager.GetService(serviceID)
 	if err != nil {
-		return fmt.Errorf("failed to get service: %v", err)
+		return fmt.Errorf("failed to get service: %w", err)
 	}
 
 	// For now, always use rolling update
@@ -37,7 +37,7 @@ func (d *Deployer) rollingUpdate(service *types.Service, newImage string) error 
 	// Get all tasks for the service
 	tasks, err := d.manager.ListTasksByService(service.ID)
 	if err != nil {
-		return fmt.Errorf("failed to list tasks: %v", err)
+		return fmt.Errorf("failed to list tasks: %w", err)
 	}
 
 	// Filter running tasks
@@ -75,7 +75,7 @@ func (d *Deployer) rollingUpdate(service *types.Service, newImage string) error 
 	service.Image = newImage
 	service.UpdatedAt = time.Now()
 	if err := d.manager.UpdateService(service); err != nil {
-		return fmt.Errorf("failed to update service: %v", err)
+		return fmt.Errorf("failed to update service: %w", err)
 	}
 
 	// Update tasks in batches

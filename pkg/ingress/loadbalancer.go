@@ -43,7 +43,7 @@ func (lb *LoadBalancer) SelectBackend(ctx context.Context, serviceName string, p
 	// Get all tasks for the service
 	tasks, err := lb.getServiceTasks(ctx, serviceName)
 	if err != nil {
-		return "", fmt.Errorf("failed to get service tasks: %v", err)
+		return "", fmt.Errorf("failed to get service tasks: %w", err)
 	}
 
 	// M7.1 MVP: If no tasks found (because getServiceTasks returns empty list),

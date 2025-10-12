@@ -74,7 +74,7 @@ func (r *Reconciler) reconcile() error {
 func (r *Reconciler) reconcileNodes() error {
 	nodes, err := r.manager.ListNodes()
 	if err != nil {
-		return fmt.Errorf("failed to list nodes: %v", err)
+		return fmt.Errorf("failed to list nodes: %w", err)
 	}
 
 	now := time.Now()
@@ -98,7 +98,7 @@ func (r *Reconciler) reconcileNodes() error {
 func (r *Reconciler) reconcileTasks() error {
 	tasks, err := r.manager.ListTasks()
 	if err != nil {
-		return fmt.Errorf("failed to list tasks: %v", err)
+		return fmt.Errorf("failed to list tasks: %w", err)
 	}
 
 	for _, task := range tasks {

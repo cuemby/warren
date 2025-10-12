@@ -59,13 +59,13 @@ type Config struct {
 // NewManager creates a new Manager instance
 func NewManager(cfg *Config) (*Manager, error) {
 	if err := os.MkdirAll(cfg.DataDir, 0755); err != nil {
-		return nil, fmt.Errorf("failed to create data directory: %v", err)
+		return nil, fmt.Errorf("failed to create data directory: %w", err)
 	}
 
 	// Create BoltDB store
 	store, err := storage.NewBoltStore(cfg.DataDir)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create store: %v", err)
+		return nil, fmt.Errorf("failed to create store: %w", err)
 	}
 
 	// Create FSM
@@ -78,12 +78,12 @@ func NewManager(cfg *Config) (*Manager, error) {
 	clusterKey := security.DeriveKeyFromClusterID(cfg.NodeID) // Using node ID as cluster ID for now
 	secretsManager, err := security.NewSecretsManager(clusterKey)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create secrets manager: %v", err)
+		return nil, fmt.Errorf("failed to create secrets manager: %w", err)
 	}
 
 	// Set cluster encryption key for CA encryption
 	if err := security.SetClusterEncryptionKey(clusterKey); err != nil {
-		return nil, fmt.Errorf("failed to set cluster encryption key: %v", err)
+		return nil, fmt.Errorf("failed to set cluster encryption key: %w", err)
 	}
 
 	// Create Certificate Authority
@@ -140,37 +140,37 @@ func (m *Manager) Bootstrap() error {
 	// Setup Raft communication
 	addr, err := net.ResolveTCPAddr("tcp", m.bindAddr)
 	if err != nil {
-		return fmt.Errorf("failed to resolve bind address: %v", err)
+		return fmt.Errorf("failed to resolve bind address: %w", err)
 	}
 
 	transport, err := raft.NewTCPTransport(m.bindAddr, addr, 3, 10*time.Second, os.Stderr)
 	if err != nil {
-		return fmt.Errorf("failed to create transport: %v", err)
+		return fmt.Errorf("failed to create transport: %w", err)
 	}
 
 	// Create snapshot store
 	snapshotStore, err := raft.NewFileSnapshotStore(m.dataDir, 2, os.Stderr)
 	if err != nil {
-		return fmt.Errorf("failed to create snapshot store: %v", err)
+		return fmt.Errorf("failed to create snapshot store: %w", err)
 	}
 
 	// Create log store and stable store using BoltDB
 	logStorePath := filepath.Join(m.dataDir, "raft-log.db")
 	logStore, err := raftboltdb.NewBoltStore(logStorePath)
 	if err != nil {
-		return fmt.Errorf("failed to create log store: %v", err)
+		return fmt.Errorf("failed to create log store: %w", err)
 	}
 
 	stableStorePath := filepath.Join(m.dataDir, "raft-stable.db")
 	stableStore, err := raftboltdb.NewBoltStore(stableStorePath)
 	if err != nil {
-		return fmt.Errorf("failed to create stable store: %v", err)
+		return fmt.Errorf("failed to create stable store: %w", err)
 	}
 
 	// Create Raft instance
 	r, err := raft.NewRaft(config, m.fsm, logStore, stableStore, snapshotStore, transport)
 	if err != nil {
-		return fmt.Errorf("failed to create raft: %v", err)
+		return fmt.Errorf("failed to create raft: %w", err)
 	}
 
 	m.raft = r
@@ -187,12 +187,12 @@ func (m *Manager) Bootstrap() error {
 
 	future := m.raft.BootstrapCluster(configuration)
 	if err := future.Error(); err != nil {
-		return fmt.Errorf("failed to bootstrap cluster: %v", err)
+		return fmt.Errorf("failed to bootstrap cluster: %w", err)
 	}
 
 	// Initialize Certificate Authority
 	if err := m.initializeCA(); err != nil {
-		return fmt.Errorf("failed to initialize CA: %v", err)
+		return fmt.Errorf("failed to initialize CA: %w", err)
 	}
 
 	// Start DNS server
@@ -223,37 +223,37 @@ func (m *Manager) Join(leaderAddr string, token string) error {
 	// Setup Raft communication
 	addr, err := net.ResolveTCPAddr("tcp", m.bindAddr)
 	if err != nil {
-		return fmt.Errorf("failed to resolve bind address: %v", err)
+		return fmt.Errorf("failed to resolve bind address: %w", err)
 	}
 
 	transport, err := raft.NewTCPTransport(m.bindAddr, addr, 3, 10*time.Second, os.Stderr)
 	if err != nil {
-		return fmt.Errorf("failed to create transport: %v", err)
+		return fmt.Errorf("failed to create transport: %w", err)
 	}
 
 	// Create snapshot store
 	snapshotStore, err := raft.NewFileSnapshotStore(m.dataDir, 2, os.Stderr)
 	if err != nil {
-		return fmt.Errorf("failed to create snapshot store: %v", err)
+		return fmt.Errorf("failed to create snapshot store: %w", err)
 	}
 
 	// Create log store and stable store using BoltDB
 	logStorePath := filepath.Join(m.dataDir, "raft-log.db")
 	logStore, err := raftboltdb.NewBoltStore(logStorePath)
 	if err != nil {
-		return fmt.Errorf("failed to create log store: %v", err)
+		return fmt.Errorf("failed to create log store: %w", err)
 	}
 
 	stableStorePath := filepath.Join(m.dataDir, "raft-stable.db")
 	stableStore, err := raftboltdb.NewBoltStore(stableStorePath)
 	if err != nil {
-		return fmt.Errorf("failed to create stable store: %v", err)
+		return fmt.Errorf("failed to create stable store: %w", err)
 	}
 
 	// Create Raft instance
 	r, err := raft.NewRaft(config, m.fsm, logStore, stableStore, snapshotStore, transport)
 	if err != nil {
-		return fmt.Errorf("failed to create raft: %v", err)
+		return fmt.Errorf("failed to create raft: %w", err)
 	}
 
 	m.raft = r
@@ -265,20 +265,20 @@ func (m *Manager) Join(leaderAddr string, token string) error {
 	// Create client to connect to leader
 	c, err := client.NewClient(leaderAddr)
 	if err != nil {
-		return fmt.Errorf("failed to connect to leader: %v", err)
+		return fmt.Errorf("failed to connect to leader: %w", err)
 	}
 	defer c.Close()
 
 	// Send JoinCluster RPC to leader
 	if err := c.JoinCluster(m.nodeID, m.bindAddr, token); err != nil {
-		return fmt.Errorf("failed to join cluster via RPC: %v", err)
+		return fmt.Errorf("failed to join cluster via RPC: %w", err)
 	}
 
 	fmt.Println("✓ Successfully joined cluster")
 
 	// Load Certificate Authority from storage (already initialized by bootstrap node)
 	if err := m.ca.LoadFromStore(); err != nil {
-		return fmt.Errorf("failed to load CA: %v", err)
+		return fmt.Errorf("failed to load CA: %w", err)
 	}
 	fmt.Println("✓ Loaded Certificate Authority from cluster")
 
@@ -309,7 +309,7 @@ func (m *Manager) AddVoter(nodeID, address string) error {
 
 	future := m.raft.AddVoter(raft.ServerID(nodeID), raft.ServerAddress(address), 0, 10*time.Second)
 	if err := future.Error(); err != nil {
-		return fmt.Errorf("failed to add voter: %v", err)
+		return fmt.Errorf("failed to add voter: %w", err)
 	}
 
 	fmt.Printf("Successfully added voter %s to cluster\n", nodeID)
@@ -328,7 +328,7 @@ func (m *Manager) RemoveServer(nodeID string) error {
 
 	future := m.raft.RemoveServer(raft.ServerID(nodeID), 0, 10*time.Second)
 	if err := future.Error(); err != nil {
-		return fmt.Errorf("failed to remove server: %v", err)
+		return fmt.Errorf("failed to remove server: %w", err)
 	}
 
 	return nil
@@ -342,7 +342,7 @@ func (m *Manager) GetClusterServers() ([]raft.Server, error) {
 
 	future := m.raft.GetConfiguration()
 	if err := future.Error(); err != nil {
-		return nil, fmt.Errorf("failed to get configuration: %v", err)
+		return nil, fmt.Errorf("failed to get configuration: %w", err)
 	}
 
 	return future.Configuration().Servers, nil
@@ -399,12 +399,12 @@ func (m *Manager) Apply(cmd Command) error {
 
 	data, err := json.Marshal(cmd)
 	if err != nil {
-		return fmt.Errorf("failed to marshal command: %v", err)
+		return fmt.Errorf("failed to marshal command: %w", err)
 	}
 
 	future := m.raft.Apply(data, 5*time.Second)
 	if err := future.Error(); err != nil {
-		return fmt.Errorf("failed to apply command: %v", err)
+		return fmt.Errorf("failed to apply command: %w", err)
 	}
 
 	// Check if apply returned an error
@@ -739,13 +739,13 @@ func (m *Manager) Shutdown() error {
 	if m.raft != nil {
 		future := m.raft.Shutdown()
 		if err := future.Error(); err != nil {
-			return fmt.Errorf("failed to shutdown raft: %v", err)
+			return fmt.Errorf("failed to shutdown raft: %w", err)
 		}
 	}
 
 	if m.store != nil {
 		if err := m.store.Close(); err != nil {
-			return fmt.Errorf("failed to close store: %v", err)
+			return fmt.Errorf("failed to close store: %w", err)
 		}
 	}
 
@@ -770,12 +770,12 @@ func (m *Manager) initializeCA() error {
 	// CA doesn't exist, create new one
 	fmt.Println("Initializing new Certificate Authority...")
 	if err := m.ca.Initialize(); err != nil {
-		return fmt.Errorf("failed to initialize CA: %v", err)
+		return fmt.Errorf("failed to initialize CA: %w", err)
 	}
 
 	// Save CA to storage
 	if err := m.ca.SaveToStore(); err != nil {
-		return fmt.Errorf("failed to save CA: %v", err)
+		return fmt.Errorf("failed to save CA: %w", err)
 	}
 
 	fmt.Println("✓ Certificate Authority initialized and saved")
@@ -783,7 +783,7 @@ func (m *Manager) initializeCA() error {
 	// Issue certificate for this manager node
 	certDir, err := security.GetCertDir("manager", m.nodeID)
 	if err != nil {
-		return fmt.Errorf("failed to get cert directory: %v", err)
+		return fmt.Errorf("failed to get cert directory: %w", err)
 	}
 
 	// Check if certificate already exists
@@ -793,7 +793,7 @@ func (m *Manager) initializeCA() error {
 		// Extract IP from bind address for certificate SAN
 		host, _, err := net.SplitHostPort(m.bindAddr)
 		if err != nil {
-			return fmt.Errorf("failed to parse bind address: %v", err)
+			return fmt.Errorf("failed to parse bind address: %w", err)
 		}
 		ip := net.ParseIP(host)
 		var ipAddresses []net.IP
@@ -809,18 +809,18 @@ func (m *Manager) initializeCA() error {
 
 		cert, err := m.ca.IssueNodeCertificate(m.nodeID, "manager", dnsNames, ipAddresses)
 		if err != nil {
-			return fmt.Errorf("failed to issue node certificate: %v", err)
+			return fmt.Errorf("failed to issue node certificate: %w", err)
 		}
 
 		// Save certificate to file
 		if err := security.SaveCertToFile(cert, certDir); err != nil {
-			return fmt.Errorf("failed to save certificate: %v", err)
+			return fmt.Errorf("failed to save certificate: %w", err)
 		}
 
 		// Save CA certificate
 		caCert := m.ca.GetRootCACert()
 		if err := security.SaveCACertToFile(caCert, certDir); err != nil {
-			return fmt.Errorf("failed to save CA certificate: %v", err)
+			return fmt.Errorf("failed to save CA certificate: %w", err)
 		}
 
 		fmt.Printf("✓ Certificate issued and saved to %s\n", certDir)
@@ -945,7 +945,7 @@ func (m *Manager) StartIngress() error {
 	// For M7.1 MVP, we'll use a simple insecure connection (mTLS will be added in M7.2)
 	grpcConn, err := grpc.Dial(m.bindAddr, grpc.WithInsecure()) // #nosec G402
 	if err != nil {
-		return fmt.Errorf("failed to create gRPC connection for ingress: %v", err)
+		return fmt.Errorf("failed to create gRPC connection for ingress: %w", err)
 	}
 
 	// Create ingress proxy
@@ -1077,7 +1077,7 @@ func (m *Manager) EnableACME(email string) error {
 
 	acmeClient, err := ingress.NewACMEClient(m.store, m.ingressProxy, email)
 	if err != nil {
-		return fmt.Errorf("failed to create ACME client: %v", err)
+		return fmt.Errorf("failed to create ACME client: %w", err)
 	}
 
 	m.acmeClient = acmeClient
@@ -1099,12 +1099,12 @@ func (m *Manager) IssueACMECertificate(domains []string) error {
 	// Request certificate
 	cert, err := m.acmeClient.ObtainCertificate(domains)
 	if err != nil {
-		return fmt.Errorf("failed to obtain certificate: %v", err)
+		return fmt.Errorf("failed to obtain certificate: %w", err)
 	}
 
 	// Store certificate
 	if err := m.CreateTLSCertificate(cert); err != nil {
-		return fmt.Errorf("failed to store certificate: %v", err)
+		return fmt.Errorf("failed to store certificate: %w", err)
 	}
 
 	log.Info(fmt.Sprintf("ACME certificate issued and stored for domains: %v", domains))

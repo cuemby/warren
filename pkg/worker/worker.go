@@ -257,7 +257,7 @@ func (w *Worker) syncTasks() error {
 		NodeId: w.nodeID,
 	})
 	if err != nil {
-		return fmt.Errorf("failed to list tasks: %v", err)
+		return fmt.Errorf("failed to list tasks: %w", err)
 	}
 
 	// Process each task

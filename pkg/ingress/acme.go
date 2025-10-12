@@ -113,7 +113,7 @@ func NewACMEClient(store storage.Store, proxy *Proxy, email string) (*ACMEClient
 	// Generate private key for ACME account
 	privateKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	if err != nil {
-		return nil, fmt.Errorf("failed to generate private key: %v", err)
+		return nil, fmt.Errorf("failed to generate private key: %w", err)
 	}
 
 	// Create ACME user
@@ -134,7 +134,7 @@ func NewACMEClient(store storage.Store, proxy *Proxy, email string) (*ACMEClient
 	// Create lego client
 	client, err := lego.NewClient(config)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create lego client: %v", err)
+		return nil, fmt.Errorf("failed to create lego client: %w", err)
 	}
 
 	// Create HTTP-01 challenge provider
@@ -143,13 +143,13 @@ func NewACMEClient(store storage.Store, proxy *Proxy, email string) (*ACMEClient
 	// Set HTTP-01 provider
 	err = client.Challenge.SetHTTP01Provider(challengeProvider)
 	if err != nil {
-		return nil, fmt.Errorf("failed to set HTTP-01 provider: %v", err)
+		return nil, fmt.Errorf("failed to set HTTP-01 provider: %w", err)
 	}
 
 	// Register user with ACME server
 	reg, err := client.Registration.Register(registration.RegisterOptions{TermsOfServiceAgreed: true})
 	if err != nil {
-		return nil, fmt.Errorf("failed to register with ACME server: %v", err)
+		return nil, fmt.Errorf("failed to register with ACME server: %w", err)
 	}
 	user.Registration = reg
 
@@ -179,7 +179,7 @@ func (a *ACMEClient) ObtainCertificate(domains []string) (*types.TLSCertificate,
 
 	certificates, err := a.client.Certificate.Obtain(request)
 	if err != nil {
-		return nil, fmt.Errorf("failed to obtain certificate: %v", err)
+		return nil, fmt.Errorf("failed to obtain certificate: %w", err)
 	}
 
 	// Parse certificate to extract metadata
@@ -190,7 +190,7 @@ func (a *ACMEClient) ObtainCertificate(domains []string) (*types.TLSCertificate,
 
 	cert, err := x509.ParseCertificate(block.Bytes)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse certificate: %v", err)
+		return nil, fmt.Errorf("failed to parse certificate: %w", err)
 	}
 
 	// Create TLS certificate
@@ -230,7 +230,7 @@ func (a *ACMEClient) RenewCertificate(cert *types.TLSCertificate) (*types.TLSCer
 	// Renew certificate
 	renewed, err := a.client.Certificate.Renew(*certResource, true, false, "")
 	if err != nil {
-		return nil, fmt.Errorf("failed to renew certificate: %v", err)
+		return nil, fmt.Errorf("failed to renew certificate: %w", err)
 	}
 
 	// Parse renewed certificate to extract metadata
@@ -241,7 +241,7 @@ func (a *ACMEClient) RenewCertificate(cert *types.TLSCertificate) (*types.TLSCer
 
 	renewedCert, err := x509.ParseCertificate(block.Bytes)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse renewed certificate: %v", err)
+		return nil, fmt.Errorf("failed to parse renewed certificate: %w", err)
 	}
 
 	// Update certificate
@@ -262,7 +262,7 @@ func (a *ACMEClient) CheckAndRenewCertificates() error {
 	// Get all certificates
 	certs, err := a.store.ListTLSCertificates()
 	if err != nil {
-		return fmt.Errorf("failed to list certificates: %v", err)
+		return fmt.Errorf("failed to list certificates: %w", err)
 	}
 
 	now := time.Now()
@@ -329,7 +329,7 @@ func (a *ACMEClient) SaveACMEAccount() error {
 
 	data, err := json.Marshal(accountData)
 	if err != nil {
-		return fmt.Errorf("failed to marshal account data: %v", err)
+		return fmt.Errorf("failed to marshal account data: %w", err)
 	}
 
 	// Store as secret (for future: save private key securely)

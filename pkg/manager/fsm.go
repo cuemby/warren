@@ -36,7 +36,7 @@ type Command struct {
 func (f *WarrenFSM) Apply(log *raft.Log) interface{} {
 	var cmd Command
 	if err := json.Unmarshal(log.Data, &cmd); err != nil {
-		return fmt.Errorf("failed to unmarshal command: %v", err)
+		return fmt.Errorf("failed to unmarshal command: %w", err)
 	}
 
 	f.mu.Lock()
@@ -190,42 +190,42 @@ func (f *WarrenFSM) Snapshot() (raft.FSMSnapshot, error) {
 	// Collect all state
 	nodes, err := f.store.ListNodes()
 	if err != nil {
-		return nil, fmt.Errorf("failed to list nodes: %v", err)
+		return nil, fmt.Errorf("failed to list nodes: %w", err)
 	}
 
 	services, err := f.store.ListServices()
 	if err != nil {
-		return nil, fmt.Errorf("failed to list services: %v", err)
+		return nil, fmt.Errorf("failed to list services: %w", err)
 	}
 
 	tasks, err := f.store.ListTasks()
 	if err != nil {
-		return nil, fmt.Errorf("failed to list tasks: %v", err)
+		return nil, fmt.Errorf("failed to list tasks: %w", err)
 	}
 
 	secrets, err := f.store.ListSecrets()
 	if err != nil {
-		return nil, fmt.Errorf("failed to list secrets: %v", err)
+		return nil, fmt.Errorf("failed to list secrets: %w", err)
 	}
 
 	volumes, err := f.store.ListVolumes()
 	if err != nil {
-		return nil, fmt.Errorf("failed to list volumes: %v", err)
+		return nil, fmt.Errorf("failed to list volumes: %w", err)
 	}
 
 	networks, err := f.store.ListNetworks()
 	if err != nil {
-		return nil, fmt.Errorf("failed to list networks: %v", err)
+		return nil, fmt.Errorf("failed to list networks: %w", err)
 	}
 
 	ingresses, err := f.store.ListIngresses()
 	if err != nil {
-		return nil, fmt.Errorf("failed to list ingresses: %v", err)
+		return nil, fmt.Errorf("failed to list ingresses: %w", err)
 	}
 
 	tlsCerts, err := f.store.ListTLSCertificates()
 	if err != nil {
-		return nil, fmt.Errorf("failed to list TLS certificates: %v", err)
+		return nil, fmt.Errorf("failed to list TLS certificates: %w", err)
 	}
 
 	snapshot := &WarrenSnapshot{
@@ -249,7 +249,7 @@ func (f *WarrenFSM) Restore(rc io.ReadCloser) error {
 
 	var snapshot WarrenSnapshot
 	if err := json.NewDecoder(rc).Decode(&snapshot); err != nil {
-		return fmt.Errorf("failed to decode snapshot: %v", err)
+		return fmt.Errorf("failed to decode snapshot: %w", err)
 	}
 
 	f.mu.Lock()
@@ -258,49 +258,49 @@ func (f *WarrenFSM) Restore(rc io.ReadCloser) error {
 	// Restore all state
 	for _, node := range snapshot.Nodes {
 		if err := f.store.CreateNode(node); err != nil {
-			return fmt.Errorf("failed to restore node: %v", err)
+			return fmt.Errorf("failed to restore node: %w", err)
 		}
 	}
 
 	for _, service := range snapshot.Services {
 		if err := f.store.CreateService(service); err != nil {
-			return fmt.Errorf("failed to restore service: %v", err)
+			return fmt.Errorf("failed to restore service: %w", err)
 		}
 	}
 
 	for _, task := range snapshot.Tasks {
 		if err := f.store.CreateTask(task); err != nil {
-			return fmt.Errorf("failed to restore task: %v", err)
+			return fmt.Errorf("failed to restore task: %w", err)
 		}
 	}
 
 	for _, secret := range snapshot.Secrets {
 		if err := f.store.CreateSecret(secret); err != nil {
-			return fmt.Errorf("failed to restore secret: %v", err)
+			return fmt.Errorf("failed to restore secret: %w", err)
 		}
 	}
 
 	for _, volume := range snapshot.Volumes {
 		if err := f.store.CreateVolume(volume); err != nil {
-			return fmt.Errorf("failed to restore volume: %v", err)
+			return fmt.Errorf("failed to restore volume: %w", err)
 		}
 	}
 
 	for _, network := range snapshot.Networks {
 		if err := f.store.CreateNetwork(network); err != nil {
-			return fmt.Errorf("failed to restore network: %v", err)
+			return fmt.Errorf("failed to restore network: %w", err)
 		}
 	}
 
 	for _, ingress := range snapshot.Ingresses {
 		if err := f.store.CreateIngress(ingress); err != nil {
-			return fmt.Errorf("failed to restore ingress: %v", err)
+			return fmt.Errorf("failed to restore ingress: %w", err)
 		}
 	}
 
 	for _, cert := range snapshot.TLSCertificates {
 		if err := f.store.CreateTLSCertificate(cert); err != nil {
-			return fmt.Errorf("failed to restore TLS certificate: %v", err)
+			return fmt.Errorf("failed to restore TLS certificate: %w", err)
 		}
 	}
 

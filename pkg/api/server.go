@@ -93,7 +93,7 @@ func (s *Server) ensureLeader() error {
 func (s *Server) Start(addr string) error {
 	lis, err := net.Listen("tcp", addr)
 	if err != nil {
-		return fmt.Errorf("failed to listen: %v", err)
+		return fmt.Errorf("failed to listen: %w", err)
 	}
 
 	proto.RegisterWarrenAPIServer(s.grpc, s)
@@ -135,7 +135,7 @@ func (s *Server) RegisterNode(ctx context.Context, req *proto.RegisterNodeReques
 	node.OverlayIP = net.ParseIP("10.0.0.1")
 
 	if err := s.manager.CreateNode(node); err != nil {
-		return nil, fmt.Errorf("failed to create node: %v", err)
+		return nil, fmt.Errorf("failed to create node: %w", err)
 	}
 
 	return &proto.RegisterNodeResponse{
@@ -148,7 +148,7 @@ func (s *Server) RegisterNode(ctx context.Context, req *proto.RegisterNodeReques
 func (s *Server) Heartbeat(ctx context.Context, req *proto.HeartbeatRequest) (*proto.HeartbeatResponse, error) {
 	node, err := s.manager.GetNode(req.NodeId)
 	if err != nil {
-		return nil, fmt.Errorf("node not found: %v", err)
+		return nil, fmt.Errorf("node not found: %w", err)
 	}
 
 	// Update node heartbeat and available resources
@@ -161,7 +161,7 @@ func (s *Server) Heartbeat(ctx context.Context, req *proto.HeartbeatRequest) (*p
 	}
 
 	if err := s.manager.UpdateNode(node); err != nil {
-		return nil, fmt.Errorf("failed to update node: %v", err)
+		return nil, fmt.Errorf("failed to update node: %w", err)
 	}
 
 	// Process task status updates
@@ -189,7 +189,7 @@ func (s *Server) Heartbeat(ctx context.Context, req *proto.HeartbeatRequest) (*p
 func (s *Server) ListNodes(ctx context.Context, req *proto.ListNodesRequest) (*proto.ListNodesResponse, error) {
 	nodes, err := s.manager.ListNodes()
 	if err != nil {
-		return nil, fmt.Errorf("failed to list nodes: %v", err)
+		return nil, fmt.Errorf("failed to list nodes: %w", err)
 	}
 
 	// Filter by role if specified
@@ -218,7 +218,7 @@ func (s *Server) ListNodes(ctx context.Context, req *proto.ListNodesRequest) (*p
 func (s *Server) GetNode(ctx context.Context, req *proto.GetNodeRequest) (*proto.GetNodeResponse, error) {
 	node, err := s.manager.GetNode(req.Id)
 	if err != nil {
-		return nil, fmt.Errorf("node not found: %v", err)
+		return nil, fmt.Errorf("node not found: %w", err)
 	}
 
 	return &proto.GetNodeResponse{
@@ -234,7 +234,7 @@ func (s *Server) RemoveNode(ctx context.Context, req *proto.RemoveNodeRequest) (
 	}
 
 	if err := s.manager.DeleteNode(req.Id); err != nil {
-		return nil, fmt.Errorf("failed to remove node: %v", err)
+		return nil, fmt.Errorf("failed to remove node: %w", err)
 	}
 
 	return &proto.RemoveNodeResponse{
@@ -316,7 +316,7 @@ func (s *Server) CreateService(ctx context.Context, req *proto.CreateServiceRequ
 	}
 
 	if err := s.manager.CreateService(service); err != nil {
-		return nil, fmt.Errorf("failed to create service: %v", err)
+		return nil, fmt.Errorf("failed to create service: %w", err)
 	}
 
 	return &proto.CreateServiceResponse{
@@ -333,7 +333,7 @@ func (s *Server) UpdateService(ctx context.Context, req *proto.UpdateServiceRequ
 
 	service, err := s.manager.GetService(req.Id)
 	if err != nil {
-		return nil, fmt.Errorf("service not found: %v", err)
+		return nil, fmt.Errorf("service not found: %w", err)
 	}
 
 	// Update fields
@@ -353,7 +353,7 @@ func (s *Server) UpdateService(ctx context.Context, req *proto.UpdateServiceRequ
 	service.UpdatedAt = time.Now()
 
 	if err := s.manager.UpdateService(service); err != nil {
-		return nil, fmt.Errorf("failed to update service: %v", err)
+		return nil, fmt.Errorf("failed to update service: %w", err)
 	}
 
 	return &proto.UpdateServiceResponse{
@@ -369,7 +369,7 @@ func (s *Server) DeleteService(ctx context.Context, req *proto.DeleteServiceRequ
 	}
 
 	if err := s.manager.DeleteService(req.Id); err != nil {
-		return nil, fmt.Errorf("failed to delete service: %v", err)
+		return nil, fmt.Errorf("failed to delete service: %w", err)
 	}
 
 	return &proto.DeleteServiceResponse{
@@ -391,7 +391,7 @@ func (s *Server) GetService(ctx context.Context, req *proto.GetServiceRequest) (
 	}
 
 	if err != nil {
-		return nil, fmt.Errorf("service not found: %v", err)
+		return nil, fmt.Errorf("service not found: %w", err)
 	}
 
 	return &proto.GetServiceResponse{
@@ -403,7 +403,7 @@ func (s *Server) GetService(ctx context.Context, req *proto.GetServiceRequest) (
 func (s *Server) ListServices(ctx context.Context, req *proto.ListServicesRequest) (*proto.ListServicesResponse, error) {
 	services, err := s.manager.ListServices()
 	if err != nil {
-		return nil, fmt.Errorf("failed to list services: %v", err)
+		return nil, fmt.Errorf("failed to list services: %w", err)
 	}
 
 	protoServices := make([]*proto.Service, len(services))
@@ -420,14 +420,14 @@ func (s *Server) ListServices(ctx context.Context, req *proto.ListServicesReques
 func (s *Server) UpdateTaskStatus(ctx context.Context, req *proto.UpdateTaskStatusRequest) (*proto.UpdateTaskStatusResponse, error) {
 	task, err := s.manager.GetTask(req.TaskId)
 	if err != nil {
-		return nil, fmt.Errorf("task not found: %v", err)
+		return nil, fmt.Errorf("task not found: %w", err)
 	}
 
 	task.ActualState = types.TaskState(req.ActualState)
 	task.ContainerID = req.ContainerId
 
 	if err := s.manager.UpdateTask(task); err != nil {
-		return nil, fmt.Errorf("failed to update task: %v", err)
+		return nil, fmt.Errorf("failed to update task: %w", err)
 	}
 
 	return &proto.UpdateTaskStatusResponse{
@@ -439,7 +439,7 @@ func (s *Server) UpdateTaskStatus(ctx context.Context, req *proto.UpdateTaskStat
 func (s *Server) ReportTaskHealth(ctx context.Context, req *proto.ReportTaskHealthRequest) (*proto.ReportTaskHealthResponse, error) {
 	task, err := s.manager.GetTask(req.TaskId)
 	if err != nil {
-		return nil, fmt.Errorf("task not found: %v", err)
+		return nil, fmt.Errorf("task not found: %w", err)
 	}
 
 	// Update task health status
@@ -455,7 +455,7 @@ func (s *Server) ReportTaskHealth(ctx context.Context, req *proto.ReportTaskHeal
 
 	// Update task in storage
 	if err := s.manager.UpdateTask(task); err != nil {
-		return nil, fmt.Errorf("failed to update task health: %v", err)
+		return nil, fmt.Errorf("failed to update task health: %w", err)
 	}
 
 	return &proto.ReportTaskHealthResponse{
@@ -477,7 +477,7 @@ func (s *Server) ListTasks(ctx context.Context, req *proto.ListTasksRequest) (*p
 	}
 
 	if err != nil {
-		return nil, fmt.Errorf("failed to list tasks: %v", err)
+		return nil, fmt.Errorf("failed to list tasks: %w", err)
 	}
 
 	protoTasks := make([]*proto.Task, len(tasks))
@@ -494,7 +494,7 @@ func (s *Server) ListTasks(ctx context.Context, req *proto.ListTasksRequest) (*p
 func (s *Server) GetTask(ctx context.Context, req *proto.GetTaskRequest) (*proto.GetTaskResponse, error) {
 	task, err := s.manager.GetTask(req.Id)
 	if err != nil {
-		return nil, fmt.Errorf("task not found: %v", err)
+		return nil, fmt.Errorf("task not found: %w", err)
 	}
 
 	return &proto.GetTaskResponse{
@@ -519,7 +519,7 @@ func (s *Server) CreateSecret(ctx context.Context, req *proto.CreateSecretReques
 	// Encrypt the secret data before storing
 	encryptedData, err := s.manager.EncryptSecret(req.Data)
 	if err != nil {
-		return nil, fmt.Errorf("failed to encrypt secret: %v", err)
+		return nil, fmt.Errorf("failed to encrypt secret: %w", err)
 	}
 
 	secret := &types.Secret{
@@ -530,7 +530,7 @@ func (s *Server) CreateSecret(ctx context.Context, req *proto.CreateSecretReques
 	}
 
 	if err := s.manager.CreateSecret(secret); err != nil {
-		return nil, fmt.Errorf("failed to create secret: %v", err)
+		return nil, fmt.Errorf("failed to create secret: %w", err)
 	}
 
 	return &proto.CreateSecretResponse{
@@ -542,7 +542,7 @@ func (s *Server) CreateSecret(ctx context.Context, req *proto.CreateSecretReques
 func (s *Server) GetSecretByName(ctx context.Context, req *proto.GetSecretByNameRequest) (*proto.GetSecretByNameResponse, error) {
 	secret, err := s.manager.GetSecretByName(req.Name)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get secret: %v", err)
+		return nil, fmt.Errorf("failed to get secret: %w", err)
 	}
 
 	// Include encrypted data for workers to decrypt
@@ -559,7 +559,7 @@ func (s *Server) DeleteSecret(ctx context.Context, req *proto.DeleteSecretReques
 	}
 
 	if err := s.manager.DeleteSecret(req.Id); err != nil {
-		return nil, fmt.Errorf("failed to delete secret: %v", err)
+		return nil, fmt.Errorf("failed to delete secret: %w", err)
 	}
 
 	return &proto.DeleteSecretResponse{
@@ -571,7 +571,7 @@ func (s *Server) DeleteSecret(ctx context.Context, req *proto.DeleteSecretReques
 func (s *Server) ListSecrets(ctx context.Context, req *proto.ListSecretsRequest) (*proto.ListSecretsResponse, error) {
 	secrets, err := s.manager.ListSecrets()
 	if err != nil {
-		return nil, fmt.Errorf("failed to list secrets: %v", err)
+		return nil, fmt.Errorf("failed to list secrets: %w", err)
 	}
 
 	protoSecrets := make([]*proto.Secret, len(secrets))
@@ -600,7 +600,7 @@ func (s *Server) CreateVolume(ctx context.Context, req *proto.CreateVolumeReques
 	}
 
 	if err := s.manager.CreateVolume(volume); err != nil {
-		return nil, fmt.Errorf("failed to create volume: %v", err)
+		return nil, fmt.Errorf("failed to create volume: %w", err)
 	}
 
 	return &proto.CreateVolumeResponse{
@@ -612,7 +612,7 @@ func (s *Server) CreateVolume(ctx context.Context, req *proto.CreateVolumeReques
 func (s *Server) GetVolumeByName(ctx context.Context, req *proto.GetVolumeByNameRequest) (*proto.GetVolumeByNameResponse, error) {
 	volume, err := s.manager.GetVolumeByName(req.Name)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get volume: %v", err)
+		return nil, fmt.Errorf("failed to get volume: %w", err)
 	}
 
 	return &proto.GetVolumeByNameResponse{
@@ -628,7 +628,7 @@ func (s *Server) DeleteVolume(ctx context.Context, req *proto.DeleteVolumeReques
 	}
 
 	if err := s.manager.DeleteVolume(req.Id); err != nil {
-		return nil, fmt.Errorf("failed to delete volume: %v", err)
+		return nil, fmt.Errorf("failed to delete volume: %w", err)
 	}
 
 	return &proto.DeleteVolumeResponse{
@@ -640,7 +640,7 @@ func (s *Server) DeleteVolume(ctx context.Context, req *proto.DeleteVolumeReques
 func (s *Server) ListVolumes(ctx context.Context, req *proto.ListVolumesRequest) (*proto.ListVolumesResponse, error) {
 	volumes, err := s.manager.ListVolumes()
 	if err != nil {
-		return nil, fmt.Errorf("failed to list volumes: %v", err)
+		return nil, fmt.Errorf("failed to list volumes: %w", err)
 	}
 
 	protoVolumes := make([]*proto.Volume, len(volumes))
@@ -663,7 +663,7 @@ func (s *Server) GenerateJoinToken(ctx context.Context, req *proto.GenerateJoinT
 	// Generate token
 	token, err := s.manager.GenerateJoinToken(req.Role)
 	if err != nil {
-		return nil, fmt.Errorf("failed to generate join token: %v", err)
+		return nil, fmt.Errorf("failed to generate join token: %w", err)
 	}
 
 	return &proto.GenerateJoinTokenResponse{
@@ -683,7 +683,7 @@ func (s *Server) JoinCluster(ctx context.Context, req *proto.JoinClusterRequest)
 	// Validate the join token
 	role, err := s.manager.ValidateJoinToken(req.Token)
 	if err != nil {
-		return nil, fmt.Errorf("invalid join token: %v", err)
+		return nil, fmt.Errorf("invalid join token: %w", err)
 	}
 
 	// Only managers can join via this endpoint
@@ -693,7 +693,7 @@ func (s *Server) JoinCluster(ctx context.Context, req *proto.JoinClusterRequest)
 
 	// Add the manager as a voter in Raft
 	if err := s.manager.AddVoter(req.NodeId, req.BindAddr); err != nil {
-		return nil, fmt.Errorf("failed to add voter: %v", err)
+		return nil, fmt.Errorf("failed to add voter: %w", err)
 	}
 
 	return &proto.JoinClusterResponse{
@@ -706,7 +706,7 @@ func (s *Server) JoinCluster(ctx context.Context, req *proto.JoinClusterRequest)
 func (s *Server) GetClusterInfo(ctx context.Context, req *proto.GetClusterInfoRequest) (*proto.GetClusterInfoResponse, error) {
 	servers, err := s.manager.GetClusterServers()
 	if err != nil {
-		return nil, fmt.Errorf("failed to get cluster servers: %v", err)
+		return nil, fmt.Errorf("failed to get cluster servers: %w", err)
 	}
 
 	protoServers := make([]*proto.ClusterServer, len(servers))
@@ -1065,7 +1065,7 @@ func (s *Server) CreateIngress(ctx context.Context, req *proto.CreateIngressRequ
 
 	// Create ingress in storage via Raft
 	if err := s.manager.CreateIngress(ingress); err != nil {
-		return nil, fmt.Errorf("failed to create ingress: %v", err)
+		return nil, fmt.Errorf("failed to create ingress: %w", err)
 	}
 
 	// Reload ingress proxy to pick up the new ingress
@@ -1127,7 +1127,7 @@ func (s *Server) UpdateIngress(ctx context.Context, req *proto.UpdateIngressRequ
 		existing, err = s.manager.GetIngressByName(req.Name)
 	}
 	if err != nil {
-		return nil, fmt.Errorf("ingress not found: %v", err)
+		return nil, fmt.Errorf("ingress not found: %w", err)
 	}
 
 	// Update fields
@@ -1147,7 +1147,7 @@ func (s *Server) UpdateIngress(ctx context.Context, req *proto.UpdateIngressRequ
 
 	// Update ingress in storage via Raft
 	if err := s.manager.UpdateIngress(existing); err != nil {
-		return nil, fmt.Errorf("failed to update ingress: %v", err)
+		return nil, fmt.Errorf("failed to update ingress: %w", err)
 	}
 
 	// Reload ingress proxy to pick up the changes
@@ -1185,12 +1185,12 @@ func (s *Server) DeleteIngress(ctx context.Context, req *proto.DeleteIngressRequ
 		ingress, err = s.manager.GetIngressByName(req.Name)
 	}
 	if err != nil {
-		return nil, fmt.Errorf("ingress not found: %v", err)
+		return nil, fmt.Errorf("ingress not found: %w", err)
 	}
 
 	// Delete ingress via Raft
 	if err := s.manager.DeleteIngress(ingress.ID); err != nil {
-		return nil, fmt.Errorf("failed to delete ingress: %v", err)
+		return nil, fmt.Errorf("failed to delete ingress: %w", err)
 	}
 
 	// Reload ingress proxy to remove the deleted ingress
@@ -1220,7 +1220,7 @@ func (s *Server) GetIngress(ctx context.Context, req *proto.GetIngressRequest) (
 		ingress, err = s.manager.GetIngressByName(req.Name)
 	}
 	if err != nil {
-		return nil, fmt.Errorf("ingress not found: %v", err)
+		return nil, fmt.Errorf("ingress not found: %w", err)
 	}
 
 	// Convert to proto
@@ -1236,7 +1236,7 @@ func (s *Server) ListIngresses(ctx context.Context, req *proto.ListIngressesRequ
 	// Get all ingresses from storage
 	ingresses, err := s.manager.ListIngresses()
 	if err != nil {
-		return nil, fmt.Errorf("failed to list ingresses: %v", err)
+		return nil, fmt.Errorf("failed to list ingresses: %w", err)
 	}
 
 	// Convert to proto
@@ -1363,7 +1363,7 @@ func (s *Server) CreateTLSCertificate(ctx context.Context, req *proto.CreateTLSC
 	certPEM := req.CertPem
 	cert, err := parseCertificate(certPEM)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse certificate: %v", err)
+		return nil, fmt.Errorf("failed to parse certificate: %w", err)
 	}
 
 	// Create TLS certificate
@@ -1384,7 +1384,7 @@ func (s *Server) CreateTLSCertificate(ctx context.Context, req *proto.CreateTLSC
 
 	// Create certificate in storage via Raft
 	if err := s.manager.CreateTLSCertificate(tlsCert); err != nil {
-		return nil, fmt.Errorf("failed to create certificate: %v", err)
+		return nil, fmt.Errorf("failed to create certificate: %w", err)
 	}
 
 	// Convert back to proto
@@ -1409,7 +1409,7 @@ func (s *Server) GetTLSCertificate(ctx context.Context, req *proto.GetTLSCertifi
 	}
 
 	if err != nil {
-		return nil, fmt.Errorf("certificate not found: %v", err)
+		return nil, fmt.Errorf("certificate not found: %w", err)
 	}
 
 	return &proto.GetTLSCertificateResponse{
@@ -1422,7 +1422,7 @@ func (s *Server) ListTLSCertificates(ctx context.Context, req *proto.ListTLSCert
 	// Get all certificates from storage
 	certs, err := s.manager.ListTLSCertificates()
 	if err != nil {
-		return nil, fmt.Errorf("failed to list certificates: %v", err)
+		return nil, fmt.Errorf("failed to list certificates: %w", err)
 	}
 
 	// Convert to proto (but exclude private keys for security)
@@ -1459,12 +1459,12 @@ func (s *Server) DeleteTLSCertificate(ctx context.Context, req *proto.DeleteTLSC
 	}
 
 	if err != nil {
-		return nil, fmt.Errorf("certificate not found: %v", err)
+		return nil, fmt.Errorf("certificate not found: %w", err)
 	}
 
 	// Delete certificate via Raft
 	if err := s.manager.DeleteTLSCertificate(cert.ID); err != nil {
-		return nil, fmt.Errorf("failed to delete certificate: %v", err)
+		return nil, fmt.Errorf("failed to delete certificate: %w", err)
 	}
 
 	return &proto.DeleteTLSCertificateResponse{

@@ -75,7 +75,7 @@ func (p *Proxy) Start(ctx context.Context) error {
 	// Start HTTP server
 	httpListener, err := net.Listen("tcp", p.httpServer.Addr)
 	if err != nil {
-		return fmt.Errorf("failed to listen on :8000: %v", err)
+		return fmt.Errorf("failed to listen on :8000: %w", err)
 	}
 
 	log.Info(fmt.Sprintf("Ingress proxy listening on :8000 (HTTP)"))
@@ -217,7 +217,7 @@ func (p *Proxy) proxyRequest(w http.ResponseWriter, r *http.Request, backendAddr
 	// Parse backend URL
 	targetURL, err := url.Parse(fmt.Sprintf("http://%s", backendAddr))
 	if err != nil {
-		return fmt.Errorf("invalid backend address: %v", err)
+		return fmt.Errorf("invalid backend address: %w", err)
 	}
 
 	// Create reverse proxy
@@ -251,7 +251,7 @@ func (p *Proxy) proxyRequest(w http.ResponseWriter, r *http.Request, backendAddr
 func (p *Proxy) ReloadIngresses() error {
 	ingresses, err := p.store.ListIngresses()
 	if err != nil {
-		return fmt.Errorf("failed to load ingresses: %v", err)
+		return fmt.Errorf("failed to load ingresses: %w", err)
 	}
 
 	p.router.UpdateIngresses(ingresses)
@@ -265,7 +265,7 @@ func (p *Proxy) loadTLSCertificates() error {
 	// Get all TLS certificates from storage
 	certs, err := p.store.ListTLSCertificates()
 	if err != nil {
-		return fmt.Errorf("failed to list certificates: %v", err)
+		return fmt.Errorf("failed to list certificates: %w", err)
 	}
 
 	if len(certs) == 0 {

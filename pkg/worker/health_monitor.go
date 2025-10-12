@@ -110,7 +110,7 @@ func (hm *HealthMonitor) startHealthCheck(task *types.Task) error {
 	// Create health checker based on type
 	checker, err := hm.createChecker(task)
 	if err != nil {
-		return fmt.Errorf("failed to create health checker: %v", err)
+		return fmt.Errorf("failed to create health checker: %w", err)
 	}
 
 	// Create health config
