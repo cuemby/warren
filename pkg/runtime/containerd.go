@@ -86,6 +86,26 @@ func (r *ContainerdRuntime) CreateContainer(ctx context.Context, task *types.Tas
 		oci.WithEnv(task.Env),
 	}
 
+	// Apply resource limits if specified
+	if task.Resources != nil {
+		if task.Resources.CPULimit > 0 {
+			// Convert CPULimit (cores) to CPU shares and quota
+			// CPU shares: relative weight (1024 = 1 core)
+			// CPU quota: period=100000 (100ms), quota=CPULimit*100000
+			shares := uint64(task.Resources.CPULimit * 1024)
+			quota := int64(task.Resources.CPULimit * 100000)
+			period := uint64(100000)
+
+			opts = append(opts, oci.WithCPUShares(shares))
+			opts = append(opts, oci.WithCPUCFS(quota, period))
+		}
+
+		if task.Resources.MemoryLimit > 0 {
+			// Apply memory limit in bytes
+			opts = append(opts, oci.WithMemoryLimit(uint64(task.Resources.MemoryLimit)))
+		}
+	}
+
 	// Create the container
 	container, err := r.client.NewContainer(
 		ctx,
@@ -115,6 +135,26 @@ func (r *ContainerdRuntime) CreateContainerWithMounts(ctx context.Context, task 
 	opts := []oci.SpecOpts{
 		oci.WithImageConfig(image),
 		oci.WithEnv(task.Env),
+	}
+
+	// Apply resource limits if specified
+	if task.Resources != nil {
+		if task.Resources.CPULimit > 0 {
+			// Convert CPULimit (cores) to CPU shares and quota
+			// CPU shares: relative weight (1024 = 1 core)
+			// CPU quota: period=100000 (100ms), quota=CPULimit*100000
+			shares := uint64(task.Resources.CPULimit * 1024)
+			quota := int64(task.Resources.CPULimit * 100000)
+			period := uint64(100000)
+
+			opts = append(opts, oci.WithCPUShares(shares))
+			opts = append(opts, oci.WithCPUCFS(quota, period))
+		}
+
+		if task.Resources.MemoryLimit > 0 {
+			// Apply memory limit in bytes
+			opts = append(opts, oci.WithMemoryLimit(uint64(task.Resources.MemoryLimit)))
+		}
 	}
 
 	// Collect all mounts

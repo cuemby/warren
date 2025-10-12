@@ -729,6 +729,10 @@ var serviceCreateCmd = &cobra.Command{
 		healthTimeout, _ := cmd.Flags().GetInt("health-timeout")
 		healthRetries, _ := cmd.Flags().GetInt("health-retries")
 
+		// Resource limit flags
+		cpus, _ := cmd.Flags().GetFloat64("cpus")
+		memory, _ := cmd.Flags().GetString("memory")
+
 		// Parse env vars
 		env := make(map[string]string)
 		for _, e := range envVars {
@@ -767,6 +771,25 @@ var serviceCreateCmd = &cobra.Command{
 			req.HealthCheck = buildHealthCheck(healthHTTP, healthTCP, healthCmd, healthInterval, healthTimeout, healthRetries)
 		}
 
+		// Add resource limits if specified
+		if cpus > 0 || memory != "" {
+			resources := &proto.ResourceRequirements{}
+
+			if cpus > 0 {
+				resources.CpuShares = int64(cpus * 1024) // Convert cores to shares
+			}
+
+			if memory != "" {
+				memBytes, err := parseMemory(memory)
+				if err != nil {
+					return fmt.Errorf("invalid memory format: %v", err)
+				}
+				resources.MemoryBytes = memBytes
+			}
+
+			req.Resources = resources
+		}
+
 		// Create service
 		service, err := c.CreateServiceWithOptions(req)
 		if err != nil {
@@ -789,6 +812,15 @@ var serviceCreateCmd = &cobra.Command{
 		}
 		if service.HealthCheck != nil {
 			fmt.Printf("  Health Check: %s\n", service.HealthCheck.Type)
+		}
+		if service.Resources != nil {
+			if service.Resources.CpuShares > 0 {
+				cpus := float64(service.Resources.CpuShares) / 1024.0
+				fmt.Printf("  CPU Limit: %.2f cores\n", cpus)
+			}
+			if service.Resources.MemoryBytes > 0 {
+				fmt.Printf("  Memory Limit: %s\n", formatBytes(service.Resources.MemoryBytes))
+			}
 		}
 		return nil
 	},
@@ -958,6 +990,10 @@ func init() {
 	serviceCreateCmd.Flags().Int("health-interval", 30, "Health check interval in seconds")
 	serviceCreateCmd.Flags().Int("health-timeout", 10, "Health check timeout in seconds")
 	serviceCreateCmd.Flags().Int("health-retries", 3, "Health check retries before marking unhealthy")
+
+	// Resource limit flags
+	serviceCreateCmd.Flags().Float64("cpus", 0, "CPU limit in cores (e.g., 0.5, 1.0, 2.0)")
+	serviceCreateCmd.Flags().String("memory", "", "Memory limit (e.g., 512m, 1g, 2g)")
 
 	serviceCreateCmd.MarkFlagRequired("image")
 
@@ -1511,4 +1547,63 @@ func parsePortSpec(spec string, publishMode proto.PortMapping_PublishMode) (*pro
 		Protocol:      protocol,
 		PublishMode:   publishMode,
 	}, nil
+}
+
+// parseMemory parses a memory string (e.g., "512m", "1g", "2048k") into bytes
+func parseMemory(mem string) (int64, error) {
+	if mem == "" {
+		return 0, nil
+	}
+
+	mem = strings.ToLower(strings.TrimSpace(mem))
+
+	// Find the numeric part and unit
+	var value float64
+	var unit string
+
+	// Try to parse with unit
+	_, err := fmt.Sscanf(mem, "%f%s", &value, &unit)
+	if err != nil {
+		// Try parsing as just a number (bytes)
+		_, err = fmt.Sscanf(mem, "%f", &value)
+		if err != nil {
+			return 0, fmt.Errorf("invalid memory format: %s (use format like '512m', '1g', '2048k')", mem)
+		}
+		return int64(value), nil
+	}
+
+	// Convert to bytes based on unit
+	var bytes int64
+	switch unit {
+	case "b", "":
+		bytes = int64(value)
+	case "k", "kb":
+		bytes = int64(value * 1024)
+	case "m", "mb":
+		bytes = int64(value * 1024 * 1024)
+	case "g", "gb":
+		bytes = int64(value * 1024 * 1024 * 1024)
+	default:
+		return 0, fmt.Errorf("invalid memory unit: %s (use b, k/kb, m/mb, g/gb)", unit)
+	}
+
+	if bytes <= 0 {
+		return 0, fmt.Errorf("memory must be positive")
+	}
+
+	return bytes, nil
+}
+
+// formatBytes formats a byte count into human-readable format
+func formatBytes(bytes int64) string {
+	const unit = 1024
+	if bytes < unit {
+		return fmt.Sprintf("%d B", bytes)
+	}
+	div, exp := int64(unit), 0
+	for n := bytes / unit; n >= unit; n /= unit {
+		div *= unit
+		exp++
+	}
+	return fmt.Sprintf("%.1f %cB", float64(bytes)/float64(div), "KMGT"[exp])
 }
