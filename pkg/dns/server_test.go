@@ -117,18 +117,6 @@ func TestMakeInstanceName(t *testing.T) {
 	}
 }
 
-// TestResolverStripDomain tests domain suffix removal
-func TestResolverStripDomain(t *testing.T) {
-	// TODO: Implement when memory store is available
-	t.Skip("Skipping until memory store is implemented")
-}
-
-// TestResolverMakeFQDN tests FQDN generation
-func TestResolverMakeFQDN(t *testing.T) {
-	// TODO: Implement when memory store is available
-	t.Skip("Skipping until memory store is implemented")
-}
-
 // TestResolverServiceResolution tests service name resolution
 func TestResolverServiceResolution(t *testing.T) {
 	// TODO: Implement when memory store is available
