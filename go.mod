@@ -1,6 +1,6 @@
 module github.com/cuemby/warren
 
-go 1.22
+go 1.24.0
 
 require (
 	github.com/containerd/containerd v1.7.24
