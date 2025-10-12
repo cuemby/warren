@@ -76,6 +76,7 @@ func init() {
 	rootCmd.AddCommand(secretCmd)
 	rootCmd.AddCommand(volumeCmd)
 	rootCmd.AddCommand(ingressCmd)
+	rootCmd.AddCommand(certificateCmd)
 }
 
 func initLogging() {
@@ -1849,6 +1850,193 @@ var ingressDeleteCmd = &cobra.Command{
 	},
 }
 
+// Certificate commands
+
+var certificateCmd = &cobra.Command{
+	Use:     "certificate",
+	Aliases: []string{"cert", "certs"},
+	Short:   "Manage TLS certificates",
+}
+
+var certificateCreateCmd = &cobra.Command{
+	Use:   "create NAME",
+	Short: "Create a new TLS certificate",
+	Args:  cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		name := args[0]
+		certFile, _ := cmd.Flags().GetString("cert")
+		keyFile, _ := cmd.Flags().GetString("key")
+		hosts, _ := cmd.Flags().GetStringSlice("hosts")
+		managerAddr, _ := cmd.Flags().GetString("manager")
+
+		// Validate flags
+		if certFile == "" || keyFile == "" {
+			return fmt.Errorf("both --cert and --key are required")
+		}
+		if len(hosts) == 0 {
+			return fmt.Errorf("at least one host is required (--hosts)")
+		}
+
+		// Read certificate and key files
+		certPEM, err := os.ReadFile(certFile)
+		if err != nil {
+			return fmt.Errorf("failed to read certificate file: %v", err)
+		}
+
+		keyPEM, err := os.ReadFile(keyFile)
+		if err != nil {
+			return fmt.Errorf("failed to read key file: %v", err)
+		}
+
+		// Connect to manager
+		c, err := client.NewClient(managerAddr)
+		if err != nil {
+			return fmt.Errorf("failed to connect to manager: %v", err)
+		}
+		defer c.Close()
+
+		// Create certificate
+		req := &proto.CreateTLSCertificateRequest{
+			Name:    name,
+			Hosts:   hosts,
+			CertPem: certPEM,
+			KeyPem:  keyPEM,
+		}
+
+		cert, err := c.CreateTLSCertificate(req)
+		if err != nil {
+			return fmt.Errorf("failed to create certificate: %v", err)
+		}
+
+		fmt.Printf("Certificate %s created successfully\n", cert.Name)
+		fmt.Printf("  ID: %s\n", cert.Id)
+		fmt.Printf("  Hosts: %v\n", cert.Hosts)
+		fmt.Printf("  Issuer: %s\n", cert.Issuer)
+		fmt.Printf("  Valid from: %s\n", cert.NotBefore.AsTime().Format(time.RFC3339))
+		fmt.Printf("  Valid until: %s\n", cert.NotAfter.AsTime().Format(time.RFC3339))
+
+		return nil
+	},
+}
+
+var certificateListCmd = &cobra.Command{
+	Use:   "list",
+	Short: "List all TLS certificates",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		managerAddr, _ := cmd.Flags().GetString("manager")
+
+		// Connect to manager
+		c, err := client.NewClient(managerAddr)
+		if err != nil {
+			return fmt.Errorf("failed to connect to manager: %v", err)
+		}
+		defer c.Close()
+
+		// List certificates
+		certs, err := c.ListTLSCertificates()
+		if err != nil {
+			return fmt.Errorf("failed to list certificates: %v", err)
+		}
+
+		if len(certs) == 0 {
+			fmt.Println("No certificates found")
+			return nil
+		}
+
+		// Print table header
+		fmt.Printf("%-20s %-40s %-25s %-25s\n", "NAME", "HOSTS", "VALID UNTIL", "ISSUER")
+		fmt.Println(strings.Repeat("-", 110))
+
+		// Print each certificate
+		for _, cert := range certs {
+			hostsStr := strings.Join(cert.Hosts, ", ")
+			if len(hostsStr) > 38 {
+				hostsStr = hostsStr[:35] + "..."
+			}
+
+			issuer := cert.Issuer
+			if len(issuer) > 23 {
+				issuer = issuer[:20] + "..."
+			}
+
+			validUntil := cert.NotAfter.AsTime().Format("2006-01-02 15:04")
+
+			fmt.Printf("%-20s %-40s %-25s %-25s\n", cert.Name, hostsStr, validUntil, issuer)
+		}
+
+		return nil
+	},
+}
+
+var certificateInspectCmd = &cobra.Command{
+	Use:   "inspect NAME",
+	Short: "Inspect a TLS certificate",
+	Args:  cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		name := args[0]
+		managerAddr, _ := cmd.Flags().GetString("manager")
+
+		// Connect to manager
+		c, err := client.NewClient(managerAddr)
+		if err != nil {
+			return fmt.Errorf("failed to connect to manager: %v", err)
+		}
+		defer c.Close()
+
+		// Get certificate
+		cert, err := c.GetTLSCertificate(&proto.GetTLSCertificateRequest{
+			Name: name,
+		})
+		if err != nil {
+			return fmt.Errorf("failed to get certificate: %v", err)
+		}
+
+		// Print certificate details
+		fmt.Printf("Name: %s\n", cert.Name)
+		fmt.Printf("ID: %s\n", cert.Id)
+		fmt.Printf("Issuer: %s\n", cert.Issuer)
+		fmt.Printf("Hosts:\n")
+		for _, host := range cert.Hosts {
+			fmt.Printf("  - %s\n", host)
+		}
+		fmt.Printf("Valid from: %s\n", cert.NotBefore.AsTime().Format(time.RFC3339))
+		fmt.Printf("Valid until: %s\n", cert.NotAfter.AsTime().Format(time.RFC3339))
+		fmt.Printf("Created: %s\n", cert.CreatedAt.AsTime().Format(time.RFC3339))
+		fmt.Printf("Updated: %s\n", cert.UpdatedAt.AsTime().Format(time.RFC3339))
+
+		return nil
+	},
+}
+
+var certificateDeleteCmd = &cobra.Command{
+	Use:     "delete NAME",
+	Aliases: []string{"rm"},
+	Short:   "Delete a TLS certificate",
+	Args:    cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		name := args[0]
+		managerAddr, _ := cmd.Flags().GetString("manager")
+
+		// Connect to manager
+		c, err := client.NewClient(managerAddr)
+		if err != nil {
+			return fmt.Errorf("failed to connect to manager: %v", err)
+		}
+		defer c.Close()
+
+		// Delete certificate
+		err = c.DeleteTLSCertificate(&proto.DeleteTLSCertificateRequest{
+			Name: name,
+		})
+		if err != nil {
+			return fmt.Errorf("failed to delete certificate: %v", err)
+		}
+
+		fmt.Printf("Certificate %s deleted successfully\n", name)
+		return nil
+	},
+}
+
 func init() {
 	// Ingress create command
 	ingressCreateCmd.Flags().String("manager", "localhost:2377", "Manager address")
@@ -1869,9 +2057,33 @@ func init() {
 	// Ingress delete command
 	ingressDeleteCmd.Flags().String("manager", "localhost:2377", "Manager address")
 
-	// Add subcommands
+	// Add ingress subcommands
 	ingressCmd.AddCommand(ingressCreateCmd)
 	ingressCmd.AddCommand(ingressListCmd)
 	ingressCmd.AddCommand(ingressInspectCmd)
 	ingressCmd.AddCommand(ingressDeleteCmd)
+
+	// Certificate create command
+	certificateCreateCmd.Flags().String("manager", "localhost:2377", "Manager address")
+	certificateCreateCmd.Flags().String("cert", "", "Path to certificate file (PEM format) (required)")
+	certificateCreateCmd.Flags().String("key", "", "Path to private key file (PEM format) (required)")
+	certificateCreateCmd.Flags().StringSlice("hosts", []string{}, "Hostnames covered by this certificate (required)")
+	certificateCreateCmd.MarkFlagRequired("cert")
+	certificateCreateCmd.MarkFlagRequired("key")
+	certificateCreateCmd.MarkFlagRequired("hosts")
+
+	// Certificate list command
+	certificateListCmd.Flags().String("manager", "localhost:2377", "Manager address")
+
+	// Certificate inspect command
+	certificateInspectCmd.Flags().String("manager", "localhost:2377", "Manager address")
+
+	// Certificate delete command
+	certificateDeleteCmd.Flags().String("manager", "localhost:2377", "Manager address")
+
+	// Add certificate subcommands
+	certificateCmd.AddCommand(certificateCreateCmd)
+	certificateCmd.AddCommand(certificateListCmd)
+	certificateCmd.AddCommand(certificateInspectCmd)
+	certificateCmd.AddCommand(certificateDeleteCmd)
 }
