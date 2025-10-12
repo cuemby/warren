@@ -1550,10 +1550,224 @@ if they don't exit. Worker drain mode deferred as future enhancement.
 
 ### Milestone 7: Built-in Ingress (v1.1)
 
-- [ ] HTTP reverse proxy
-- [ ] TLS termination (Let's Encrypt integration)
-- [ ] Path-based routing
-- [ ] Host-based routing
+**Goal**: Add HTTP/HTTPS ingress capabilities for seamless external service access
+
+**Priority**: [RECOMMENDED]
+**Estimated Effort**: 2-3 weeks
+**Status**: 🔲 Not Started
+
+**Overview**:
+Warren M7 adds a built-in ingress controller that enables HTTP/HTTPS routing to services without external load balancers. This completes Warren's networking stack and makes it production-ready for web applications.
+
+**Success Criteria**:
+- HTTP reverse proxy routes traffic to backend services
+- TLS termination with automatic Let's Encrypt certificates
+- Path-based and host-based routing rules
+- Load balancing across service replicas
+- Health check integration (only route to healthy tasks)
+- Zero external dependencies
+
+---
+
+#### Phase 7.1: HTTP Reverse Proxy (Week 1)
+
+**Priority**: [CRITICAL] - Foundation for all ingress features
+
+**Task 7.1.1: Ingress Types & Core**
+- [ ] **Add Ingress types to pkg/types/types.go**
+  - Ingress struct (name, rules, backend services)
+  - IngressRule (host, paths, service backend)
+  - IngressBackend (service name, port)
+  - Test: Unit tests for ingress types
+
+- [ ] **Implement reverse proxy (pkg/ingress/proxy.go)**
+  - HTTP server listening on port 80
+  - Route requests based on Host header and path
+  - Proxy to backend service IPs (from DNS resolver)
+  - Connection pooling and keep-alive
+  - Test: Proxy single request to backend
+
+**Task 7.1.2: Request Routing**
+- [ ] **Path-based routing (pkg/ingress/router.go)**
+  - Match longest prefix path (e.g., /api/v1 before /api)
+  - Support exact matches and prefix matches
+  - Default backend for unmatched requests
+  - Test: Route /api → service-a, /web → service-b
+
+- [ ] **Host-based routing**
+  - Match Host header to ingress rules
+  - Support wildcard hosts (*.example.com)
+  - SNI-based routing (for HTTPS)
+  - Test: api.example.com → api-service, web.example.com → web-service
+
+**Task 7.1.3: Load Balancing**
+- [ ] **Backend selection (pkg/ingress/loadbalancer.go)**
+  - Query DNS resolver for service IPs
+  - Round-robin selection across replicas
+  - Exclude unhealthy tasks (check health status from manager)
+  - Connection draining on task shutdown
+  - Test: Traffic distributed evenly across 3 replicas
+
+**Phase 7.1 Deliverables**:
+- [ ] HTTP reverse proxy working
+- [ ] Path and host-based routing functional
+- [ ] Load balancing across service replicas
+- [ ] CLI commands: `warren ingress create/list/delete`
+
+---
+
+#### Phase 7.2: TLS Termination (Week 1-2)
+
+**Priority**: [CRITICAL] - HTTPS support for production
+
+**Task 7.2.1: Manual TLS Certificates**
+- [ ] **TLS server setup (pkg/ingress/tls.go)**
+  - HTTPS server listening on port 443
+  - Load certificates from secrets
+  - SNI support for multi-domain hosting
+  - HTTP → HTTPS redirect (configurable)
+  - Test: Serve HTTPS with provided cert
+
+- [ ] **Certificate management**
+  - Store certificates as Warren secrets
+  - Automatic reload on secret update
+  - Fallback to self-signed cert for development
+  - Test: Update cert secret, ingress reloads
+
+**Task 7.2.2: Let's Encrypt Integration**
+- [ ] **ACME protocol client (pkg/ingress/acme.go)**
+  - Use lego library (github.com/go-acme/lego)
+  - HTTP-01 challenge (serve /.well-known/acme-challenge/)
+  - Automatic certificate issuance
+  - Certificate storage in Warren secrets
+  - Test: Issue cert for test.example.com
+
+- [ ] **Auto-renewal**
+  - Check certificate expiry (30 days before)
+  - Automatic renewal background job
+  - Zero-downtime cert rotation
+  - Test: Renew cert, verify no service interruption
+
+**Phase 7.2 Deliverables**:
+- [ ] HTTPS support with manual certificates
+- [ ] Let's Encrypt automatic certificate issuance
+- [ ] Auto-renewal working
+- [ ] CLI: `warren ingress create --tls --tls-email user@example.com`
+
+---
+
+#### Phase 7.3: Advanced Routing (Week 2)
+
+**Priority**: [RECOMMENDED] - Production-grade routing
+
+**Task 7.3.1: Request Modification**
+- [ ] **Header manipulation (pkg/ingress/headers.go)**
+  - Add custom headers (X-Forwarded-For, X-Real-IP)
+  - Remove headers (security)
+  - Rewrite headers
+  - Test: Custom headers added to backend requests
+
+- [ ] **Path rewriting**
+  - Strip path prefix (e.g., /api/v1 → /)
+  - Rewrite paths (e.g., /old → /new)
+  - Preserve query parameters
+  - Test: /api/users → backend receives /users
+
+**Task 7.3.2: Advanced Features**
+- [ ] **Rate limiting (pkg/ingress/ratelimit.go)**
+  - Per-IP rate limiting
+  - Token bucket algorithm
+  - Configurable limits (requests/second, burst)
+  - Test: 429 Too Many Requests after limit
+
+- [ ] **Access control**
+  - IP whitelist/blacklist
+  - Client certificate validation (mTLS)
+  - Basic auth support
+  - Test: Block requests from blacklisted IPs
+
+**Phase 7.3 Deliverables**:
+- [ ] Header manipulation working
+- [ ] Path rewriting functional
+- [ ] Rate limiting operational
+- [ ] Access control working
+
+---
+
+#### Phase 7.4: Integration & Testing (Week 3)
+
+**Priority**: [CRITICAL] - Ensure production readiness
+
+**Task 7.4.1: End-to-End Tests**
+- [ ] **Basic ingress test**
+  - Deploy 2 services (api, web)
+  - Create ingress with path routing
+  - Verify requests routed correctly
+
+- [ ] **TLS ingress test**
+  - Deploy service with HTTPS
+  - Let's Encrypt issuance
+  - Verify HTTPS works, HTTP redirects
+
+- [ ] **Multi-service test**
+  - 3 services, 3 different hosts
+  - SNI routing
+  - Health checks exclude unhealthy backends
+
+**Task 7.4.2: Documentation**
+- [ ] **Update API documentation**
+  - Document ingress APIs
+  - Add RPC methods for ingress CRUD
+
+- [ ] **User guide**
+  - Create docs/ingress.md
+  - Example: Deploy web app with ingress
+  - Let's Encrypt setup guide
+
+- [ ] **Update .agent documentation**
+  - Update project-architecture.md with pkg/ingress/
+  - Update database-schema.md with ingress bucket
+
+**Phase 7.4 Deliverables**:
+- [ ] End-to-end tests passing
+- [ ] Documentation complete
+- [ ] Example YAMLs provided
+- [ ] Integration guide written
+
+---
+
+### Milestone 7 Acceptance Criteria
+
+**Core Features**:
+- [ ] HTTP reverse proxy routing traffic to services
+- [ ] Path-based routing (/api, /web, etc.)
+- [ ] Host-based routing (api.example.com, web.example.com)
+- [ ] TLS termination with manual certificates
+- [ ] Let's Encrypt automatic certificate issuance and renewal
+- [ ] Load balancing across service replicas
+- [ ] Health check integration (route to healthy tasks only)
+
+**Optional Features** (Nice to have):
+- [ ] Rate limiting
+- [ ] Access control (IP whitelist/blacklist)
+- [ ] Header manipulation
+- [ ] Path rewriting
+
+**Quality Gates**:
+- [ ] Unit tests for routing logic
+- [ ] Integration tests for HTTP and HTTPS
+- [ ] Let's Encrypt test (staging environment)
+- [ ] Documentation complete
+- [ ] Binary size still < 100MB
+
+**Production Ready**:
+- [ ] Can deploy complete web application with ingress
+- [ ] HTTPS works with Let's Encrypt
+- [ ] Traffic distributed across replicas
+- [ ] Zero external dependencies (no nginx, traefik, etc.)
+- [ ] Ready for v1.1 release
+
+---
 
 ### Milestone 8: Service Mesh (v1.2)
 
