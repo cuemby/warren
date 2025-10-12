@@ -1046,7 +1046,7 @@ func (s *Server) CreateIngress(ctx context.Context, req *proto.CreateIngressRequ
 	}
 
 	// Check if ingress already exists
-	existing, _ := s.manager.GetStore().GetIngressByName(req.Name)
+	existing, _ := s.manager.GetIngressByName(req.Name)
 	if existing != nil {
 		return nil, fmt.Errorf("ingress %s already exists", req.Name)
 	}
@@ -1091,9 +1091,9 @@ func (s *Server) UpdateIngress(ctx context.Context, req *proto.UpdateIngressRequ
 	var existing *types.Ingress
 	var err error
 	if req.Id != "" {
-		existing, err = s.manager.GetStore().GetIngress(req.Id)
+		existing, err = s.manager.GetIngress(req.Id)
 	} else {
-		existing, err = s.manager.GetStore().GetIngressByName(req.Name)
+		existing, err = s.manager.GetIngressByName(req.Name)
 	}
 	if err != nil {
 		return nil, fmt.Errorf("ingress not found: %v", err)
@@ -1143,9 +1143,9 @@ func (s *Server) DeleteIngress(ctx context.Context, req *proto.DeleteIngressRequ
 	var ingress *types.Ingress
 	var err error
 	if req.Id != "" {
-		ingress, err = s.manager.GetStore().GetIngress(req.Id)
+		ingress, err = s.manager.GetIngress(req.Id)
 	} else {
-		ingress, err = s.manager.GetStore().GetIngressByName(req.Name)
+		ingress, err = s.manager.GetIngressByName(req.Name)
 	}
 	if err != nil {
 		return nil, fmt.Errorf("ingress not found: %v", err)
@@ -1172,9 +1172,9 @@ func (s *Server) GetIngress(ctx context.Context, req *proto.GetIngressRequest) (
 	var ingress *types.Ingress
 	var err error
 	if req.Id != "" {
-		ingress, err = s.manager.GetStore().GetIngress(req.Id)
+		ingress, err = s.manager.GetIngress(req.Id)
 	} else {
-		ingress, err = s.manager.GetStore().GetIngressByName(req.Name)
+		ingress, err = s.manager.GetIngressByName(req.Name)
 	}
 	if err != nil {
 		return nil, fmt.Errorf("ingress not found: %v", err)
@@ -1191,7 +1191,7 @@ func (s *Server) GetIngress(ctx context.Context, req *proto.GetIngressRequest) (
 // ListIngresses lists all ingresses
 func (s *Server) ListIngresses(ctx context.Context, req *proto.ListIngressesRequest) (*proto.ListIngressesResponse, error) {
 	// Get all ingresses from storage
-	ingresses, err := s.manager.GetStore().ListIngresses()
+	ingresses, err := s.manager.ListIngresses()
 	if err != nil {
 		return nil, fmt.Errorf("failed to list ingresses: %v", err)
 	}

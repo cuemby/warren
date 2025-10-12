@@ -1684,13 +1684,13 @@ var ingressCreateCmd = &cobra.Command{
 		}
 
 		// Create ingress
-		resp, err := c.GetClient().CreateIngress(context.Background(), req)
+		ingress, err := c.CreateIngress(req)
 		if err != nil {
 			return fmt.Errorf("failed to create ingress: %v", err)
 		}
 
-		fmt.Printf("Ingress %s created successfully\n", resp.Ingress.Name)
-		fmt.Printf("ID: %s\n", resp.Ingress.Id)
+		fmt.Printf("Ingress %s created successfully\n", ingress.Name)
+		fmt.Printf("ID: %s\n", ingress.Id)
 		if host != "" {
 			fmt.Printf("Host: %s\n", host)
 		}
@@ -1716,12 +1716,12 @@ var ingressListCmd = &cobra.Command{
 		defer c.Close()
 
 		// List ingresses
-		resp, err := c.GetClient().ListIngresses(context.Background(), &proto.ListIngressesRequest{})
+		ingresses, err := c.ListIngresses()
 		if err != nil {
 			return fmt.Errorf("failed to list ingresses: %v", err)
 		}
 
-		if len(resp.Ingresses) == 0 {
+		if len(ingresses) == 0 {
 			fmt.Println("No ingresses found")
 			return nil
 		}
@@ -1731,7 +1731,7 @@ var ingressListCmd = &cobra.Command{
 		fmt.Println(strings.Repeat("-", 95))
 
 		// Print each ingress
-		for _, ingress := range resp.Ingresses {
+		for _, ingress := range ingresses {
 			for _, rule := range ingress.Rules {
 				host := rule.Host
 				if host == "" {
@@ -1769,14 +1769,12 @@ var ingressInspectCmd = &cobra.Command{
 		defer c.Close()
 
 		// Get ingress
-		resp, err := c.GetClient().GetIngress(context.Background(), &proto.GetIngressRequest{
+		ingress, err := c.GetIngress(&proto.GetIngressRequest{
 			Name: name,
 		})
 		if err != nil {
 			return fmt.Errorf("failed to get ingress: %v", err)
 		}
-
-		ingress := resp.Ingress
 
 		// Print ingress details
 		fmt.Printf("Name: %s\n", ingress.Name)
@@ -1823,7 +1821,7 @@ var ingressDeleteCmd = &cobra.Command{
 		defer c.Close()
 
 		// Delete ingress
-		_, err = c.GetClient().DeleteIngress(context.Background(), &proto.DeleteIngressRequest{
+		err = c.DeleteIngress(&proto.DeleteIngressRequest{
 			Name: name,
 		})
 		if err != nil {

@@ -60,7 +60,11 @@
       "Bash(sudo:*)",
       "Bash(./warren:*)",
       "Bash(curl -s http://127.0.0.1:9090/metrics)",
-      "Bash(pkill:*)"
+      "Bash(pkill:*)",
+      "Bash(./test/lima/test-mtls.sh:*)",
+      "Bash(CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -o bin/warren-linux-arm64 ./cmd/warren)",
+      "Bash(./test/lima/test-ports.sh:*)",
+      "Bash(stat:*)"
     ],
     "deny": [],
     "ask": []

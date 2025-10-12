@@ -16,11 +16,13 @@ import (
 	"github.com/cuemby/warren/pkg/client"
 	"github.com/cuemby/warren/pkg/dns"
 	"github.com/cuemby/warren/pkg/events"
+	"github.com/cuemby/warren/pkg/ingress"
 	"github.com/cuemby/warren/pkg/security"
 	"github.com/cuemby/warren/pkg/storage"
 	"github.com/cuemby/warren/pkg/types"
 	"github.com/hashicorp/raft"
 	raftboltdb "github.com/hashicorp/raft-boltdb"
+	"google.golang.org/grpc"
 )
 
 // Manager represents a Warren cluster manager node
@@ -39,6 +41,9 @@ type Manager struct {
 	dnsServer      *dns.Server
 	dnsCtx         context.Context
 	dnsCancel      context.CancelFunc
+	ingressProxy   *ingress.Proxy
+	ingressCtx     context.Context
+	ingressCancel  context.CancelFunc
 }
 
 // Config holds configuration for creating a Manager
@@ -887,15 +892,101 @@ func (m *Manager) NodeID() string {
 
 // CreateIngress creates a new ingress via Raft
 func (m *Manager) CreateIngress(ingress *types.Ingress) error {
-	return m.applyRaftCommand("CreateIngress", ingress)
+	data, err := json.Marshal(ingress)
+	if err != nil {
+		return err
+	}
+
+	cmd := Command{
+		Op:   "CreateIngress",
+		Data: data,
+	}
+
+	return m.Apply(cmd)
 }
 
 // UpdateIngress updates an ingress via Raft
 func (m *Manager) UpdateIngress(ingress *types.Ingress) error {
-	return m.applyRaftCommand("UpdateIngress", ingress)
+	data, err := json.Marshal(ingress)
+	if err != nil {
+		return err
+	}
+
+	cmd := Command{
+		Op:   "UpdateIngress",
+		Data: data,
+	}
+
+	return m.Apply(cmd)
 }
 
 // DeleteIngress deletes an ingress via Raft
 func (m *Manager) DeleteIngress(ingressID string) error {
-	return m.applyRaftCommand("DeleteIngress", map[string]string{"id": ingressID})
+	data, err := json.Marshal(ingressID)
+	if err != nil {
+		return err
+	}
+
+	cmd := Command{
+		Op:   "DeleteIngress",
+		Data: data,
+	}
+
+	return m.Apply(cmd)
+}
+
+// StartIngress starts the ingress HTTP proxy on port 80
+func (m *Manager) StartIngress() error {
+	// Create gRPC connection for the ingress proxy to query the manager
+	// For M7.1 MVP, we'll use a simple connection (mTLS will be added in M7.2)
+	grpcConn, err := grpc.Dial(m.bindAddr, grpc.WithInsecure())
+	if err != nil {
+		return fmt.Errorf("failed to create gRPC connection for ingress: %v", err)
+	}
+
+	// Create ingress proxy
+	m.ingressProxy = ingress.NewProxy(m.store, m.bindAddr, grpcConn)
+
+	// Create context for ingress proxy
+	m.ingressCtx, m.ingressCancel = context.WithCancel(context.Background())
+
+	// Start proxy in goroutine
+	go func() {
+		if err := m.ingressProxy.Start(m.ingressCtx); err != nil {
+			// Log error but don't crash manager
+			fmt.Printf("Ingress proxy error: %v\n", err)
+		}
+	}()
+
+	return nil
+}
+
+// StopIngress stops the ingress proxy
+func (m *Manager) StopIngress() {
+	if m.ingressCancel != nil {
+		m.ingressCancel()
+	}
+}
+
+// ReloadIngress reloads ingress rules from storage
+func (m *Manager) ReloadIngress() error {
+	if m.ingressProxy != nil {
+		return m.ingressProxy.ReloadIngresses()
+	}
+	return nil
+}
+
+// GetIngress retrieves an ingress by ID
+func (m *Manager) GetIngress(id string) (*types.Ingress, error) {
+	return m.store.GetIngress(id)
+}
+
+// GetIngressByName retrieves an ingress by name
+func (m *Manager) GetIngressByName(name string) (*types.Ingress, error) {
+	return m.store.GetIngressByName(name)
+}
+
+// ListIngresses lists all ingresses
+func (m *Manager) ListIngresses() ([]*types.Ingress, error) {
+	return m.store.ListIngresses()
 }

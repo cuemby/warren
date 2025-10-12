@@ -36,7 +36,7 @@ func NewProxy(store storage.Store, managerAddr string, grpcClient *grpc.ClientCo
 	// Initialize router with current ingresses
 	ingresses, err := store.ListIngresses()
 	if err != nil {
-		log.Warnf("Failed to load ingresses: %v", err)
+		log.Warn(fmt.Sprintf("Failed to load ingresses: %v", err))
 		ingresses = []*types.Ingress{}
 	}
 
@@ -63,12 +63,12 @@ func (p *Proxy) Start(ctx context.Context) error {
 		return fmt.Errorf("failed to listen on :80: %v", err)
 	}
 
-	log.Infof("Ingress proxy listening on :80")
+	log.Info(fmt.Sprintf("Ingress proxy listening on :80"))
 
 	// Serve in goroutine
 	go func() {
 		if err := p.httpServer.Serve(listener); err != nil && err != http.ErrServerClosed {
-			log.Errorf("HTTP server error: %v", err)
+			log.Error(fmt.Sprintf("HTTP server error: %v", err))
 		}
 	}()
 
@@ -92,31 +92,31 @@ func (p *Proxy) handleRequest(w http.ResponseWriter, r *http.Request) {
 	host := r.Host
 	path := r.URL.Path
 
-	log.Debugf("Ingress request: %s %s%s", r.Method, host, path)
+	log.Debug(fmt.Sprintf("Ingress request: %s %s%s", r.Method, host, path))
 
 	// Route the request
 	backend := p.router.Route(host, path)
 	if backend == nil {
-		log.Warnf("No backend found for %s%s", host, path)
+		log.Warn(fmt.Sprintf("No backend found for %s%s", host, path))
 		http.Error(w, "Service not found", http.StatusNotFound)
 		return
 	}
 
-	log.Debugf("Matched backend: service=%s, port=%d", backend.ServiceName, backend.Port)
+	log.Debug(fmt.Sprintf("Matched backend: service=%s, port=%d", backend.ServiceName, backend.Port))
 
 	// Select backend instance via load balancer
 	backendAddr, err := p.lb.SelectBackend(r.Context(), backend.ServiceName, backend.Port)
 	if err != nil {
-		log.Errorf("Failed to select backend: %v", err)
+		log.Error(fmt.Sprintf("Failed to select backend: %v", err))
 		http.Error(w, "Service temporarily unavailable", http.StatusServiceUnavailable)
 		return
 	}
 
-	log.Debugf("Selected backend address: %s", backendAddr)
+	log.Debug(fmt.Sprintf("Selected backend address: %s", backendAddr))
 
 	// Proxy the request
 	if err := p.proxyRequest(w, r, backendAddr); err != nil {
-		log.Errorf("Proxy error: %v", err)
+		log.Error(fmt.Sprintf("Proxy error: %v", err))
 		http.Error(w, "Bad gateway", http.StatusBadGateway)
 		return
 	}
@@ -147,7 +147,7 @@ func (p *Proxy) proxyRequest(w http.ResponseWriter, r *http.Request, backendAddr
 
 	// Custom error handler
 	proxy.ErrorHandler = func(w http.ResponseWriter, r *http.Request, err error) {
-		log.Errorf("Proxy error for %s: %v", backendAddr, err)
+		log.Error(fmt.Sprintf("Proxy error for %s: %v", backendAddr, err))
 		http.Error(w, "Bad gateway", http.StatusBadGateway)
 	}
 
@@ -165,7 +165,7 @@ func (p *Proxy) ReloadIngresses() error {
 	}
 
 	p.router.UpdateIngresses(ingresses)
-	log.Infof("Reloaded %d ingress rules", len(ingresses))
+	log.Info(fmt.Sprintf("Reloaded %d ingress rules", len(ingresses)))
 
 	return nil
 }

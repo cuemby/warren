@@ -57,7 +57,10 @@ func (lb *LoadBalancer) SelectBackend(ctx context.Context, serviceName string, p
 		if task.ActualState == "running" {
 			// If health check is configured, check health status
 			if task.HealthCheck != nil {
-				if task.HealthStatus == "healthy" || task.HealthStatus == "" {
+				if task.HealthStatus != nil && task.HealthStatus.Healthy {
+					healthyTasks = append(healthyTasks, task)
+				} else if task.HealthStatus == nil {
+					// Health check configured but not yet checked, include task
 					healthyTasks = append(healthyTasks, task)
 				}
 			} else {
@@ -84,7 +87,7 @@ func (lb *LoadBalancer) SelectBackend(ctx context.Context, serviceName string, p
 	// TODO: In Phase 7.3, support overlay networking with container IPs
 	node, err := lb.getNode(ctx, selectedTask.NodeID)
 	if err != nil {
-		log.Warnf("Failed to get node %s: %v, using localhost", selectedTask.NodeID, err)
+		log.Warn(fmt.Sprintf("Failed to get node %s: %v, using localhost", selectedTask.NodeID, err))
 		// Fallback to localhost for development
 		return fmt.Sprintf("127.0.0.1:%d", port), nil
 	}
@@ -95,26 +98,22 @@ func (lb *LoadBalancer) SelectBackend(ctx context.Context, serviceName string, p
 
 // getServiceTasks queries the manager API for service tasks
 func (lb *LoadBalancer) getServiceTasks(ctx context.Context, serviceName string) ([]*types.Task, error) {
-	// Query manager gRPC API
-	// For now, we'll implement a simple version
-	// TODO: Implement proper gRPC client call
+	log.Debug(fmt.Sprintf("LoadBalancer: Getting tasks for service %s", serviceName))
 
-	// This is a placeholder - we'll need to import the proto package
-	// and make a proper ListTasks call filtered by service
+	// TODO (M7 Phase 7.2): Implement full gRPC query to manager
+	// For M7 Phase 7.1 MVP, return empty list to allow basic functionality
+	// The proxy will fall back to localhost:port for development testing
 
-	log.Debugf("LoadBalancer: Getting tasks for service %s", serviceName)
-
-	// Return empty for now - this will be implemented when we integrate with manager
-	return nil, fmt.Errorf("not yet implemented: getServiceTasks")
+	return []*types.Task{}, nil
 }
 
 // getNode queries the manager API for node information
 func (lb *LoadBalancer) getNode(ctx context.Context, nodeID string) (*types.Node, error) {
-	// Query manager gRPC API
-	// TODO: Implement proper gRPC client call
+	log.Debug(fmt.Sprintf("LoadBalancer: Getting node %s", nodeID))
 
-	log.Debugf("LoadBalancer: Getting node %s", nodeID)
+	// TODO (M7 Phase 7.2): Implement full gRPC query to manager
+	// For M7 Phase 7.1 MVP, return error to trigger localhost fallback
+	// This allows basic testing without full cluster integration
 
-	// Return nil for now - this will be implemented when we integrate with manager
-	return nil, fmt.Errorf("not yet implemented: getNode")
+	return nil, fmt.Errorf("using localhost fallback for M7 Phase 7.1")
 }

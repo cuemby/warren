@@ -460,3 +460,66 @@ func connectWithMTLS(addr, certDir string) (*grpc.ClientConn, error) {
 
 	return conn, nil
 }
+
+// --- Ingress Operations ---
+
+// CreateIngress creates a new ingress
+func (c *Client) CreateIngress(req *proto.CreateIngressRequest) (*proto.Ingress, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	resp, err := c.client.CreateIngress(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Ingress, nil
+}
+
+// UpdateIngress updates an existing ingress
+func (c *Client) UpdateIngress(req *proto.UpdateIngressRequest) (*proto.Ingress, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	resp, err := c.client.UpdateIngress(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Ingress, nil
+}
+
+// DeleteIngress deletes an ingress
+func (c *Client) DeleteIngress(req *proto.DeleteIngressRequest) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	_, err := c.client.DeleteIngress(ctx, req)
+	return err
+}
+
+// GetIngress retrieves an ingress by ID or name
+func (c *Client) GetIngress(req *proto.GetIngressRequest) (*proto.Ingress, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	resp, err := c.client.GetIngress(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Ingress, nil
+}
+
+// ListIngresses lists all ingresses
+func (c *Client) ListIngresses() ([]*proto.Ingress, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	resp, err := c.client.ListIngresses(ctx, &proto.ListIngressesRequest{})
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Ingresses, nil
+}
