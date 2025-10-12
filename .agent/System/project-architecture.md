@@ -6,8 +6,8 @@
 **Type**: Container Orchestration Platform
 **Purpose**: Simple yet feature-rich container orchestrator for edge computing, combining Docker Swarm's simplicity with Kubernetes-level features in a single binary with zero external dependencies.
 
-**Last Updated**: 2025-10-10
-**Implementation Status**: Milestones 0-5 Complete ✅
+**Last Updated**: 2025-10-11
+**Implementation Status**: Milestones 0-6 In Progress ✅
 
 ---
 
@@ -15,15 +15,16 @@
 
 Warren is a **production-ready container orchestration system** for edge computing:
 
-**Current Status (M0-M5 COMPLETE)**:
+**Current Status (M0-M6 IN PROGRESS)**:
 1. **Multi-manager HA cluster** - 3-5 node Raft quorum with 2-3s failover
 2. **Real container runtime** - containerd integration with full lifecycle management
 3. **Secrets & volumes** - AES-256-GCM encrypted secrets, local volume driver
 4. **Advanced deployment** - Rolling updates, global services, deployment strategies
 5. **Production observability** - Prometheus metrics, structured logging, profiling
 6. **Open source ready** - Complete docs, CI/CD, package distribution setup
+7. **Production hardening (M6)** - Health checks, mTLS, DNS, resource limits, graceful shutdown
 
-**Implemented Features (M0-M5)**:
+**Implemented Features (M0-M6)**:
 - ✅ Multi-manager Raft cluster with automatic failover (< 3s)
 - ✅ Containerd integration for real container execution
 - ✅ Worker join and heartbeat with token-based security
@@ -33,20 +34,25 @@ Warren is a **production-ready container orchestration system** for edge computi
 - ✅ Secrets management (AES-256-GCM, tmpfs mounting)
 - ✅ Volume orchestration (local driver, node affinity)
 - ✅ Prometheus metrics and structured logging
-- ✅ gRPC API with 28+ methods
+- ✅ gRPC API with 30+ methods
 - ✅ Complete CLI with YAML apply
 - ✅ Multi-platform builds (Linux/macOS, AMD64/ARM64)
 - ✅ **Platform Support**:
   - ✅ Linux: Embedded containerd binaries (AMD64/ARM64)
   - ✅ macOS: Lima VM integration with Alpine Linux + containerd
 - ✅ Comprehensive documentation and CI/CD
+- ✅ **M6 Production Hardening**:
+  - ✅ Health checks (HTTP/TCP/Exec probes with auto-replacement)
+  - ✅ Published ports (host mode with iptables)
+  - ✅ DNS service discovery (service and instance resolution)
+  - ✅ mTLS security (CA, certificate management, TLS 1.3)
+  - ✅ Resource limits (CPU shares, CFS quota, memory limits)
+  - ✅ Graceful shutdown (configurable SIGTERM timeout)
 
-**Future Enhancements (M6+)**:
-- ⏳ mTLS enforcement (M6: Production Hardening)
-- ⏳ WireGuard mesh networking (M6)
+**Future Enhancements (M7+)**:
+- ⏳ WireGuard mesh networking (deferred)
 - ⏳ Blue/green and canary deployments (backlog)
-- ⏳ Health checks (HTTP/TCP/Exec probes) (M6)
-- ⏳ Published ports and DNS service (M6)
+- ⏳ Ingress mode port publishing (backlog)
 
 **Philosophy**: "Docker Swarm simplicity + Kubernetes features - Kubernetes complexity"
 
@@ -64,7 +70,7 @@ warren/
 │
 ├── pkg/
 │   ├── api/
-│   │   └── server.go                  # ✅ gRPC server with 28+ methods
+│   │   └── server.go                  # ✅ gRPC server with 30+ methods
 │   │
 │   ├── manager/
 │   │   ├── manager.go                 # ✅ Manager with Raft consensus & multi-manager support
@@ -75,15 +81,17 @@ warren/
 │   │   └── scheduler.go               # ✅ Task scheduler with volume affinity (5s interval)
 │   │
 │   ├── reconciler/
-│   │   └── reconciler.go              # ✅ Failure detection reconciler (10s interval)
+│   │   └── reconciler.go              # ✅ Failure detection reconciler (10s interval, health-aware)
 │   │
 │   ├── worker/
 │   │   ├── worker.go                  # ✅ Worker agent with heartbeat
 │   │   ├── secrets.go                 # ✅ Secret fetching and tmpfs mounting
-│   │   └── volumes.go                 # ✅ Volume mounting to containers
+│   │   ├── volumes.go                 # ✅ Volume mounting to containers
+│   │   ├── health_monitor.go          # ✅ Health check monitoring system (M6)
+│   │   └── dns.go                     # ✅ Container DNS configuration (M6)
 │   │
 │   ├── runtime/
-│   │   └── containerd.go              # ✅ Containerd integration (pull, create, start, stop, delete)
+│   │   └── containerd.go              # ✅ Containerd integration with resource limits (M6)
 │   │
 │   ├── embedded/
 │   │   ├── containerd.go              # ✅ Embedded containerd manager (Linux)
@@ -91,11 +99,31 @@ warren/
 │   │
 │   ├── security/
 │   │   ├── secrets.go                 # ✅ AES-256-GCM encryption/decryption
-│   │   └── secrets_test.go            # ✅ Unit tests (10/10 passing)
+│   │   ├── secrets_test.go            # ✅ Unit tests (10/10 passing)
+│   │   ├── ca.go                      # ✅ Certificate Authority (M6)
+│   │   ├── ca_test.go                 # ✅ CA unit tests
+│   │   ├── certs.go                   # ✅ Certificate management (M6)
+│   │   └── certs_test.go              # ✅ Certificate unit tests
 │   │
 │   ├── volume/
 │   │   ├── local.go                   # ✅ Local volume driver with node affinity
 │   │   └── local_test.go              # ✅ Unit tests (10/10 passing)
+│   │
+│   ├── health/
+│   │   ├── health.go                  # ✅ Health check interface (M6)
+│   │   ├── http.go                    # ✅ HTTP health probes (M6)
+│   │   ├── http_test.go               # ✅ HTTP probe tests (7/7 passing)
+│   │   ├── tcp.go                     # ✅ TCP health probes (M6)
+│   │   └── exec.go                    # ✅ Exec health probes (M6)
+│   │
+│   ├── network/
+│   │   └── hostports.go               # ✅ Host mode port publishing (M6)
+│   │
+│   ├── dns/
+│   │   ├── server.go                  # ✅ Embedded DNS server (M6)
+│   │   ├── server_test.go             # ✅ DNS server tests (9/9 passing)
+│   │   ├── resolver.go                # ✅ Service/instance name resolver (M6)
+│   │   └── instance.go                # ✅ Instance name parsing (M6)
 │   │
 │   ├── deploy/
 │   │   └── deploy.go                  # ✅ Deployment strategy foundation
@@ -122,16 +150,19 @@ warren/
 │
 ├── api/
 │   └── proto/
-│       └── warren.proto               # ✅ Protocol buffers definitions (28+ methods)
+│       └── warren.proto               # ✅ Protocol buffers definitions (30+ methods, M6 updated)
 │
 ├── test/
 │   ├── integration/
-│   │   └── containerd_test.go         # ✅ Containerd integration tests
+│   │   ├── containerd_test.go         # ✅ Containerd integration tests
+│   │   └── health_check_test.go       # ✅ Health check integration tests (M6)
 │   └── lima/
 │       ├── setup.sh                   # ✅ Lima VM cluster setup
 │       ├── test-cluster.sh            # ✅ Multi-manager cluster test
 │       ├── test-failover.sh           # ✅ Leader failover test
-│       └── test-load.sh               # ✅ Load testing script
+│       ├── test-load.sh               # ✅ Load testing script
+│       ├── test-mtls.sh               # ✅ mTLS security test (M6)
+│       └── test-ports.sh              # ✅ Port publishing test (M6)
 │
 ├── specs/
 │   ├── prd.md                         # ✅ Product Requirements Document
@@ -157,7 +188,10 @@ warren/
 │   ├── profiling.md                   # ✅ pprof usage guide (M4)
 │   ├── load-testing.md                # ✅ Load testing guide (M4)
 │   ├── raft-tuning.md                 # ✅ Raft configuration guide (M4)
-│   └── tab-completion.md              # ✅ Shell completion guide (M4)
+│   ├── tab-completion.md              # ✅ Shell completion guide (M4)
+│   ├── health-checks.md               # ✅ Health check configuration (M6)
+│   ├── resource-limits.md             # ✅ CPU and memory limits (M6)
+│   └── graceful-shutdown.md           # ✅ Graceful shutdown patterns (M6)
 │
 ├── examples/
 │   ├── nginx-service.yaml             # ✅ Example service YAML (M4)
@@ -203,8 +237,9 @@ warren/
 ```
 
 **Legend**:
-- ✅ Implemented (M0-M5 complete)
-- (M0-M5) indicates milestone where feature was added
+- ✅ Implemented (M0-M6 in progress)
+- (M0-M6) indicates milestone where feature was added
+- (M6) indicates current milestone production hardening features
 
 ---
 
@@ -788,6 +823,6 @@ warren service create web --image nginx:latest --replicas 3
 
 ---
 
-**Version**: 1.1 (Updated for Milestone 1 Completion)
+**Version**: 1.6 (Updated for Milestone 6 Progress)
 **Maintained By**: Cuemby Engineering Team
-**Last Updated**: 2025-10-10
+**Last Updated**: 2025-10-11

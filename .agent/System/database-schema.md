@@ -1,7 +1,7 @@
 # Warren Database Schema
 
-**Last Updated**: 2025-10-10
-**Implementation Status**: Milestones 0-5 Complete ✅
+**Last Updated**: 2025-10-11
+**Implementation Status**: Milestones 0-6 In Progress ✅
 **Database**: BoltDB (embedded key-value store)
 
 ---
@@ -124,14 +124,15 @@ type Service struct {
     DeployStrategy DeployStrategy        // "rolling" | "blue-green" | "canary"
     UpdateConfig   *UpdateConfig         // Update strategy config
     Env            []string              // Environment variables
-    Ports          []*PortMapping        // Port mappings
+    Ports          []*PortMapping        // Port mappings (M6: with PublishMode)
     Networks       []string              // Network IDs
     Secrets        []string              // Secret IDs
     Volumes        []*VolumeMount        // Volume mounts
     Labels         map[string]string     // User-defined labels
-    HealthCheck    *HealthCheck          // Health check config
+    HealthCheck    *HealthCheck          // Health check config (M6: HTTP/TCP/Exec)
     RestartPolicy  *RestartPolicy        // Restart behavior
-    Resources      *ResourceRequirements // CPU/memory limits
+    Resources      *ResourceRequirements // CPU/memory limits (M6: implemented)
+    StopTimeout    int                   // Graceful shutdown timeout in seconds (M6)
     CreatedAt      time.Time
     UpdatedAt      time.Time
 }
@@ -199,13 +200,15 @@ type Task struct {
     ContainerID   string                // Container runtime ID
     DesiredState  TaskState             // "pending" | "running" | "shutdown"
     ActualState   TaskState             // Actual state reported by worker
+    HealthStatus  HealthStatus          // Health status (M6: healthy/unhealthy/unknown)
     Image         string                // Container image
     Env           []string              // Environment variables
-    Ports         []*PortMapping        // Port mappings
+    Ports         []*PortMapping        // Port mappings (M6: with PublishMode)
     Mounts        []*VolumeMount        // Volume mounts
-    HealthCheck   *HealthCheck          // Health check config
+    HealthCheck   *HealthCheck          // Health check config (M6: HTTP/TCP/Exec)
     RestartPolicy *RestartPolicy        // Restart policy
-    Resources     *ResourceRequirements // Resource limits
+    Resources     *ResourceRequirements // Resource limits (M6: CPU/memory enforced)
+    StopTimeout   int                   // Graceful shutdown timeout (M6)
     CreatedAt     time.Time
     StartedAt     time.Time
     FinishedAt    time.Time
@@ -285,7 +288,7 @@ type Secret struct {
 - `Data` field is encrypted with AES-256-GCM before storage
 - Encryption key stored in Raft cluster configuration
 - Decrypted only when needed by workers
-- **⏳ Full encryption implementation deferred to Milestone 3**
+- **✅ Full encryption implementation complete (M3)**
 
 **Example Entry**:
 ```json
@@ -353,7 +356,7 @@ type Volume struct {
 - `CreateVolume(volume)` - Insert volume
 - `DeleteVolume(id)` - Remove volume
 
-**⏳ Volume orchestration deferred to Milestone 3**
+**✅ Volume orchestration complete (M3)**
 
 ---
 
@@ -393,7 +396,7 @@ type Network struct {
 - `CreateNetwork(network)` - Insert network
 - `DeleteNetwork(id)` - Remove network
 
-**⏳ WireGuard networking deferred to Milestone 2**
+**⏳ WireGuard networking deferred (M6: DNS service discovery implemented)**
 
 ---
 
@@ -616,7 +619,16 @@ warren task inspect task-123abc
 - **Key Storage**: Raft cluster configuration
 - **Key Rotation**: Manual (future: automatic every 90 days)
 
-**⏳ Full secrets encryption deferred to Milestone 3**
+**✅ Full secrets encryption complete (M3)**
+
+### mTLS Security (M6)
+
+- **Certificate Authority**: Self-signed root CA with 10-year validity
+- **Node Certificates**: 365-day validity with IP SANs
+- **TLS Version**: TLS 1.3 minimum
+- **Certificate Storage**: File-based (0600 permissions)
+
+**✅ mTLS implementation complete (M6)**
 
 ### Access Control
 
@@ -628,20 +640,19 @@ warren task inspect task-123abc
 
 ## Future Enhancements
 
-### Milestone 2: High Availability
-- Multi-manager Raft replication
-- Automatic failover and leadership transfer
+### Milestone 6: Production Hardening ✅
+- Health checks (HTTP/TCP/Exec probes)
+- Resource limits (CPU/memory enforcement)
+- Graceful shutdown (configurable timeout)
+- mTLS security (CA, certificates, TLS 1.3)
+- DNS service discovery (service/instance resolution)
 
-### Milestone 3: Advanced Features
+### Future Milestones (M7+)
 - Secondary indexes for faster lookups
-- Full secrets encryption (AES-256-GCM)
-- Volume orchestration with local driver
-
-### Milestone 4: Production Ready
 - Online backup and restore
 - Point-in-time recovery
-- Metrics and observability (Prometheus)
 - Automated schema migrations
+- Certificate rotation automation
 
 ---
 
@@ -655,6 +666,6 @@ warren task inspect task-123abc
 
 ---
 
-**Version**: 1.0
+**Version**: 1.6
 **Maintained By**: Cuemby Engineering Team
-**Last Updated**: 2025-10-10
+**Last Updated**: 2025-10-11

@@ -1,7 +1,7 @@
 # Warren API Documentation
 
-**Last Updated**: 2025-10-10
-**Implementation Status**: Milestones 0-5 Complete ✅
+**Last Updated**: 2025-10-11
+**Implementation Status**: Milestones 0-6 In Progress ✅
 **API Version**: v1
 **Protocol**: gRPC
 
@@ -17,7 +17,7 @@ Warren exposes a **gRPC API** for all cluster operations. The API is used by:
 **API Server**:
 - **Port**: `:2377` (default, configurable)
 - **Protocol**: gRPC over HTTP/2
-- **Security**: ⏳ mTLS (planned for Milestone 2)
+- **Security**: ✅ mTLS with TLS 1.3 (M6 complete)
 - **File**: [pkg/api/server.go](../../pkg/api/server.go)
 - **Proto**: [api/proto/warren.proto](../../api/proto/warren.proto)
 
@@ -27,7 +27,7 @@ Warren exposes a **gRPC API** for all cluster operations. The API is used by:
 
 ### WarrenAPI Service
 
-The main gRPC service with 25+ methods organized by resource type:
+The main gRPC service with 30+ methods organized by resource type:
 
 ```protobuf
 service WarrenAPI {
@@ -45,25 +45,40 @@ service WarrenAPI {
   rpc GetService(GetServiceRequest) returns (GetServiceResponse);
   rpc ListServices(ListServicesRequest) returns (ListServicesResponse);
 
-  // Task operations (4 methods)
+  // Task operations (5 methods - M6: added ReportTaskHealth)
   rpc UpdateTaskStatus(UpdateTaskStatusRequest) returns (UpdateTaskStatusResponse);
   rpc ListTasks(ListTasksRequest) returns (ListTasksResponse);
   rpc GetTask(GetTaskRequest) returns (GetTaskResponse);
   rpc WatchTasks(WatchTasksRequest) returns (stream TaskEvent);
+  rpc ReportTaskHealth(ReportTaskHealthRequest) returns (ReportTaskHealthResponse);  // M6
 
-  // Secret operations (3 methods)
+  // Secret operations (4 methods - M6: added GetSecret)
   rpc CreateSecret(CreateSecretRequest) returns (CreateSecretResponse);
   rpc DeleteSecret(DeleteSecretRequest) returns (DeleteSecretResponse);
   rpc ListSecrets(ListSecretsRequest) returns (ListSecretsResponse);
+  rpc GetSecret(GetSecretRequest) returns (GetSecretResponse);  // M6
 
-  // Volume operations (3 methods)
+  // Volume operations (4 methods - M6: added GetVolume)
   rpc CreateVolume(CreateVolumeRequest) returns (CreateVolumeResponse);
   rpc DeleteVolume(DeleteVolumeRequest) returns (DeleteVolumeResponse);
   rpc ListVolumes(ListVolumesRequest) returns (ListVolumesResponse);
+  rpc GetVolume(GetVolumeRequest) returns (GetVolumeResponse);  // M6
+
+  // Cluster operations (5 methods - M2+M6)
+  rpc GenerateJoinToken(GenerateJoinTokenRequest) returns (GenerateJoinTokenResponse);
+  rpc JoinCluster(JoinClusterRequest) returns (JoinClusterResponse);
+  rpc GetClusterInfo(GetClusterInfoRequest) returns (GetClusterInfoResponse);
+  rpc RequestCertificate(RequestCertificateRequest) returns (RequestCertificateResponse);  // M6
+  rpc StreamEvents(StreamEventsRequest) returns (stream Event);
 }
 ```
 
-**Total**: 20 unary RPCs + 1 server-streaming RPC = **21 methods**
+**Total**: 28 unary RPCs + 2 server-streaming RPCs = **30 methods**
+
+**M6 Additions**:
+- ReportTaskHealth (health check monitoring)
+- RequestCertificate (mTLS certificate management)
+- GetSecret, GetVolume (complete CRUD operations)
 
 ---
 
@@ -940,24 +955,103 @@ if err != nil {
 
 ---
 
+## Health Check Operations (M6)
+
+### ReportTaskHealth
+
+**Purpose**: Worker reports task health status to manager
+
+**Method**: `ReportTaskHealth(ReportTaskHealthRequest) → ReportTaskHealthResponse`
+
+**Request**:
+```protobuf
+message ReportTaskHealthRequest {
+  string task_id = 1;         // Task ID
+  string health_status = 2;   // "healthy", "unhealthy", or "unknown"
+}
+```
+
+**Response**:
+```protobuf
+message ReportTaskHealthResponse {
+  string status = 1;          // Acknowledgment
+}
+```
+
+**Worker Usage**:
+```go
+// Health monitor reports status
+_, err := client.ReportTaskHealth(ctx, &ReportTaskHealthRequest{
+    TaskId:       task.ID,
+    HealthStatus: "healthy",
+})
+```
+
+**Health Check Types** (defined in Service/Task):
+- **HTTP**: GET request with expected status code
+- **TCP**: Port connectivity check
+- **Exec**: Command execution with exit code check
+
+**Reconciler Integration**:
+- Reconciler monitors task health status (every 10s)
+- Unhealthy tasks marked as failed
+- Replacement tasks automatically created
+
+---
+
 ## Security
 
-### Current (Milestone 1)
+### ✅ Current Implementation (M6 Complete)
 
-- **No authentication**: Open API (development only)
-- **No encryption**: Plain HTTP/2
+- **mTLS**: Mutual TLS for all gRPC connections (TLS 1.3)
+- **Certificate Authority**: Self-signed root CA (RSA 4096, 10-year validity)
+- **Node Certificates**: 365-day validity with IP SANs
+- **Token-based auth**: Bootstrap tokens for worker, manager, and CLI
+- **RequestClientCert**: TLS mode for bootstrap flow
 
-### Future (Milestone 2+)
-
-- **mTLS**: Mutual TLS for all connections
-- **Certificate Authority**: Self-signed CA on cluster init
-- **Client certificates**: Manager and worker certs
-- **Token-based auth**: Join tokens for worker registration
+**mTLS Flow**:
+1. Cluster init generates root CA
+2. Bootstrap tokens printed after init (worker, manager, CLI)
+3. Workers/CLI request certificate using token
+4. Manager issues signed certificate
+5. All subsequent gRPC calls use mTLS
 
 **Example mTLS Setup**:
 ```go
 creds, err := credentials.NewServerTLSFromFile(certFile, keyFile)
 server := grpc.NewServer(grpc.Creds(creds))
+```
+
+### M6 Security RPCs
+
+#### RequestCertificate
+
+**Purpose**: Request signed certificate from CA using bootstrap token
+
+**Method**: `RequestCertificate(RequestCertificateRequest) → RequestCertificateResponse`
+
+**Request**:
+```protobuf
+message RequestCertificateRequest {
+  string token = 1;         // Bootstrap token
+  string node_id = 2;       // Node ID
+  string role = 3;          // "worker", "manager", or "cli"
+  string address = 4;       // Node address (for IP SAN)
+}
+```
+
+**Response**:
+```protobuf
+message RequestCertificateResponse {
+  bytes certificate = 1;    // PEM-encoded certificate
+  bytes ca_cert = 2;        // PEM-encoded CA certificate
+}
+```
+
+**Usage**:
+```bash
+# Worker requests certificate
+warren worker start --token <bootstrap-token>
 ```
 
 ---
@@ -997,6 +1091,6 @@ grpcurl -plaintext -import-path ./api/proto -proto warren.proto \
 
 ---
 
-**Version**: 1.0
+**Version**: 1.6
 **Maintained By**: Cuemby Engineering Team
-**Last Updated**: 2025-10-10
+**Last Updated**: 2025-10-11
