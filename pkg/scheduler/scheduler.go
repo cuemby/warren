@@ -135,6 +135,7 @@ func (s *Scheduler) scheduleGlobalService(service *types.Service, nodes []*types
 				Resources:     service.Resources,
 				HealthCheck:   service.HealthCheck,
 				RestartPolicy: service.RestartPolicy,
+				StopTimeout:   service.StopTimeout,
 				CreatedAt:     time.Now(),
 			}
 
@@ -220,6 +221,7 @@ func (s *Scheduler) scheduleReplicatedService(service *types.Service, nodes []*t
 				Resources:     service.Resources,
 				HealthCheck:   service.HealthCheck,
 				RestartPolicy: service.RestartPolicy,
+				StopTimeout:   service.StopTimeout,
 				CreatedAt:     time.Now(),
 			}
 

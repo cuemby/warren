@@ -495,9 +495,16 @@ func (w *Worker) stopTask(task *types.Task) {
 	ctx := context.Background()
 	fmt.Printf("Stopping task %s (container: %s)\n", task.ID, task.ContainerID)
 
+	// Determine stop timeout (default: 10 seconds)
+	stopTimeout := 10 * time.Second
+	if task.StopTimeout > 0 {
+		stopTimeout = time.Duration(task.StopTimeout) * time.Second
+	}
+
 	// Stop the container
 	if task.ContainerID != "" {
-		if err := w.runtime.StopContainer(ctx, task.ContainerID, 10*time.Second); err != nil {
+		fmt.Printf("Sending SIGTERM to container %s (timeout: %v)\n", task.ContainerID, stopTimeout)
+		if err := w.runtime.StopContainer(ctx, task.ContainerID, stopTimeout); err != nil {
 			fmt.Printf("Failed to stop container %s: %v\n", task.ContainerID, err)
 		}
 

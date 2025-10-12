@@ -870,7 +870,8 @@ type Service struct {
 	Command        []string               `protobuf:"bytes,14,rep,name=command,proto3" json:"command,omitempty"`
 	CreatedAt      *timestamppb.Timestamp `protobuf:"bytes,15,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	UpdatedAt      *timestamppb.Timestamp `protobuf:"bytes,16,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
-	Ports          []*PortMapping         `protobuf:"bytes,17,rep,name=ports,proto3" json:"ports,omitempty"` // Published ports
+	Ports          []*PortMapping         `protobuf:"bytes,17,rep,name=ports,proto3" json:"ports,omitempty"`                                 // Published ports
+	StopTimeout    int32                  `protobuf:"varint,18,opt,name=stop_timeout,json=stopTimeout,proto3" json:"stop_timeout,omitempty"` // Seconds to wait before force-killing (default: 10)
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -1022,6 +1023,13 @@ func (x *Service) GetPorts() []*PortMapping {
 		return x.Ports
 	}
 	return nil
+}
+
+func (x *Service) GetStopTimeout() int32 {
+	if x != nil {
+		return x.StopTimeout
+	}
+	return 0
 }
 
 type UpdateConfig struct {
@@ -1681,7 +1689,8 @@ type CreateServiceRequest struct {
 	Volumes        []*VolumeMount         `protobuf:"bytes,11,rep,name=volumes,proto3" json:"volumes,omitempty"`
 	Env            map[string]string      `protobuf:"bytes,12,rep,name=env,proto3" json:"env,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	Command        []string               `protobuf:"bytes,13,rep,name=command,proto3" json:"command,omitempty"`
-	Ports          []*PortMapping         `protobuf:"bytes,14,rep,name=ports,proto3" json:"ports,omitempty"` // Published ports
+	Ports          []*PortMapping         `protobuf:"bytes,14,rep,name=ports,proto3" json:"ports,omitempty"`                                 // Published ports
+	StopTimeout    int32                  `protobuf:"varint,15,opt,name=stop_timeout,json=stopTimeout,proto3" json:"stop_timeout,omitempty"` // Seconds to wait before force-killing (default: 10)
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -1812,6 +1821,13 @@ func (x *CreateServiceRequest) GetPorts() []*PortMapping {
 		return x.Ports
 	}
 	return nil
+}
+
+func (x *CreateServiceRequest) GetStopTimeout() int32 {
+	if x != nil {
+		return x.StopTimeout
+	}
+	return 0
 }
 
 type CreateServiceResponse struct {
@@ -2254,7 +2270,8 @@ type Task struct {
 	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,15,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	UpdatedAt     *timestamppb.Timestamp `protobuf:"bytes,16,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
 	Error         string                 `protobuf:"bytes,17,opt,name=error,proto3" json:"error,omitempty"`
-	Secrets       []string               `protobuf:"bytes,18,rep,name=secrets,proto3" json:"secrets,omitempty"` // Secret names to mount
+	Secrets       []string               `protobuf:"bytes,18,rep,name=secrets,proto3" json:"secrets,omitempty"`                             // Secret names to mount
+	StopTimeout   int32                  `protobuf:"varint,19,opt,name=stop_timeout,json=stopTimeout,proto3" json:"stop_timeout,omitempty"` // Seconds to wait before force-killing (default: 10)
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -2413,6 +2430,13 @@ func (x *Task) GetSecrets() []string {
 		return x.Secrets
 	}
 	return nil
+}
+
+func (x *Task) GetStopTimeout() int32 {
+	if x != nil {
+		return x.StopTimeout
+	}
+	return 0
 }
 
 type UpdateTaskStatusRequest struct {
@@ -4503,7 +4527,7 @@ const file_api_proto_warren_proto_rawDesc = "" +
 	"\x11RemoveNodeRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\",\n" +
 	"\x12RemoveNodeResponse\x12\x16\n" +
-	"\x06status\x18\x01 \x01(\tR\x06status\"\x88\x06\n" +
+	"\x06status\x18\x01 \x01(\tR\x06status\"\xab\x06\n" +
 	"\aService\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x14\n" +
@@ -4524,7 +4548,8 @@ const file_api_proto_warren_proto_rawDesc = "" +
 	"created_at\x18\x0f \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
 	"\n" +
 	"updated_at\x18\x10 \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\x12,\n" +
-	"\x05ports\x18\x11 \x03(\v2\x16.warren.v1.PortMappingR\x05ports\x1a6\n" +
+	"\x05ports\x18\x11 \x03(\v2\x16.warren.v1.PortMappingR\x05ports\x12!\n" +
+	"\fstop_timeout\x18\x12 \x01(\x05R\vstopTimeout\x1a6\n" +
 	"\bEnvEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"|\n" +
@@ -4580,7 +4605,7 @@ const file_api_proto_warren_proto_rawDesc = "" +
 	"\fpublish_mode\x18\x05 \x01(\x0e2\".warren.v1.PortMapping.PublishModeR\vpublishMode\"$\n" +
 	"\vPublishMode\x12\b\n" +
 	"\x04HOST\x10\x00\x12\v\n" +
-	"\aINGRESS\x10\x01\"\x9c\x05\n" +
+	"\aINGRESS\x10\x01\"\xbf\x05\n" +
 	"\x14CreateServiceRequest\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x14\n" +
 	"\x05image\x18\x02 \x01(\tR\x05image\x12\x1a\n" +
@@ -4596,7 +4621,8 @@ const file_api_proto_warren_proto_rawDesc = "" +
 	"\avolumes\x18\v \x03(\v2\x16.warren.v1.VolumeMountR\avolumes\x12:\n" +
 	"\x03env\x18\f \x03(\v2(.warren.v1.CreateServiceRequest.EnvEntryR\x03env\x12\x18\n" +
 	"\acommand\x18\r \x03(\tR\acommand\x12,\n" +
-	"\x05ports\x18\x0e \x03(\v2\x16.warren.v1.PortMappingR\x05ports\x1a6\n" +
+	"\x05ports\x18\x0e \x03(\v2\x16.warren.v1.PortMappingR\x05ports\x12!\n" +
+	"\fstop_timeout\x18\x0f \x01(\x05R\vstopTimeout\x1a6\n" +
 	"\bEnvEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"E\n" +
@@ -4623,7 +4649,7 @@ const file_api_proto_warren_proto_rawDesc = "" +
 	"\aservice\x18\x01 \x01(\v2\x12.warren.v1.ServiceR\aservice\"\x15\n" +
 	"\x13ListServicesRequest\"F\n" +
 	"\x14ListServicesResponse\x12.\n" +
-	"\bservices\x18\x01 \x03(\v2\x12.warren.v1.ServiceR\bservices\"\x83\x06\n" +
+	"\bservices\x18\x01 \x03(\v2\x12.warren.v1.ServiceR\bservices\"\xa6\x06\n" +
 	"\x04Task\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1d\n" +
 	"\n" +
@@ -4646,7 +4672,8 @@ const file_api_proto_warren_proto_rawDesc = "" +
 	"\n" +
 	"updated_at\x18\x10 \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\x12\x14\n" +
 	"\x05error\x18\x11 \x01(\tR\x05error\x12\x18\n" +
-	"\asecrets\x18\x12 \x03(\tR\asecrets\x1a6\n" +
+	"\asecrets\x18\x12 \x03(\tR\asecrets\x12!\n" +
+	"\fstop_timeout\x18\x13 \x01(\x05R\vstopTimeout\x1a6\n" +
 	"\bEnvEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xa7\x01\n" +

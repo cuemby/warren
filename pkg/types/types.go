@@ -77,6 +77,7 @@ type Service struct {
 	HealthCheck    *HealthCheck
 	RestartPolicy  *RestartPolicy
 	Resources      *ResourceRequirements
+	StopTimeout    int // Seconds to wait before force-killing tasks (default: 10)
 	CreatedAt      time.Time
 	UpdatedAt      time.Time
 }
@@ -206,6 +207,7 @@ type Task struct {
 	HealthStatus  *HealthStatus // Current health check status
 	RestartPolicy *RestartPolicy
 	Resources     *ResourceRequirements
+	StopTimeout   int // Seconds to wait before force-killing (default: 10)
 	CreatedAt     time.Time
 	StartedAt     time.Time
 	FinishedAt    time.Time

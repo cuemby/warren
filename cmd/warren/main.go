@@ -733,6 +733,9 @@ var serviceCreateCmd = &cobra.Command{
 		cpus, _ := cmd.Flags().GetFloat64("cpus")
 		memory, _ := cmd.Flags().GetString("memory")
 
+		// Graceful shutdown flags
+		stopTimeout, _ := cmd.Flags().GetInt("stop-timeout")
+
 		// Parse env vars
 		env := make(map[string]string)
 		for _, e := range envVars {
@@ -788,6 +791,11 @@ var serviceCreateCmd = &cobra.Command{
 			}
 
 			req.Resources = resources
+		}
+
+		// Add stop timeout if specified
+		if stopTimeout > 0 {
+			req.StopTimeout = int32(stopTimeout)
 		}
 
 		// Create service
@@ -994,6 +1002,9 @@ func init() {
 	// Resource limit flags
 	serviceCreateCmd.Flags().Float64("cpus", 0, "CPU limit in cores (e.g., 0.5, 1.0, 2.0)")
 	serviceCreateCmd.Flags().String("memory", "", "Memory limit (e.g., 512m, 1g, 2g)")
+
+	// Graceful shutdown flags
+	serviceCreateCmd.Flags().Int("stop-timeout", 10, "Seconds to wait before force-killing container (default: 10)")
 
 	serviceCreateCmd.MarkFlagRequired("image")
 

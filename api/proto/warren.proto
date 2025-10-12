@@ -149,6 +149,7 @@ message Service {
   google.protobuf.Timestamp created_at = 15;
   google.protobuf.Timestamp updated_at = 16;
   repeated PortMapping ports = 17; // Published ports
+  int32 stop_timeout = 18; // Seconds to wait before force-killing (default: 10)
 }
 
 message UpdateConfig {
@@ -247,6 +248,7 @@ message CreateServiceRequest {
   map<string, string> env = 12;
   repeated string command = 13;
   repeated PortMapping ports = 14; // Published ports
+  int32 stop_timeout = 15; // Seconds to wait before force-killing (default: 10)
 }
 
 message CreateServiceResponse {
@@ -307,6 +309,7 @@ message Task {
   google.protobuf.Timestamp updated_at = 16;
   string error = 17;
   repeated string secrets = 18; // Secret names to mount
+  int32 stop_timeout = 19; // Seconds to wait before force-killing (default: 10)
 }
 
 message UpdateTaskStatusRequest {
