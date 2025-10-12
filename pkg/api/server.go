@@ -1030,3 +1030,262 @@ func (s *Server) RequestCertificate(ctx context.Context, req *proto.RequestCerti
 		CaCert:      caCertPEM,
 	}, nil
 }
+
+// --- Ingress Operations ---
+
+// CreateIngress creates a new ingress
+func (s *Server) CreateIngress(ctx context.Context, req *proto.CreateIngressRequest) (*proto.CreateIngressResponse, error) {
+	// Forward to leader if not leader
+	if !s.manager.IsLeader() {
+		return nil, fmt.Errorf("not leader, forward to leader")
+	}
+
+	// Validate request
+	if req.Name == "" {
+		return nil, fmt.Errorf("ingress name is required")
+	}
+
+	// Check if ingress already exists
+	existing, _ := s.manager.GetStore().GetIngressByName(req.Name)
+	if existing != nil {
+		return nil, fmt.Errorf("ingress %s already exists", req.Name)
+	}
+
+	// Convert proto to internal type
+	ingress := &types.Ingress{
+		ID:        uuid.New().String(),
+		Name:      req.Name,
+		Rules:     convertProtoIngressRules(req.Rules),
+		TLS:       convertProtoIngressTLS(req.Tls),
+		Labels:    req.Labels,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+	}
+
+	// Create ingress in storage via Raft
+	if err := s.manager.CreateIngress(ingress); err != nil {
+		return nil, fmt.Errorf("failed to create ingress: %v", err)
+	}
+
+	// Convert back to proto
+	protoIngress := convertIngressToProto(ingress)
+
+	return &proto.CreateIngressResponse{
+		Ingress: protoIngress,
+	}, nil
+}
+
+// UpdateIngress updates an existing ingress
+func (s *Server) UpdateIngress(ctx context.Context, req *proto.UpdateIngressRequest) (*proto.UpdateIngressResponse, error) {
+	// Forward to leader if not leader
+	if !s.manager.IsLeader() {
+		return nil, fmt.Errorf("not leader, forward to leader")
+	}
+
+	// Validate request
+	if req.Id == "" && req.Name == "" {
+		return nil, fmt.Errorf("ingress ID or name is required")
+	}
+
+	// Get existing ingress
+	var existing *types.Ingress
+	var err error
+	if req.Id != "" {
+		existing, err = s.manager.GetStore().GetIngress(req.Id)
+	} else {
+		existing, err = s.manager.GetStore().GetIngressByName(req.Name)
+	}
+	if err != nil {
+		return nil, fmt.Errorf("ingress not found: %v", err)
+	}
+
+	// Update fields
+	if req.Name != "" {
+		existing.Name = req.Name
+	}
+	if req.Rules != nil {
+		existing.Rules = convertProtoIngressRules(req.Rules)
+	}
+	if req.Tls != nil {
+		existing.TLS = convertProtoIngressTLS(req.Tls)
+	}
+	if req.Labels != nil {
+		existing.Labels = req.Labels
+	}
+	existing.UpdatedAt = time.Now()
+
+	// Update ingress in storage via Raft
+	if err := s.manager.UpdateIngress(existing); err != nil {
+		return nil, fmt.Errorf("failed to update ingress: %v", err)
+	}
+
+	// Convert back to proto
+	protoIngress := convertIngressToProto(existing)
+
+	return &proto.UpdateIngressResponse{
+		Ingress: protoIngress,
+	}, nil
+}
+
+// DeleteIngress deletes an ingress
+func (s *Server) DeleteIngress(ctx context.Context, req *proto.DeleteIngressRequest) (*proto.DeleteIngressResponse, error) {
+	// Forward to leader if not leader
+	if !s.manager.IsLeader() {
+		return nil, fmt.Errorf("not leader, forward to leader")
+	}
+
+	// Validate request
+	if req.Id == "" && req.Name == "" {
+		return nil, fmt.Errorf("ingress ID or name is required")
+	}
+
+	// Get ingress to delete
+	var ingress *types.Ingress
+	var err error
+	if req.Id != "" {
+		ingress, err = s.manager.GetStore().GetIngress(req.Id)
+	} else {
+		ingress, err = s.manager.GetStore().GetIngressByName(req.Name)
+	}
+	if err != nil {
+		return nil, fmt.Errorf("ingress not found: %v", err)
+	}
+
+	// Delete ingress via Raft
+	if err := s.manager.DeleteIngress(ingress.ID); err != nil {
+		return nil, fmt.Errorf("failed to delete ingress: %v", err)
+	}
+
+	return &proto.DeleteIngressResponse{
+		Status: "deleted",
+	}, nil
+}
+
+// GetIngress retrieves an ingress
+func (s *Server) GetIngress(ctx context.Context, req *proto.GetIngressRequest) (*proto.GetIngressResponse, error) {
+	// Validate request
+	if req.Id == "" && req.Name == "" {
+		return nil, fmt.Errorf("ingress ID or name is required")
+	}
+
+	// Get ingress from storage
+	var ingress *types.Ingress
+	var err error
+	if req.Id != "" {
+		ingress, err = s.manager.GetStore().GetIngress(req.Id)
+	} else {
+		ingress, err = s.manager.GetStore().GetIngressByName(req.Name)
+	}
+	if err != nil {
+		return nil, fmt.Errorf("ingress not found: %v", err)
+	}
+
+	// Convert to proto
+	protoIngress := convertIngressToProto(ingress)
+
+	return &proto.GetIngressResponse{
+		Ingress: protoIngress,
+	}, nil
+}
+
+// ListIngresses lists all ingresses
+func (s *Server) ListIngresses(ctx context.Context, req *proto.ListIngressesRequest) (*proto.ListIngressesResponse, error) {
+	// Get all ingresses from storage
+	ingresses, err := s.manager.GetStore().ListIngresses()
+	if err != nil {
+		return nil, fmt.Errorf("failed to list ingresses: %v", err)
+	}
+
+	// Convert to proto
+	protoIngresses := make([]*proto.Ingress, len(ingresses))
+	for i, ingress := range ingresses {
+		protoIngresses[i] = convertIngressToProto(ingress)
+	}
+
+	return &proto.ListIngressesResponse{
+		Ingresses: protoIngresses,
+	}, nil
+}
+
+// Helper functions for Ingress conversion
+
+func convertIngressToProto(ingress *types.Ingress) *proto.Ingress {
+	if ingress == nil {
+		return nil
+	}
+
+	protoRules := make([]*proto.IngressRule, len(ingress.Rules))
+	for i, rule := range ingress.Rules {
+		protoPaths := make([]*proto.IngressPath, len(rule.Paths))
+		for j, path := range rule.Paths {
+			protoPaths[j] = &proto.IngressPath{
+				Path:     path.Path,
+				PathType: string(path.PathType),
+				Backend: &proto.IngressBackend{
+					ServiceName: path.Backend.ServiceName,
+					Port:        int32(path.Backend.Port),
+				},
+			}
+		}
+		protoRules[i] = &proto.IngressRule{
+			Host:  rule.Host,
+			Paths: protoPaths,
+		}
+	}
+
+	var protoTLS *proto.IngressTLS
+	if ingress.TLS != nil {
+		protoTLS = &proto.IngressTLS{
+			Enabled:    ingress.TLS.Enabled,
+			SecretName: ingress.TLS.SecretName,
+			Hosts:      ingress.TLS.Hosts,
+			AutoTls:    ingress.TLS.AutoTLS,
+			Email:      ingress.TLS.Email,
+		}
+	}
+
+	return &proto.Ingress{
+		Id:        ingress.ID,
+		Name:      ingress.Name,
+		Rules:     protoRules,
+		Tls:       protoTLS,
+		Labels:    ingress.Labels,
+		CreatedAt: timestamppb.New(ingress.CreatedAt),
+		UpdatedAt: timestamppb.New(ingress.UpdatedAt),
+	}
+}
+
+func convertProtoIngressRules(protoRules []*proto.IngressRule) []*types.IngressRule {
+	rules := make([]*types.IngressRule, len(protoRules))
+	for i, protoRule := range protoRules {
+		paths := make([]*types.IngressPath, len(protoRule.Paths))
+		for j, protoPath := range protoRule.Paths {
+			paths[j] = &types.IngressPath{
+				Path:     protoPath.Path,
+				PathType: types.PathType(protoPath.PathType),
+				Backend: &types.IngressBackend{
+					ServiceName: protoPath.Backend.ServiceName,
+					Port:        int(protoPath.Backend.Port),
+				},
+			}
+		}
+		rules[i] = &types.IngressRule{
+			Host:  protoRule.Host,
+			Paths: paths,
+		}
+	}
+	return rules
+}
+
+func convertProtoIngressTLS(protoTLS *proto.IngressTLS) *types.IngressTLS {
+	if protoTLS == nil {
+		return nil
+	}
+	return &types.IngressTLS{
+		Enabled:    protoTLS.Enabled,
+		SecretName: protoTLS.SecretName,
+		Hosts:      protoTLS.Hosts,
+		AutoTLS:    protoTLS.AutoTls,
+		Email:      protoTLS.Email,
+	}
+}

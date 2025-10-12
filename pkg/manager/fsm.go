@@ -139,6 +139,28 @@ func (f *WarrenFSM) Apply(log *raft.Log) interface{} {
 		}
 		return f.store.DeleteVolume(volumeID)
 
+	// Ingress operations
+	case "CreateIngress":
+		var ingress types.Ingress
+		if err := json.Unmarshal(cmd.Data, &ingress); err != nil {
+			return err
+		}
+		return f.store.CreateIngress(&ingress)
+
+	case "UpdateIngress":
+		var ingress types.Ingress
+		if err := json.Unmarshal(cmd.Data, &ingress); err != nil {
+			return err
+		}
+		return f.store.UpdateIngress(&ingress)
+
+	case "DeleteIngress":
+		var data map[string]string
+		if err := json.Unmarshal(cmd.Data, &data); err != nil {
+			return err
+		}
+		return f.store.DeleteIngress(data["id"])
+
 	default:
 		return fmt.Errorf("unknown command: %s", cmd.Op)
 	}
@@ -181,13 +203,19 @@ func (f *WarrenFSM) Snapshot() (raft.FSMSnapshot, error) {
 		return nil, fmt.Errorf("failed to list networks: %v", err)
 	}
 
+	ingresses, err := f.store.ListIngresses()
+	if err != nil {
+		return nil, fmt.Errorf("failed to list ingresses: %v", err)
+	}
+
 	snapshot := &WarrenSnapshot{
-		Nodes:    nodes,
-		Services: services,
-		Tasks:    tasks,
-		Secrets:  secrets,
-		Volumes:  volumes,
-		Networks: networks,
+		Nodes:     nodes,
+		Services:  services,
+		Tasks:     tasks,
+		Secrets:   secrets,
+		Volumes:   volumes,
+		Networks:  networks,
+		Ingresses: ingresses,
 	}
 
 	return snapshot, nil
@@ -243,17 +271,24 @@ func (f *WarrenFSM) Restore(rc io.ReadCloser) error {
 		}
 	}
 
+	for _, ingress := range snapshot.Ingresses {
+		if err := f.store.CreateIngress(ingress); err != nil {
+			return fmt.Errorf("failed to restore ingress: %v", err)
+		}
+	}
+
 	return nil
 }
 
 // WarrenSnapshot represents a point-in-time snapshot of cluster state
 type WarrenSnapshot struct {
-	Nodes    []*types.Node
-	Services []*types.Service
-	Tasks    []*types.Task
-	Secrets  []*types.Secret
-	Volumes  []*types.Volume
-	Networks []*types.Network
+	Nodes     []*types.Node
+	Services  []*types.Service
+	Tasks     []*types.Task
+	Secrets   []*types.Secret
+	Volumes   []*types.Volume
+	Networks  []*types.Network
+	Ingresses []*types.Ingress
 }
 
 // Persist writes the snapshot to the given SnapshotSink

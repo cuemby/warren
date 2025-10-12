@@ -882,3 +882,20 @@ func (m *Manager) ValidateToken(token string) (string, error) {
 func (m *Manager) NodeID() string {
 	return m.nodeID
 }
+
+// --- Ingress Operations ---
+
+// CreateIngress creates a new ingress via Raft
+func (m *Manager) CreateIngress(ingress *types.Ingress) error {
+	return m.applyRaftCommand("CreateIngress", ingress)
+}
+
+// UpdateIngress updates an ingress via Raft
+func (m *Manager) UpdateIngress(ingress *types.Ingress) error {
+	return m.applyRaftCommand("UpdateIngress", ingress)
+}
+
+// DeleteIngress deletes an ingress via Raft
+func (m *Manager) DeleteIngress(ingressID string) error {
+	return m.applyRaftCommand("DeleteIngress", map[string]string{"id": ingressID})
+}
