@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/cuemby/warren/pkg/manager"
+	"github.com/cuemby/warren/pkg/metrics"
 	"github.com/cuemby/warren/pkg/types"
 )
 
@@ -54,6 +55,13 @@ func (r *Reconciler) run() {
 
 // reconcile performs one reconciliation cycle
 func (r *Reconciler) reconcile() error {
+	// Start timing the reconciliation cycle
+	timer := metrics.NewTimer()
+	defer func() {
+		timer.ObserveDuration(metrics.ReconciliationDuration)
+		metrics.ReconciliationCyclesTotal.Inc()
+	}()
+
 	r.mu.Lock()
 	defer r.mu.Unlock()
 

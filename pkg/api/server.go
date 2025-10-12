@@ -12,6 +12,7 @@ import (
 
 	"github.com/cuemby/warren/api/proto"
 	"github.com/cuemby/warren/pkg/manager"
+	"github.com/cuemby/warren/pkg/metrics"
 	"github.com/cuemby/warren/pkg/security"
 	"github.com/cuemby/warren/pkg/types"
 	"github.com/google/uuid"
@@ -244,6 +245,10 @@ func (s *Server) RemoveNode(ctx context.Context, req *proto.RemoveNodeRequest) (
 
 // CreateService creates a new service
 func (s *Server) CreateService(ctx context.Context, req *proto.CreateServiceRequest) (*proto.CreateServiceResponse, error) {
+	// Start timing service creation
+	timer := metrics.NewTimer()
+	defer timer.ObserveDuration(metrics.ServiceCreateDuration)
+
 	// Ensure we're the leader for write operations
 	if err := s.ensureLeader(); err != nil {
 		return nil, err
@@ -326,6 +331,10 @@ func (s *Server) CreateService(ctx context.Context, req *proto.CreateServiceRequ
 
 // UpdateService updates an existing service
 func (s *Server) UpdateService(ctx context.Context, req *proto.UpdateServiceRequest) (*proto.UpdateServiceResponse, error) {
+	// Start timing service update
+	timer := metrics.NewTimer()
+	defer timer.ObserveDuration(metrics.ServiceUpdateDuration)
+
 	// Ensure we're the leader for write operations
 	if err := s.ensureLeader(); err != nil {
 		return nil, err
@@ -363,6 +372,10 @@ func (s *Server) UpdateService(ctx context.Context, req *proto.UpdateServiceRequ
 
 // DeleteService deletes a service
 func (s *Server) DeleteService(ctx context.Context, req *proto.DeleteServiceRequest) (*proto.DeleteServiceResponse, error) {
+	// Start timing service deletion
+	timer := metrics.NewTimer()
+	defer timer.ObserveDuration(metrics.ServiceDeleteDuration)
+
 	// Ensure we're the leader for write operations
 	if err := s.ensureLeader(); err != nil {
 		return nil, err
