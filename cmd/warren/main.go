@@ -75,6 +75,7 @@ func init() {
 	rootCmd.AddCommand(nodeCmd)
 	rootCmd.AddCommand(secretCmd)
 	rootCmd.AddCommand(volumeCmd)
+	rootCmd.AddCommand(ingressCmd)
 }
 
 func initLogging() {
@@ -1617,4 +1618,246 @@ func formatBytes(bytes int64) string {
 		exp++
 	}
 	return fmt.Sprintf("%.1f %cB", float64(bytes)/float64(div), "KMGT"[exp])
+}
+
+// Ingress commands
+var ingressCmd = &cobra.Command{
+	Use:   "ingress",
+	Short: "Manage ingress rules",
+}
+
+var ingressCreateCmd = &cobra.Command{
+	Use:   "create NAME",
+	Short: "Create a new ingress",
+	Args:  cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		name := args[0]
+		host, _ := cmd.Flags().GetString("host")
+		path, _ := cmd.Flags().GetString("path")
+		pathType, _ := cmd.Flags().GetString("path-type")
+		serviceName, _ := cmd.Flags().GetString("service")
+		servicePort, _ := cmd.Flags().GetInt("port")
+		manager, _ := cmd.Flags().GetString("manager")
+
+		// Validate required flags
+		if serviceName == "" {
+			return fmt.Errorf("--service is required")
+		}
+		if servicePort == 0 {
+			return fmt.Errorf("--port is required")
+		}
+
+		// Default path
+		if path == "" {
+			path = "/"
+		}
+		// Default path type
+		if pathType == "" {
+			pathType = "Prefix"
+		}
+
+		// Connect to manager
+		c, err := client.NewClient(manager)
+		if err != nil {
+			return fmt.Errorf("failed to connect to manager: %v", err)
+		}
+		defer c.Close()
+
+		// Build ingress request
+		req := &proto.CreateIngressRequest{
+			Name: name,
+			Rules: []*proto.IngressRule{
+				{
+					Host: host,
+					Paths: []*proto.IngressPath{
+						{
+							Path:     path,
+							PathType: pathType,
+							Backend: &proto.IngressBackend{
+								ServiceName: serviceName,
+								Port:        int32(servicePort),
+							},
+						},
+					},
+				},
+			},
+		}
+
+		// Create ingress
+		resp, err := c.GetClient().CreateIngress(context.Background(), req)
+		if err != nil {
+			return fmt.Errorf("failed to create ingress: %v", err)
+		}
+
+		fmt.Printf("Ingress %s created successfully\n", resp.Ingress.Name)
+		fmt.Printf("ID: %s\n", resp.Ingress.Id)
+		if host != "" {
+			fmt.Printf("Host: %s\n", host)
+		}
+		fmt.Printf("Path: %s (type: %s)\n", path, pathType)
+		fmt.Printf("Backend: %s:%d\n", serviceName, servicePort)
+
+		return nil
+	},
+}
+
+var ingressListCmd = &cobra.Command{
+	Use:   "list",
+	Short: "List all ingresses",
+	Aliases: []string{"ls"},
+	RunE: func(cmd *cobra.Command, args []string) error {
+		manager, _ := cmd.Flags().GetString("manager")
+
+		// Connect to manager
+		c, err := client.NewClient(manager)
+		if err != nil {
+			return fmt.Errorf("failed to connect to manager: %v", err)
+		}
+		defer c.Close()
+
+		// List ingresses
+		resp, err := c.GetClient().ListIngresses(context.Background(), &proto.ListIngressesRequest{})
+		if err != nil {
+			return fmt.Errorf("failed to list ingresses: %v", err)
+		}
+
+		if len(resp.Ingresses) == 0 {
+			fmt.Println("No ingresses found")
+			return nil
+		}
+
+		// Print table header
+		fmt.Printf("%-20s %-30s %-15s %-30s\n", "NAME", "HOST", "PATH", "BACKEND")
+		fmt.Println(strings.Repeat("-", 95))
+
+		// Print each ingress
+		for _, ingress := range resp.Ingresses {
+			for _, rule := range ingress.Rules {
+				host := rule.Host
+				if host == "" {
+					host = "*"
+				}
+				for _, path := range rule.Paths {
+					backend := fmt.Sprintf("%s:%d", path.Backend.ServiceName, path.Backend.Port)
+					fmt.Printf("%-20s %-30s %-15s %-30s\n",
+						ingress.Name,
+						host,
+						path.Path,
+						backend,
+					)
+				}
+			}
+		}
+
+		return nil
+	},
+}
+
+var ingressInspectCmd = &cobra.Command{
+	Use:   "inspect NAME",
+	Short: "Inspect an ingress",
+	Args:  cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		name := args[0]
+		manager, _ := cmd.Flags().GetString("manager")
+
+		// Connect to manager
+		c, err := client.NewClient(manager)
+		if err != nil {
+			return fmt.Errorf("failed to connect to manager: %v", err)
+		}
+		defer c.Close()
+
+		// Get ingress
+		resp, err := c.GetClient().GetIngress(context.Background(), &proto.GetIngressRequest{
+			Name: name,
+		})
+		if err != nil {
+			return fmt.Errorf("failed to get ingress: %v", err)
+		}
+
+		ingress := resp.Ingress
+
+		// Print ingress details
+		fmt.Printf("Name: %s\n", ingress.Name)
+		fmt.Printf("ID: %s\n", ingress.Id)
+		fmt.Printf("Created: %s\n", ingress.CreatedAt.AsTime().Format(time.RFC3339))
+		fmt.Printf("Updated: %s\n", ingress.UpdatedAt.AsTime().Format(time.RFC3339))
+		fmt.Println()
+
+		fmt.Println("Rules:")
+		for i, rule := range ingress.Rules {
+			fmt.Printf("  Rule %d:\n", i+1)
+			if rule.Host != "" {
+				fmt.Printf("    Host: %s\n", rule.Host)
+			} else {
+				fmt.Printf("    Host: * (all hosts)\n")
+			}
+			fmt.Println("    Paths:")
+			for j, path := range rule.Paths {
+				fmt.Printf("      Path %d:\n", j+1)
+				fmt.Printf("        Path: %s\n", path.Path)
+				fmt.Printf("        Type: %s\n", path.PathType)
+				fmt.Printf("        Backend: %s:%d\n", path.Backend.ServiceName, path.Backend.Port)
+			}
+		}
+
+		return nil
+	},
+}
+
+var ingressDeleteCmd = &cobra.Command{
+	Use:   "delete NAME",
+	Short: "Delete an ingress",
+	Aliases: []string{"rm"},
+	Args:  cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		name := args[0]
+		manager, _ := cmd.Flags().GetString("manager")
+
+		// Connect to manager
+		c, err := client.NewClient(manager)
+		if err != nil {
+			return fmt.Errorf("failed to connect to manager: %v", err)
+		}
+		defer c.Close()
+
+		// Delete ingress
+		_, err = c.GetClient().DeleteIngress(context.Background(), &proto.DeleteIngressRequest{
+			Name: name,
+		})
+		if err != nil {
+			return fmt.Errorf("failed to delete ingress: %v", err)
+		}
+
+		fmt.Printf("Ingress %s deleted successfully\n", name)
+		return nil
+	},
+}
+
+func init() {
+	// Ingress create command
+	ingressCreateCmd.Flags().String("manager", "localhost:2377", "Manager address")
+	ingressCreateCmd.Flags().String("host", "", "Host to match (e.g., api.example.com, leave empty for all hosts)")
+	ingressCreateCmd.Flags().String("path", "/", "Path to match (default: /)")
+	ingressCreateCmd.Flags().String("path-type", "Prefix", "Path type: Prefix or Exact (default: Prefix)")
+	ingressCreateCmd.Flags().String("service", "", "Backend service name (required)")
+	ingressCreateCmd.Flags().Int("port", 0, "Backend service port (required)")
+	ingressCreateCmd.MarkFlagRequired("service")
+	ingressCreateCmd.MarkFlagRequired("port")
+
+	// Ingress list command
+	ingressListCmd.Flags().String("manager", "localhost:2377", "Manager address")
+
+	// Ingress inspect command
+	ingressInspectCmd.Flags().String("manager", "localhost:2377", "Manager address")
+
+	// Ingress delete command
+	ingressDeleteCmd.Flags().String("manager", "localhost:2377", "Manager address")
+
+	// Add subcommands
+	ingressCmd.AddCommand(ingressCreateCmd)
+	ingressCmd.AddCommand(ingressListCmd)
+	ingressCmd.AddCommand(ingressInspectCmd)
+	ingressCmd.AddCommand(ingressDeleteCmd)
 }
