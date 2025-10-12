@@ -133,3 +133,39 @@ type TestingT interface {
 	Name() string
 	Helper()
 }
+
+// ServiceSpec defines a service for testing
+type ServiceSpec struct {
+	Name     string
+	Image    string
+	Replicas int
+	Env      map[string]string
+	Ports    []ServicePort
+}
+
+// ServicePort defines a port mapping
+type ServicePort struct {
+	ContainerPort int
+	Protocol      string
+}
+
+// IngressSpec defines an ingress rule for testing
+type IngressSpec struct {
+	Host     string
+	Path     string
+	PathType string // "Exact" or "Prefix"
+	Backend  IngressBackend
+	TLS      *IngressTLS
+}
+
+// IngressBackend defines the backend service for an ingress rule
+type IngressBackend struct {
+	Service string
+	Port    int
+}
+
+// IngressTLS defines TLS configuration for an ingress
+type IngressTLS struct {
+	Enabled    bool
+	SecretName string
+}
