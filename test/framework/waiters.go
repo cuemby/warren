@@ -52,20 +52,26 @@ func (w *Waiter) WaitFor(ctx context.Context, condition func() bool, description
 	}
 }
 
-// WaitForService waits for a service to reach a specific status
-func (w *Waiter) WaitForService(ctx context.Context, client *client.Client, name string, status string) error {
+// WaitForServiceRunning waits for a service to have at least one running task
+func (w *Waiter) WaitForServiceRunning(ctx context.Context, client *client.Client, name string) error {
 	return w.WaitFor(ctx, func() bool {
 		svc, err := client.GetService(name)
 		if err != nil {
 			return false
 		}
-		return svc.Status == status
-	}, fmt.Sprintf("service %s to reach status %s", name, status))
-}
 
-// WaitForServiceRunning waits for a service to be running
-func (w *Waiter) WaitForServiceRunning(ctx context.Context, client *client.Client, name string) error {
-	return w.WaitForService(ctx, client, name, "running")
+		tasks, err := client.ListTasks(svc.Id, "")
+		if err != nil {
+			return false
+		}
+
+		for _, task := range tasks {
+			if task.ActualState == "running" {
+				return true
+			}
+		}
+		return false
+	}, fmt.Sprintf("service %s to have running tasks", name))
 }
 
 // WaitForServiceDeleted waits for a service to be deleted
@@ -91,7 +97,7 @@ func (w *Waiter) WaitForReplicas(ctx context.Context, client *client.Client, ser
 
 		running := 0
 		for _, task := range tasks {
-			if task.Status == "running" {
+			if task.ActualState == "running" {
 				running++
 			}
 		}
@@ -110,7 +116,7 @@ func (w *Waiter) WaitForTask(ctx context.Context, client *client.Client, taskID 
 
 		for _, task := range tasks {
 			if task.Id == taskID {
-				return task.Status == status
+				return task.ActualState == status
 			}
 		}
 
@@ -124,6 +130,7 @@ func (w *Waiter) WaitForTaskRunning(ctx context.Context, client *client.Client, 
 }
 
 // WaitForTaskHealthy waits for a task to become healthy
+// TODO: Use actual health_status field when added to proto
 func (w *Waiter) WaitForTaskHealthy(ctx context.Context, client *client.Client, taskID string) error {
 	return w.WaitFor(ctx, func() bool {
 		tasks, err := client.ListTasks("", "")
@@ -133,7 +140,9 @@ func (w *Waiter) WaitForTaskHealthy(ctx context.Context, client *client.Client, 
 
 		for _, task := range tasks {
 			if task.Id == taskID {
-				return task.HealthStatus == "healthy"
+				// For now, use ActualState as a proxy for health
+				// When health_status is added to proto, replace with: task.HealthStatus == "healthy"
+				return task.ActualState == "running"
 			}
 		}
 

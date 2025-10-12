@@ -1,6 +1,47 @@
-# Warren Integration Tests
+# Warren Testing
 
-This directory contains integration tests for Warren features.
+This directory contains the Warren testing framework and test suites.
+
+## Test Framework
+
+Warren includes a comprehensive Go-based testing framework for e2e and integration tests. The framework provides:
+
+- **Cluster Management**: Start/stop multi-node Warren clusters using Lima VMs
+- **Process Lifecycle**: Manage Warren processes with automatic log capture
+- **Rich Assertions**: Type-safe test assertions for services, tasks, nodes, etc.
+- **Polling Utilities**: Wait for conditions with timeouts and retries
+- **Parallel Execution**: Run tests concurrently for faster feedback
+
+See [framework/README.md](framework/README.md) for detailed documentation.
+
+## E2E Tests
+
+End-to-end tests validate complete workflows across multi-node clusters.
+
+### Running E2E Tests
+
+```bash
+# Run all e2e tests
+go test -v ./test/e2e/...
+
+# Run specific test
+go test -v ./test/e2e -run TestBasicCluster
+
+# Run in short mode (skip long tests)
+go test -v -short ./test/e2e/...
+
+# Run with race detector
+go test -v -race ./test/e2e/...
+```
+
+### Available E2E Tests
+
+- **TestBasicCluster**: Single manager + worker cluster with service operations
+- **TestMultiManagerCluster**: 3-manager HA cluster with leader failover
+
+## Integration Tests
+
+Integration tests validate specific Warren features and components.
 
 ## Health Check Tests
 
