@@ -170,17 +170,32 @@ automatically form a Raft quorum once additional managers join.`,
 		metricsCollector.Start()
 		fmt.Println("✓ Metrics collector started")
 
+		// Set version for health checks
+		metrics.SetVersion("1.1.0")
+
+		// Register initial health status
+		metrics.RegisterComponent("raft", true, "bootstrapped")
+		metrics.RegisterComponent("containerd", false, "initializing")
+		metrics.RegisterComponent("api", false, "initializing")
+
 		// Start metrics HTTP server in background
 		metricsAddr := "127.0.0.1:9090"
 		pprofEnabled, _ := cmd.Flags().GetBool("enable-pprof")
 
 		go func() {
 			http.Handle("/metrics", metrics.Handler())
+			http.Handle("/health", metrics.HealthHandler())
+			http.Handle("/ready", metrics.ReadyHandler())
+			http.Handle("/live", metrics.LivenessHandler())
 			if err := http.ListenAndServe(metricsAddr, nil); err != nil {
 				fmt.Printf("Metrics server error: %v\n", err)
 			}
 		}()
 		fmt.Printf("✓ Metrics endpoint: http://%s/metrics\n", metricsAddr)
+		fmt.Printf("✓ Health endpoints:\n")
+		fmt.Printf("  - Health check: http://%s/health\n", metricsAddr)
+		fmt.Printf("  - Readiness:    http://%s/ready\n", metricsAddr)
+		fmt.Printf("  - Liveness:     http://%s/live\n", metricsAddr)
 
 		if pprofEnabled {
 			fmt.Printf("✓ Profiling endpoints enabled at http://%s/debug/pprof/\n", metricsAddr)
@@ -203,6 +218,10 @@ automatically form a Raft quorum once additional managers join.`,
 
 		// Wait for API server to start
 		time.Sleep(500 * time.Millisecond)
+
+		// Update health status - API is now ready
+		metrics.RegisterComponent("api", true, "ready")
+		metrics.RegisterComponent("containerd", true, "ready")
 
 		// Start ingress proxy
 		if err := mgr.StartIngress(); err != nil {
@@ -598,17 +617,32 @@ var managerJoinCmd = &cobra.Command{
 		metricsCollector.Start()
 		fmt.Println("✓ Metrics collector started")
 
+		// Set version for health checks
+		metrics.SetVersion("1.1.0")
+
+		// Register initial health status
+		metrics.RegisterComponent("raft", true, "bootstrapped")
+		metrics.RegisterComponent("containerd", false, "initializing")
+		metrics.RegisterComponent("api", false, "initializing")
+
 		// Start metrics HTTP server in background
 		metricsAddr := "127.0.0.1:9090"
 		pprofEnabled, _ := cmd.Flags().GetBool("enable-pprof")
 
 		go func() {
 			http.Handle("/metrics", metrics.Handler())
+			http.Handle("/health", metrics.HealthHandler())
+			http.Handle("/ready", metrics.ReadyHandler())
+			http.Handle("/live", metrics.LivenessHandler())
 			if err := http.ListenAndServe(metricsAddr, nil); err != nil {
 				fmt.Printf("Metrics server error: %v\n", err)
 			}
 		}()
 		fmt.Printf("✓ Metrics endpoint: http://%s/metrics\n", metricsAddr)
+		fmt.Printf("✓ Health endpoints:\n")
+		fmt.Printf("  - Health check: http://%s/health\n", metricsAddr)
+		fmt.Printf("  - Readiness:    http://%s/ready\n", metricsAddr)
+		fmt.Printf("  - Liveness:     http://%s/live\n", metricsAddr)
 
 		if pprofEnabled {
 			fmt.Printf("✓ Profiling endpoints enabled at http://%s/debug/pprof/\n", metricsAddr)
@@ -631,6 +665,10 @@ var managerJoinCmd = &cobra.Command{
 
 		// Wait for API server to start
 		time.Sleep(500 * time.Millisecond)
+
+		// Update health status - API is now ready
+		metrics.RegisterComponent("api", true, "ready")
+		metrics.RegisterComponent("containerd", true, "ready")
 
 		// Start ingress proxy
 		if err := mgr.StartIngress(); err != nil {
