@@ -1432,6 +1432,78 @@ resource-aware placement is deferred as a future enhancement.
 
 ---
 
+### Phase 6.6: Graceful Shutdown (Week 3) ✅ **COMPLETE**
+
+**Status**: ✅ **COMPLETE** (2025-10-11)
+**Priority**: [REQUIRED] - Clean container termination
+
+#### Task 6.6.1: Configurable Stop Timeout ✅ **COMPLETE**
+- [x] **StopTimeout field added to types** ✅ **COMPLETE**
+  - Added to Service and Task structs
+  - Default value: 10 seconds
+  - Propagated from service to tasks
+  - Commit: 4422f60
+
+- [x] **Worker graceful shutdown** ✅ **COMPLETE**
+  - Updated stopTask() to use configurable timeout
+  - SIGTERM → wait → SIGKILL sequence
+  - Context-based timeout handling
+  - Commit: 4422f60
+
+- [x] **Scheduler integration** ✅ **COMPLETE**
+  - Propagates StopTimeout to tasks (global + replicated modes)
+  - Ensures timeout consistency across system
+  - Commit: 4422f60
+
+- [x] **CLI support** ✅ **COMPLETE**
+  - `--stop-timeout <seconds>` flag
+  - Default: 10 seconds
+  - Human-readable output
+  - Commit: 4422f60
+
+- [x] **Protobuf schema updates** ✅ **COMPLETE**
+  - Added stop_timeout to Service, Task, CreateServiceRequest
+  - Regenerated Go protobuf code
+  - Commit: 4422f60
+
+- [x] **Documentation** ✅ **COMPLETE**
+  - Comprehensive graceful shutdown guide (docs/graceful-shutdown.md)
+  - Signal handling examples (Go, Node.js, Python)
+  - Best practices for choosing timeout values
+  - Troubleshooting guide
+  - Application integration patterns
+  - Commit: c372ce4
+
+#### Task 6.6.2: Worker Drain Mode - DEFERRED
+- [ ] **Drain mode on worker shutdown** - DEFERRED
+  - Stop accepting new tasks
+  - Gracefully terminate existing tasks
+  - Not critical for MVP
+
+- [ ] **Signal handling** - DEFERRED
+  - Manager/worker process SIGTERM handling
+  - Graceful cluster component shutdown
+  - Future enhancement
+
+**Phase 6.6 Deliverables**:
+- ✅ Configurable stop timeout (default: 10s)
+- ✅ Worker uses configurable timeout for container shutdown
+- ✅ SIGTERM → wait → SIGKILL sequence
+- ✅ CLI functional (--stop-timeout flag)
+- ✅ Protobuf schema updated
+- ✅ Documentation complete (graceful-shutdown.md)
+- ⏸️  Worker drain mode (deferred - not critical for MVP)
+
+**Commits**:
+- 4422f60 - Configurable graceful shutdown timeout implementation
+- c372ce4 - Comprehensive documentation
+
+**Status**: Core graceful shutdown with configurable timeout is COMPLETE. Containers
+receive SIGTERM, have configurable time to shut down cleanly, then receive SIGKILL
+if they don't exit. Worker drain mode deferred as future enhancement.
+
+---
+
 ### Milestone 6 Acceptance Criteria
 
 **Core Features Completed**:
