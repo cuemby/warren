@@ -991,3 +991,51 @@ func (m *Manager) GetIngressByName(name string) (*types.Ingress, error) {
 func (m *Manager) ListIngresses() ([]*types.Ingress, error) {
 	return m.store.ListIngresses()
 }
+
+// --- TLS Certificate Operations ---
+
+// CreateTLSCertificate creates a new TLS certificate via Raft
+func (m *Manager) CreateTLSCertificate(cert *types.TLSCertificate) error {
+	data, err := json.Marshal(cert)
+	if err != nil {
+		return err
+	}
+
+	cmd := Command{
+		Op:   "CreateTLSCertificate",
+		Data: data,
+	}
+
+	return m.Apply(cmd)
+}
+
+// DeleteTLSCertificate deletes a TLS certificate via Raft
+func (m *Manager) DeleteTLSCertificate(certID string) error {
+	// FSM expects map[string]string with "id" key
+	data, err := json.Marshal(map[string]string{"id": certID})
+	if err != nil {
+		return err
+	}
+
+	cmd := Command{
+		Op:   "DeleteTLSCertificate",
+		Data: data,
+	}
+
+	return m.Apply(cmd)
+}
+
+// GetTLSCertificate retrieves a TLS certificate by ID
+func (m *Manager) GetTLSCertificate(id string) (*types.TLSCertificate, error) {
+	return m.store.GetTLSCertificate(id)
+}
+
+// GetTLSCertificateByName retrieves a TLS certificate by name
+func (m *Manager) GetTLSCertificateByName(name string) (*types.TLSCertificate, error) {
+	return m.store.GetTLSCertificateByName(name)
+}
+
+// ListTLSCertificates lists all TLS certificates
+func (m *Manager) ListTLSCertificates() ([]*types.TLSCertificate, error) {
+	return m.store.ListTLSCertificates()
+}

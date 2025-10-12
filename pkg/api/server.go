@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/pem"
 	"fmt"
 	"net"
 	"strings"
@@ -1306,4 +1307,170 @@ func convertProtoIngressTLS(protoTLS *proto.IngressTLS) *types.IngressTLS {
 		AutoTLS:    protoTLS.AutoTls,
 		Email:      protoTLS.Email,
 	}
+}
+
+// --- TLS Certificate Handlers ---
+
+// CreateTLSCertificate creates a new TLS certificate
+func (s *Server) CreateTLSCertificate(ctx context.Context, req *proto.CreateTLSCertificateRequest) (*proto.CreateTLSCertificateResponse, error) {
+	// Forward to leader if not leader
+	if !s.manager.IsLeader() {
+		return nil, fmt.Errorf("not leader, forward to leader")
+	}
+
+	// Validate request
+	if req.Name == "" {
+		return nil, fmt.Errorf("certificate name is required")
+	}
+	if len(req.Hosts) == 0 {
+		return nil, fmt.Errorf("at least one host is required")
+	}
+	if len(req.CertPem) == 0 || len(req.KeyPem) == 0 {
+		return nil, fmt.Errorf("certificate and key are required")
+	}
+
+	// Check if certificate already exists
+	existing, _ := s.manager.GetTLSCertificateByName(req.Name)
+	if existing != nil {
+		return nil, fmt.Errorf("certificate %s already exists", req.Name)
+	}
+
+	// Parse certificate to extract metadata
+	certPEM := req.CertPem
+	cert, err := parseCertificate(certPEM)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse certificate: %v", err)
+	}
+
+	// Create TLS certificate
+	tlsCert := &types.TLSCertificate{
+		ID:        uuid.New().String(),
+		Name:      req.Name,
+		Hosts:     req.Hosts,
+		CertPEM:   certPEM,
+		KeyPEM:    req.KeyPem,
+		Issuer:    cert.Issuer.CommonName,
+		NotBefore: cert.NotBefore,
+		NotAfter:  cert.NotAfter,
+		AutoRenew: false, // M7.3 feature
+		Labels:    req.Labels,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+	}
+
+	// Create certificate in storage via Raft
+	if err := s.manager.CreateTLSCertificate(tlsCert); err != nil {
+		return nil, fmt.Errorf("failed to create certificate: %v", err)
+	}
+
+	// Convert back to proto
+	protoCert := convertTLSCertificateToProto(tlsCert)
+
+	return &proto.CreateTLSCertificateResponse{
+		Certificate: protoCert,
+	}, nil
+}
+
+// GetTLSCertificate retrieves a TLS certificate
+func (s *Server) GetTLSCertificate(ctx context.Context, req *proto.GetTLSCertificateRequest) (*proto.GetTLSCertificateResponse, error) {
+	var cert *types.TLSCertificate
+	var err error
+
+	if req.Id != "" {
+		cert, err = s.manager.GetTLSCertificate(req.Id)
+	} else if req.Name != "" {
+		cert, err = s.manager.GetTLSCertificateByName(req.Name)
+	} else {
+		return nil, fmt.Errorf("id or name is required")
+	}
+
+	if err != nil {
+		return nil, fmt.Errorf("certificate not found: %v", err)
+	}
+
+	return &proto.GetTLSCertificateResponse{
+		Certificate: convertTLSCertificateToProto(cert),
+	}, nil
+}
+
+// ListTLSCertificates lists all TLS certificates
+func (s *Server) ListTLSCertificates(ctx context.Context, req *proto.ListTLSCertificatesRequest) (*proto.ListTLSCertificatesResponse, error) {
+	// Get all certificates from storage
+	certs, err := s.manager.ListTLSCertificates()
+	if err != nil {
+		return nil, fmt.Errorf("failed to list certificates: %v", err)
+	}
+
+	// Convert to proto (but exclude private keys for security)
+	protoCerts := make([]*proto.TLSCertificate, len(certs))
+	for i, cert := range certs {
+		protoCert := convertTLSCertificateToProto(cert)
+		// Clear private key from response for security
+		protoCert.KeyPem = nil
+		protoCerts[i] = protoCert
+	}
+
+	return &proto.ListTLSCertificatesResponse{
+		Certificates: protoCerts,
+	}, nil
+}
+
+// DeleteTLSCertificate deletes a TLS certificate
+func (s *Server) DeleteTLSCertificate(ctx context.Context, req *proto.DeleteTLSCertificateRequest) (*proto.DeleteTLSCertificateResponse, error) {
+	// Forward to leader if not leader
+	if !s.manager.IsLeader() {
+		return nil, fmt.Errorf("not leader, forward to leader")
+	}
+
+	// Get certificate to delete
+	var cert *types.TLSCertificate
+	var err error
+
+	if req.Id != "" {
+		cert, err = s.manager.GetTLSCertificate(req.Id)
+	} else if req.Name != "" {
+		cert, err = s.manager.GetTLSCertificateByName(req.Name)
+	} else {
+		return nil, fmt.Errorf("id or name is required")
+	}
+
+	if err != nil {
+		return nil, fmt.Errorf("certificate not found: %v", err)
+	}
+
+	// Delete certificate via Raft
+	if err := s.manager.DeleteTLSCertificate(cert.ID); err != nil {
+		return nil, fmt.Errorf("failed to delete certificate: %v", err)
+	}
+
+	return &proto.DeleteTLSCertificateResponse{
+		Status: "deleted",
+	}, nil
+}
+
+// Helper functions for TLS Certificate conversion
+
+func convertTLSCertificateToProto(cert *types.TLSCertificate) *proto.TLSCertificate {
+	return &proto.TLSCertificate{
+		Id:        cert.ID,
+		Name:      cert.Name,
+		Hosts:     cert.Hosts,
+		CertPem:   cert.CertPEM,
+		KeyPem:    cert.KeyPEM,
+		Issuer:    cert.Issuer,
+		NotBefore: timestamppb.New(cert.NotBefore),
+		NotAfter:  timestamppb.New(cert.NotAfter),
+		AutoRenew: cert.AutoRenew,
+		Labels:    cert.Labels,
+		CreatedAt: timestamppb.New(cert.CreatedAt),
+		UpdatedAt: timestamppb.New(cert.UpdatedAt),
+	}
+}
+
+func parseCertificate(certPEM []byte) (*x509.Certificate, error) {
+	block, _ := pem.Decode(certPEM)
+	if block == nil {
+		return nil, fmt.Errorf("failed to decode PEM block")
+	}
+	return x509.ParseCertificate(block.Bytes)
 }

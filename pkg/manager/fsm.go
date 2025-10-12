@@ -161,6 +161,21 @@ func (f *WarrenFSM) Apply(log *raft.Log) interface{} {
 		}
 		return f.store.DeleteIngress(data["id"])
 
+	// TLS Certificate operations
+	case "CreateTLSCertificate":
+		var cert types.TLSCertificate
+		if err := json.Unmarshal(cmd.Data, &cert); err != nil {
+			return err
+		}
+		return f.store.CreateTLSCertificate(&cert)
+
+	case "DeleteTLSCertificate":
+		var data map[string]string
+		if err := json.Unmarshal(cmd.Data, &data); err != nil {
+			return err
+		}
+		return f.store.DeleteTLSCertificate(data["id"])
+
 	default:
 		return fmt.Errorf("unknown command: %s", cmd.Op)
 	}
@@ -208,14 +223,20 @@ func (f *WarrenFSM) Snapshot() (raft.FSMSnapshot, error) {
 		return nil, fmt.Errorf("failed to list ingresses: %v", err)
 	}
 
+	tlsCerts, err := f.store.ListTLSCertificates()
+	if err != nil {
+		return nil, fmt.Errorf("failed to list TLS certificates: %v", err)
+	}
+
 	snapshot := &WarrenSnapshot{
-		Nodes:     nodes,
-		Services:  services,
-		Tasks:     tasks,
-		Secrets:   secrets,
-		Volumes:   volumes,
-		Networks:  networks,
-		Ingresses: ingresses,
+		Nodes:           nodes,
+		Services:        services,
+		Tasks:           tasks,
+		Secrets:         secrets,
+		Volumes:         volumes,
+		Networks:        networks,
+		Ingresses:       ingresses,
+		TLSCertificates: tlsCerts,
 	}
 
 	return snapshot, nil
@@ -277,18 +298,25 @@ func (f *WarrenFSM) Restore(rc io.ReadCloser) error {
 		}
 	}
 
+	for _, cert := range snapshot.TLSCertificates {
+		if err := f.store.CreateTLSCertificate(cert); err != nil {
+			return fmt.Errorf("failed to restore TLS certificate: %v", err)
+		}
+	}
+
 	return nil
 }
 
 // WarrenSnapshot represents a point-in-time snapshot of cluster state
 type WarrenSnapshot struct {
-	Nodes     []*types.Node
-	Services  []*types.Service
-	Tasks     []*types.Task
-	Secrets   []*types.Secret
-	Volumes   []*types.Volume
-	Networks  []*types.Network
-	Ingresses []*types.Ingress
+	Nodes           []*types.Node
+	Services        []*types.Service
+	Tasks           []*types.Task
+	Secrets         []*types.Secret
+	Volumes         []*types.Volume
+	Networks        []*types.Network
+	Ingresses       []*types.Ingress
+	TLSCertificates []*types.TLSCertificate
 }
 
 // Persist writes the snapshot to the given SnapshotSink
