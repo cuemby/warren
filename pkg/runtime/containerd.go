@@ -4,6 +4,9 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"net"
+	"os/exec"
+	"strings"
 	"syscall"
 	"time"
 
@@ -352,4 +355,69 @@ func (r *ContainerdRuntime) ListContainers(ctx context.Context) ([]string, error
 	}
 
 	return ids, nil
+}
+
+// GetContainerIP returns the IP address of a container
+func (r *ContainerdRuntime) GetContainerIP(ctx context.Context, containerID string) (string, error) {
+	ctx = namespaces.WithNamespace(ctx, r.namespace)
+
+	// Get the container
+	container, err := r.client.LoadContainer(ctx, containerID)
+	if err != nil {
+		return "", fmt.Errorf("failed to load container %s: %w", containerID, err)
+	}
+
+	// Get the task
+	task, err := container.Task(ctx, nil)
+	if err != nil {
+		return "", fmt.Errorf("failed to get task: %w", err)
+	}
+
+	// Get task status to ensure it's running
+	status, err := task.Status(ctx)
+	if err != nil {
+		return "", fmt.Errorf("failed to get task status: %w", err)
+	}
+
+	if status.Status != containerd.Running {
+		return "", fmt.Errorf("container is not running")
+	}
+
+	// Get the PID of the container task
+	pid := task.Pid()
+	if pid == 0 {
+		return "", fmt.Errorf("container task has no PID")
+	}
+
+	// Use nsenter to execute ip command in the container's network namespace
+	// This extracts the IP address from the eth0 interface
+	cmd := exec.CommandContext(ctx, "nsenter", "-t", fmt.Sprintf("%d", pid), "-n", "ip", "-4", "addr", "show", "eth0")
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return "", fmt.Errorf("failed to get container IP: %w (output: %s)", err, string(output))
+	}
+
+	// Parse the output to extract IP address
+	// Example output:
+	// 2: eth0@if3: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default
+	//     inet 10.88.0.2/16 brd 10.88.255.255 scope global eth0
+	lines := strings.Split(string(output), "\n")
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if strings.HasPrefix(line, "inet ") {
+			// Extract IP from "inet 10.88.0.2/16 brd ..."
+			parts := strings.Fields(line)
+			if len(parts) >= 2 {
+				// Remove CIDR notation (e.g., "10.88.0.2/16" -> "10.88.0.2")
+				ipWithCIDR := parts[1]
+				ip, _, err := net.ParseCIDR(ipWithCIDR)
+				if err != nil {
+					return "", fmt.Errorf("failed to parse IP address %s: %w", ipWithCIDR, err)
+				}
+				return ip.String(), nil
+			}
+		}
+	}
+
+	return "", fmt.Errorf("no IP address found for container")
 }

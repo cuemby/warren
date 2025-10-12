@@ -12,6 +12,7 @@ import (
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 
 	"github.com/cuemby/warren/api/proto"
+	"github.com/cuemby/warren/pkg/network"
 	"github.com/cuemby/warren/pkg/runtime"
 	"github.com/cuemby/warren/pkg/security"
 	"github.com/cuemby/warren/pkg/types"
@@ -32,6 +33,7 @@ type Worker struct {
 	volumesHandler *VolumesHandler
 	healthMonitor  *HealthMonitor
 	dnsHandler     *DNSHandler
+	portPublisher  *network.HostPortPublisher
 
 	tasks  map[string]*types.Task
 	taskMu sync.RWMutex
@@ -98,6 +100,9 @@ func NewWorker(cfg *Config) (*Worker, error) {
 
 	// Initialize health monitor
 	w.healthMonitor = NewHealthMonitor(w)
+
+	// Initialize port publisher for host mode port publishing
+	w.portPublisher = network.NewHostPortPublisher()
 
 	return w, nil
 }
@@ -417,6 +422,33 @@ func (w *Worker) executeTask(task *types.Task) {
 	w.taskMu.Unlock()
 	fmt.Printf("Task %s is running (container: %s)\n", task.ID, containerID)
 
+	// Publish ports if task has any
+	if len(task.Ports) > 0 && w.portPublisher != nil {
+		// Get container IP from runtime
+		containerIP, err := w.runtime.GetContainerIP(ctx, containerID)
+		if err != nil {
+			fmt.Printf("Warning: failed to get container IP for port publishing: %v\n", err)
+		} else {
+			// Convert []*PortMapping to []PortMapping for publisher
+			var ports []types.PortMapping
+			for _, p := range task.Ports {
+				if p != nil {
+					ports = append(ports, *p)
+				}
+			}
+
+			fmt.Printf("Publishing %d port(s) for task %s (container IP: %s)\n",
+				len(ports), task.ID, containerIP)
+
+			if err := w.portPublisher.PublishPorts(task.ID, containerIP, ports); err != nil {
+				fmt.Printf("Warning: failed to publish ports for task %s: %v\n", task.ID, err)
+				// Don't fail the task if port publishing fails - log and continue
+			} else {
+				fmt.Printf("✓ Ports published for task %s\n", task.ID)
+			}
+		}
+	}
+
 	// Monitor container status
 	ticker := time.NewTicker(5 * time.Second)
 	defer ticker.Stop()
@@ -481,6 +513,15 @@ func (w *Worker) stopTask(task *types.Task) {
 			fmt.Printf("Warning: failed to cleanup secrets for task %s: %v\n", task.ID, err)
 		} else {
 			fmt.Printf("Secrets cleaned up for task %s\n", task.ID)
+		}
+	}
+
+	// Cleanup published ports if task had any
+	if len(task.Ports) > 0 && w.portPublisher != nil {
+		if err := w.portPublisher.UnpublishPorts(task.ID); err != nil {
+			fmt.Printf("Warning: failed to unpublish ports for task %s: %v\n", task.ID, err)
+		} else {
+			fmt.Printf("Ports unpublished for task %s\n", task.ID)
 		}
 	}
 

@@ -1160,26 +1160,33 @@ Warren is functionally complete with M0-M5, but needs key production features to
 
 ---
 
-### Phase 6.2: Published Ports (Week 1-2)
+### Phase 6.2: Published Ports (Week 1-2) ✅ **COMPLETE** (Host Mode)
 
 **Priority**: [CRITICAL] - External service access
+**Status**: ✅ **Host Mode COMPLETE** (2025-10-11)
 
 #### Task 6.2.1: Port Publishing
-- [ ] **Port mapping spec (types.PublishedPort)**
-  - TargetPort (container), PublishedPort (host)
+- [x] **Port mapping spec (types.PortMapping)** ✅ **COMPLETE**
+  - HostPort (host), ContainerPort (container)
   - Protocol (TCP/UDP)
   - PublishMode (host/ingress)
+  - Integrated in protobuf schema
+  - Commit: 90b2034, daf6d37
 
-- [ ] **Host mode publishing (pkg/network/hostports.go)**
+- [x] **Host mode publishing (pkg/network/hostports.go)** ✅ **COMPLETE**
   - Map host port to container port on same node
-  - Update iptables for port forwarding
-  - Test: Access nginx on host:8080
+  - iptables DNAT rules for port forwarding
+  - FORWARD chain rules for traffic acceptance
+  - MASQUERADE for return traffic
+  - GetContainerIP() via nsenter to network namespace
+  - Worker lifecycle integration (publish on start, unpublish on stop)
+  - Commit: (pending)
 
-- [ ] **Ingress mode publishing (pkg/network/ingress.go)**
+- [ ] **Ingress mode publishing (pkg/network/ingress.go)** - DEFERRED
   - Publish port on all nodes (routing mesh)
   - Load balance across replicas
   - Update iptables on all nodes
-  - Test: Access service from any node
+  - Future enhancement (Phase 7+)
 
 #### Task 6.2.2: Port Allocation
 - [ ] **Port manager (pkg/network/portmanager.go)**
