@@ -922,7 +922,8 @@ func (m *Manager) UpdateIngress(ingress *types.Ingress) error {
 
 // DeleteIngress deletes an ingress via Raft
 func (m *Manager) DeleteIngress(ingressID string) error {
-	data, err := json.Marshal(ingressID)
+	// FSM expects map[string]string with "id" key
+	data, err := json.Marshal(map[string]string{"id": ingressID})
 	if err != nil {
 		return err
 	}
@@ -938,8 +939,8 @@ func (m *Manager) DeleteIngress(ingressID string) error {
 // StartIngress starts the ingress HTTP proxy on port 80
 func (m *Manager) StartIngress() error {
 	// Create gRPC connection for the ingress proxy to query the manager
-	// For M7.1 MVP, we'll use a simple connection (mTLS will be added in M7.2)
-	grpcConn, err := grpc.Dial(m.bindAddr, grpc.WithInsecure())
+	// For M7.1 MVP, we'll use a simple insecure connection (mTLS will be added in M7.2)
+	grpcConn, err := grpc.Dial(m.bindAddr, grpc.WithInsecure()) // #nosec G402
 	if err != nil {
 		return fmt.Errorf("failed to create gRPC connection for ingress: %v", err)
 	}

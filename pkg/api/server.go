@@ -1067,6 +1067,12 @@ func (s *Server) CreateIngress(ctx context.Context, req *proto.CreateIngressRequ
 		return nil, fmt.Errorf("failed to create ingress: %v", err)
 	}
 
+	// Reload ingress proxy to pick up the new ingress
+	if err := s.manager.ReloadIngress(); err != nil {
+		// Log but don't fail the request
+		fmt.Printf("Warning: Failed to reload ingress proxy: %v\n", err)
+	}
+
 	// Convert back to proto
 	protoIngress := convertIngressToProto(ingress)
 
@@ -1119,6 +1125,12 @@ func (s *Server) UpdateIngress(ctx context.Context, req *proto.UpdateIngressRequ
 		return nil, fmt.Errorf("failed to update ingress: %v", err)
 	}
 
+	// Reload ingress proxy to pick up the changes
+	if err := s.manager.ReloadIngress(); err != nil {
+		// Log but don't fail the request
+		fmt.Printf("Warning: Failed to reload ingress proxy: %v\n", err)
+	}
+
 	// Convert back to proto
 	protoIngress := convertIngressToProto(existing)
 
@@ -1154,6 +1166,12 @@ func (s *Server) DeleteIngress(ctx context.Context, req *proto.DeleteIngressRequ
 	// Delete ingress via Raft
 	if err := s.manager.DeleteIngress(ingress.ID); err != nil {
 		return nil, fmt.Errorf("failed to delete ingress: %v", err)
+	}
+
+	// Reload ingress proxy to remove the deleted ingress
+	if err := s.manager.ReloadIngress(); err != nil {
+		// Log but don't fail the request
+		fmt.Printf("Warning: Failed to reload ingress proxy: %v\n", err)
 	}
 
 	return &proto.DeleteIngressResponse{

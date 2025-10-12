@@ -203,6 +203,13 @@ automatically form a Raft quorum once additional managers join.`,
 		// Wait for API server to start
 		time.Sleep(500 * time.Millisecond)
 
+		// Start ingress proxy
+		if err := mgr.StartIngress(); err != nil {
+			fmt.Printf("Warning: Failed to start ingress proxy: %v\n", err)
+		} else {
+			fmt.Println("✓ Ingress proxy started on port 8000")
+		}
+
 		// Generate and display join tokens for initial setup
 		fmt.Println()
 		fmt.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
@@ -257,6 +264,7 @@ automatically form a Raft quorum once additional managers join.`,
 		sched.Stop()
 		recon.Stop()
 		metricsCollector.Stop()
+		mgr.StopIngress()
 		apiServer.Stop()
 		if err := mgr.Shutdown(); err != nil {
 			return fmt.Errorf("failed to shutdown: %v", err)
@@ -623,6 +631,13 @@ var managerJoinCmd = &cobra.Command{
 		// Wait for API server to start
 		time.Sleep(500 * time.Millisecond)
 
+		// Start ingress proxy
+		if err := mgr.StartIngress(); err != nil {
+			fmt.Printf("Warning: Failed to start ingress proxy: %v\n", err)
+		} else {
+			fmt.Println("✓ Ingress proxy started on port 8000")
+		}
+
 		// Generate and display join tokens for initial setup
 		fmt.Println()
 		fmt.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
@@ -677,6 +692,7 @@ var managerJoinCmd = &cobra.Command{
 		sched.Stop()
 		recon.Stop()
 		metricsCollector.Stop()
+		mgr.StopIngress()
 		apiServer.Stop()
 		if err := mgr.Shutdown(); err != nil {
 			return fmt.Errorf("failed to shutdown: %v", err)

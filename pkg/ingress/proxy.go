@@ -46,11 +46,12 @@ func NewProxy(store storage.Store, managerAddr string, grpcClient *grpc.ClientCo
 	return p
 }
 
-// Start starts the HTTP proxy server on port 80
+// Start starts the HTTP proxy server on port 8000 (M7.1 MVP - port 80 in M7.2)
 func (p *Proxy) Start(ctx context.Context) error {
 	// Create HTTP server
+	// TODO(M7.2): Change to port 80 with proper capabilities/permissions
 	p.httpServer = &http.Server{
-		Addr:         ":80",
+		Addr:         ":8000",
 		Handler:      http.HandlerFunc(p.handleRequest),
 		ReadTimeout:  30 * time.Second,
 		WriteTimeout: 30 * time.Second,
@@ -60,10 +61,10 @@ func (p *Proxy) Start(ctx context.Context) error {
 	// Start HTTP server
 	listener, err := net.Listen("tcp", p.httpServer.Addr)
 	if err != nil {
-		return fmt.Errorf("failed to listen on :80: %v", err)
+		return fmt.Errorf("failed to listen on :8000: %v", err)
 	}
 
-	log.Info(fmt.Sprintf("Ingress proxy listening on :80"))
+	log.Info(fmt.Sprintf("Ingress proxy listening on :8000"))
 
 	// Serve in goroutine
 	go func() {
