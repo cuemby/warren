@@ -30,7 +30,7 @@ Warren is a **production-ready container orchestration system** for edge computi
 - ✅ Containerd integration for real container execution
 - ✅ Worker join and heartbeat with token-based security
 - ✅ Service deployment (replicated and global modes)
-- ✅ Task scheduler with volume affinity
+- ✅ Container scheduler with volume affinity
 - ✅ Reconciler for failure detection and auto-healing
 - ✅ Secrets management (AES-256-GCM, tmpfs mounting)
 - ✅ Volume orchestration (local driver, node affinity)
@@ -91,7 +91,7 @@ warren/
 │   │   └── token.go                   # ✅ Join token management (workers & managers)
 │   │
 │   ├── scheduler/
-│   │   └── scheduler.go               # ✅ Task scheduler with volume affinity (5s interval)
+│   │   └── scheduler.go               # ✅ Container scheduler with volume affinity (5s interval)
 │   │
 │   ├── reconciler/
 │   │   └── reconciler.go              # ✅ Failure detection reconciler (10s interval, health-aware)
@@ -635,8 +635,8 @@ wrn service list  # Same as 'warren service list'
 ### Milestone 1: Core Orchestration ✅ **COMPLETE** (2025-10-09)
 - ✅ Single-manager cluster with Raft consensus
 - ✅ Worker join and heartbeat mechanism
-- ✅ Service deployment with task creation
-- ✅ Task scheduler (round-robin, 5s interval)
+- ✅ Service deployment with container creation
+- ✅ Container scheduler (round-robin, 5s interval)
 - ✅ Reconciler (failure detection, 10s interval)
 - ✅ gRPC API (25+ methods)
 - ✅ Full CLI (cluster, service, node commands)
@@ -656,7 +656,7 @@ wrn service list  # Same as 'warren service list'
 - ✅ Secrets mounted as tmpfs - [pkg/worker/secrets.go](../../pkg/worker/secrets.go)
 - ✅ Volume orchestration (local driver) - [pkg/volume/local.go](../../pkg/volume/local.go)
 - ✅ Volume node affinity in scheduler
-- ✅ Global services (one task per node)
+- ✅ Global services (one container per node)
 - ✅ Deployment strategy foundation - [pkg/deploy/deploy.go](../../pkg/deploy/deploy.go)
 - ✅ 11 commits with full test coverage
 

@@ -1,7 +1,7 @@
 # Warren API Documentation
 
-**Last Updated**: 2025-10-11
-**Implementation Status**: Milestones 0-6 In Progress ✅
+**Last Updated**: 2025-10-13
+**Implementation Status**: Milestones 0-7 Complete ✅ | v1.1.1 Released
 **API Version**: v1
 **Protocol**: gRPC
 
@@ -45,12 +45,12 @@ service WarrenAPI {
   rpc GetService(GetServiceRequest) returns (GetServiceResponse);
   rpc ListServices(ListServicesRequest) returns (ListServicesResponse);
 
-  // Task operations (5 methods - M6: added ReportTaskHealth)
-  rpc UpdateTaskStatus(UpdateTaskStatusRequest) returns (UpdateTaskStatusResponse);
-  rpc ListTasks(ListTasksRequest) returns (ListTasksResponse);
-  rpc GetTask(GetTaskRequest) returns (GetTaskResponse);
-  rpc WatchTasks(WatchTasksRequest) returns (stream TaskEvent);
-  rpc ReportTaskHealth(ReportTaskHealthRequest) returns (ReportTaskHealthResponse);  // M6
+  // Container operations (5 methods - M6: added ReportContainerHealth)
+  rpc UpdateContainerStatus(UpdateContainerStatusRequest) returns (UpdateContainerStatusResponse);
+  rpc ListContainers(ListContainersRequest) returns (ListContainersResponse);
+  rpc GetContainer(GetContainerRequest) returns (GetContainerResponse);
+  rpc WatchContainers(WatchContainersRequest) returns (stream ContainerEvent);
+  rpc ReportContainerHealth(ReportContainerHealthRequest) returns (ReportContainerHealthResponse);  // M6
 
   // Secret operations (4 methods - M6: added GetSecret)
   rpc CreateSecret(CreateSecretRequest) returns (CreateSecretResponse);
@@ -76,7 +76,7 @@ service WarrenAPI {
 **Total**: 28 unary RPCs + 2 server-streaming RPCs = **30 methods**
 
 **M6 Additions**:
-- ReportTaskHealth (health check monitoring)
+- ReportContainerHealth (health check monitoring)
 - RequestCertificate (mTLS certificate management)
 - GetSecret, GetVolume (complete CRUD operations)
 
@@ -147,15 +147,15 @@ resp, err := client.RegisterNode(ctx, &RegisterNodeRequest{
 **Request**:
 ```protobuf
 message HeartbeatRequest {
-  string node_id = 1;                      // Node ID
-  NodeResources available_resources = 2;   // Current available resources
-  repeated TaskStatus task_statuses = 3;   // Status of assigned tasks
+  string node_id = 1;                               // Node ID
+  NodeResources available_resources = 2;            // Current available resources
+  repeated ContainerStatus container_statuses = 3;  // Status of assigned containers
 }
 
-message TaskStatus {
-  string task_id = 1;       // Task ID
+message ContainerStatus {
+  string container_id = 1;  // Container ID
   string actual_state = 2;  // "running", "failed", "stopped"
-  string container_id = 3;  // Container runtime ID
+  string runtime_id = 3;    // Container runtime ID
   string error = 4;         // Error message (if failed)
 }
 ```
@@ -174,7 +174,7 @@ for range ticker.C {
     _, err := client.Heartbeat(ctx, &HeartbeatRequest{
         NodeId: nodeID,
         AvailableResources: getCurrentResources(),
-        TaskStatuses:       getTaskStatuses(),
+        ContainerStatuses:  getContainerStatuses(),
     })
 }
 ```
@@ -441,39 +441,39 @@ warren service list
 
 ---
 
-## Task Operations
+## Container Operations
 
-### 11. UpdateTaskStatus
+### 11. UpdateContainerStatus
 
-**Purpose**: Worker reports task status changes
+**Purpose**: Worker reports container status changes
 
-**Method**: `UpdateTaskStatus(UpdateTaskStatusRequest) → UpdateTaskStatusResponse`
+**Method**: `UpdateContainerStatus(UpdateContainerStatusRequest) → UpdateContainerStatusResponse`
 
 **Request**:
 ```protobuf
-message UpdateTaskStatusRequest {
-  string task_id = 1;        // Task ID
+message UpdateContainerStatusRequest {
+  string container_id = 1;   // Container ID
   string node_id = 2;        // Reporting node
   string actual_state = 3;   // "running", "failed", "stopped"
-  string container_id = 4;   // Container runtime ID
+  string runtime_id = 4;     // Container runtime ID
   string error = 5;          // Error message (if failed)
 }
 ```
 
 **Response**:
 ```protobuf
-message UpdateTaskStatusResponse {
+message UpdateContainerStatusResponse {
   string status = 1;
 }
 ```
 
 **Worker Usage**:
 ```go
-_, err := client.UpdateTaskStatus(ctx, &UpdateTaskStatusRequest{
-    TaskId:      task.ID,
+_, err := client.UpdateContainerStatus(ctx, &UpdateContainerStatusRequest{
+    ContainerId: container.ID,
     NodeId:      nodeID,
     ActualState: "running",
-    ContainerId: containerID,
+    RuntimeId:   runtimeID,
 })
 ```
 

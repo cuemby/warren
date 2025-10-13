@@ -1,7 +1,7 @@
 # Warren Database Schema
 
-**Last Updated**: 2025-10-11
-**Implementation Status**: Milestones 0-6 In Progress ✅
+**Last Updated**: 2025-10-13
+**Implementation Status**: Milestones 0-7 Complete ✅ | v1.1.1 Released
 **Database**: BoltDB (embedded key-value store)
 
 ---
@@ -28,7 +28,7 @@ BoltDB organizes data into **buckets** (similar to tables in SQL). Warren uses 6
 warren.db
 ├── nodes       # Cluster nodes (managers & workers)
 ├── services    # User-defined services
-├── tasks       # Individual task instances
+├── containers  # Individual container instances
 ├── secrets     # Encrypted sensitive data
 ├── volumes     # Persistent storage volumes
 └── networks    # Overlay network definitions
@@ -182,24 +182,24 @@ type Service struct {
 
 ---
 
-### 3. Tasks Bucket
+### 3. Containers Bucket
 
-**Bucket Name**: `tasks`
-**Key**: Task ID (string)
-**Value**: JSON-serialized `Task` struct
+**Bucket Name**: `containers`
+**Key**: Container ID (string)
+**Value**: JSON-serialized `Container` struct
 
-**Purpose**: Tracks individual task instances (containers)
+**Purpose**: Tracks individual container instances
 
 **Schema**:
 ```go
-type Task struct {
-    ID            string                // Unique task ID (UUID)
+type Container struct {
+    ID            string                // Unique container ID (UUID)
     ServiceID     string                // Parent service ID
     ServiceName   string                // Service name (denormalized)
     NodeID        string                // Assigned worker node
     ContainerID   string                // Container runtime ID
-    DesiredState  TaskState             // "pending" | "running" | "shutdown"
-    ActualState   TaskState             // Actual state reported by worker
+    DesiredState  ContainerState        // "pending" | "running" | "shutdown"
+    ActualState   ContainerState        // Actual state reported by worker
     HealthStatus  HealthStatus          // Health status (M6: healthy/unhealthy/unknown)
     Image         string                // Container image
     Env           []string              // Environment variables
@@ -217,17 +217,17 @@ type Task struct {
 }
 ```
 
-**TaskState Values**:
-- `pending` - Task created, awaiting scheduling
-- `running` - Task assigned and running on worker
-- `failed` - Task failed (non-zero exit or health check failure)
-- `complete` - Task exited successfully (exit code 0)
-- `shutdown` - Task stopped intentionally
+**ContainerState Values**:
+- `pending` - Container created, awaiting scheduling
+- `running` - Container assigned and running on worker
+- `failed` - Container failed (non-zero exit or health check failure)
+- `complete` - Container exited successfully (exit code 0)
+- `shutdown` - Container stopped intentionally
 
 **Example Entry**:
 ```json
 {
-  "ID": "task-123abc",
+  "ID": "container-123abc",
   "ServiceID": "svc-xyz789",
   "ServiceName": "nginx-web",
   "NodeID": "node-abc123",
@@ -256,12 +256,12 @@ type Task struct {
 ```
 
 **Access Patterns**:
-- `GetTask(id)` - Direct lookup by task ID
-- `ListTasks()` - Full scan of all tasks
-- `ListTasksByService(serviceID)` - Filter by service (in-memory filter)
-- `ListTasksByNode(nodeID)` - Filter by node (in-memory filter)
-- `UpdateTask(task)` - Upsert
-- `DeleteTask(id)` - Remove task
+- `GetContainer(id)` - Direct lookup by container ID
+- `ListContainers()` - Full scan of all containers
+- `ListContainersByService(serviceID)` - Filter by service (in-memory filter)
+- `ListContainersByNode(nodeID)` - Filter by node (in-memory filter)
+- `UpdateContainer(container)` - Upsert
+- `DeleteContainer(id)` - Remove container
 
 ---
 

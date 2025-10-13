@@ -5,6 +5,67 @@ All notable changes to Warren will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.1] - 2025-10-13
+
+### Changed - Major Refactor & Infrastructure Updates
+
+This patch release includes a comprehensive terminology refactor and build system updates to improve code clarity and ensure consistent Go version usage across all platforms.
+
+#### Container Terminology Refactor
+
+Warren has completed a comprehensive refactor replacing "Task" with "Container" throughout the codebase for improved clarity and Docker/Kubernetes alignment.
+
+**Why this change?**
+- **Industry alignment**: "Container" is the standard term in Docker, Kubernetes, and container orchestration
+- **User clarity**: Users think in terms of "containers", not "tasks"
+- **Migration path**: Makes Warren more intuitive for users coming from Docker Swarm or Kubernetes
+
+**What changed:**
+- **Core types**: `Task` → `Container`, `TaskState` → `ContainerState`, `TaskStatus` → `ContainerStatus`
+- **API methods**: `ListTasks` → `ListContainers`, `UpdateTaskStatus` → `UpdateContainerStatus`, etc.
+- **Storage layer**: BoltDB bucket renamed `tasks` → `containers`
+- **CLI commands**: All references updated for consistency
+- **Documentation**: Updated to use "container" terminology throughout
+
+**Impact**:
+- 26 files modified, ~2,400 lines changed
+- All core packages updated: types, storage, manager, worker, scheduler, reconciler, API, client
+- All tests updated: unit, integration, E2E
+- **Migration tool included**: `warren-migrate` command to upgrade existing databases
+
+**Backward compatibility**:
+- v1.1.0 databases automatically migrate on first v1.1.1 startup
+- Migration is non-destructive with automatic backup
+- See `cmd/warren-migrate/` for manual migration tool
+
+#### Go 1.24 Upgrade
+
+**Build system updates:**
+- Updated `go.mod` to require Go 1.24.0 minimum
+- Updated Dockerfile to use `golang:1.24-alpine` base image
+- Updated all CI workflows (.github/workflows/*.yml) to Go 1.24
+- Test matrix now validates Go 1.24 and 1.25 compatibility
+
+**Why Go 1.24?**
+- Access to latest language features and standard library improvements
+- Security updates and performance optimizations
+- Ensures consistent build environment across development and CI/CD
+
+### Fixed
+
+- **Linter compliance**: Fixed errcheck warning in migration tool
+- **Docker release**: Resolved Go version mismatch preventing Docker image builds
+- **Test framework documentation**: Updated examples to use Go 1.24
+
+### Internal
+
+- Complete refactor across 26 files in 17 commits
+- Database migration tool with comprehensive backup/restore
+- All tests updated and passing
+- CI/CD validated with new Go version
+
+---
+
 ## [1.1.0] - 2025-10-12
 
 ### Added - Built-in Ingress Controller (Milestone 7)
