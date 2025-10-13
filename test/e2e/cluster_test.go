@@ -10,6 +10,10 @@ import (
 
 // TestBasicCluster tests basic cluster initialization and operations
 func TestBasicCluster(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping basic cluster test in short mode")
+	}
+
 	config := &framework.ClusterConfig{
 		NumManagers: 1,
 		NumWorkers:  1,

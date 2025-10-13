@@ -204,6 +204,10 @@ func TestClusterFormation(t *testing.T) {
 // TestClusterFormationSingleManager tests basic single-manager cluster
 // This is a simpler, faster variant for quick validation
 func TestClusterFormationSingleManager(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping single manager test in short mode")
+	}
+
 	// Configure 1-manager + 1-worker cluster
 	config := &framework.ClusterConfig{
 		NumManagers: 1,
