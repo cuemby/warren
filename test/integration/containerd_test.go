@@ -21,23 +21,23 @@ func TestContainerdBasicWorkflow(t *testing.T) {
 	defer rt.Close()
 
 	ctx := context.Background()
-	taskID := uuid.New().String()
+	containerSpecID := uuid.New().String()
 
-	// Test task with nginx
-	task := &types.Task{
-		ID:    taskID,
+	// Test container with nginx
+	container := &types.Container{
+		ID:    containerSpecID,
 		Image: "docker.io/library/nginx:alpine",
 		Env:   []string{"TEST=integration"},
 	}
 
 	t.Log("Step 1: Pulling nginx:alpine image...")
-	if err := rt.PullImage(ctx, task.Image); err != nil {
+	if err := rt.PullImage(ctx, container.Image); err != nil {
 		t.Fatalf("Failed to pull image: %v", err)
 	}
 	t.Log("✓ Image pulled successfully")
 
 	t.Log("Step 2: Creating container...")
-	containerID, err := rt.CreateContainer(ctx, task)
+	containerID, err := rt.CreateContainer(ctx, container)
 	if err != nil {
 		t.Fatalf("Failed to create container: %v", err)
 	}
@@ -67,7 +67,7 @@ func TestContainerdBasicWorkflow(t *testing.T) {
 	}
 	t.Logf("✓ Container status: %s", status)
 
-	if status != types.TaskStateRunning {
+	if status != types.ContainerStateRunning {
 		t.Errorf("Expected container to be running, got: %s", status)
 	}
 

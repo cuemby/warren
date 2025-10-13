@@ -54,25 +54,25 @@ func TestHealthCheckHTTP(t *testing.T) {
 
 	t.Logf("Created service %s with HTTP health check", serviceName)
 
-	// Wait for task to be scheduled and running
+	// Wait for container to be scheduled and running
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 	defer cancel()
 
-	var runningTask *proto.Task
+	var runningContainer *proto.Container
 	for {
 		select {
 		case <-ctx.Done():
-			t.Fatal("Timeout waiting for task to start")
+			t.Fatal("Timeout waiting for container to start")
 		default:
-			tasks, err := c.ListTasks("", "")
+			containers, err := c.ListContainers("", "")
 			if err != nil {
-				t.Fatalf("Failed to list tasks: %v", err)
+				t.Fatalf("Failed to list containers: %v", err)
 			}
 
-			for _, task := range tasks {
-				if task.ServiceId == service.Id && task.ActualState == "running" {
-					runningTask = task
-					goto TaskRunning
+			for _, container := range containers {
+				if container.ServiceId == service.Id && container.ActualState == "running" {
+					runningContainer = container
+					goto ContainerRunning
 				}
 			}
 
@@ -80,8 +80,8 @@ func TestHealthCheckHTTP(t *testing.T) {
 		}
 	}
 
-TaskRunning:
-	t.Logf("Task %s is running", runningTask.Id)
+ContainerRunning:
+	t.Logf("Container %s is running", runningContainer.Id)
 
 	// Wait for health check to be reported
 	// Health checks run every 10 seconds, so wait up to 30 seconds
@@ -93,25 +93,25 @@ TaskRunning:
 		t.Fatalf("Failed to get service: %v", err)
 	}
 
-	// List tasks again to check health status
-	tasks, err := c.ListTasks("", "")
+	// List containers again to check health status
+	containers, err := c.ListContainers("", "")
 	if err != nil {
-		t.Fatalf("Failed to list tasks: %v", err)
+		t.Fatalf("Failed to list containers: %v", err)
 	}
 
-	var healthyTask *proto.Task
-	for _, task := range tasks {
-		if task.ServiceId == service.Id && task.ActualState == "running" {
-			healthyTask = task
+	var healthyContainer *proto.Container
+	for _, container := range containers {
+		if container.ServiceId == service.Id && container.ActualState == "running" {
+			healthyContainer = container
 			break
 		}
 	}
 
-	if healthyTask == nil {
-		t.Fatal("Task is no longer running after health check period")
+	if healthyContainer == nil {
+		t.Fatal("Container is no longer running after health check period")
 	}
 
-	t.Logf("✓ HTTP health check test passed - task %s remained healthy", healthyTask.Id)
+	t.Logf("✓ HTTP health check test passed - container %s remained healthy", healthyContainer.Id)
 }
 
 // TestHealthCheckTCP tests TCP health check functionality
@@ -154,25 +154,25 @@ func TestHealthCheckTCP(t *testing.T) {
 
 	t.Logf("Created service %s with TCP health check", serviceName)
 
-	// Wait for task to be scheduled and running
+	// Wait for container to be scheduled and running
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 	defer cancel()
 
-	var runningTask *proto.Task
+	var runningContainer *proto.Container
 	for {
 		select {
 		case <-ctx.Done():
-			t.Fatal("Timeout waiting for task to start")
+			t.Fatal("Timeout waiting for container to start")
 		default:
-			tasks, err := c.ListTasks("", "")
+			containers, err := c.ListContainers("", "")
 			if err != nil {
-				t.Fatalf("Failed to list tasks: %v", err)
+				t.Fatalf("Failed to list containers: %v", err)
 			}
 
-			for _, task := range tasks {
-				if task.ServiceId == service.Id && task.ActualState == "running" {
-					runningTask = task
-					goto TaskRunning
+			for _, container := range containers {
+				if container.ServiceId == service.Id && container.ActualState == "running" {
+					runningContainer = container
+					goto ContainerRunning
 				}
 			}
 
@@ -180,31 +180,31 @@ func TestHealthCheckTCP(t *testing.T) {
 		}
 	}
 
-TaskRunning:
-	t.Logf("Task %s is running", runningTask.Id)
+ContainerRunning:
+	t.Logf("Container %s is running", runningContainer.Id)
 
 	// Wait for health check to be reported
 	time.Sleep(30 * time.Second)
 
-	// List tasks again to check health status
-	tasks, err := c.ListTasks("", "")
+	// List containers again to check health status
+	containers, err := c.ListContainers("", "")
 	if err != nil {
-		t.Fatalf("Failed to list tasks: %v", err)
+		t.Fatalf("Failed to list containers: %v", err)
 	}
 
-	var healthyTask *proto.Task
-	for _, task := range tasks {
-		if task.ServiceId == service.Id && task.ActualState == "running" {
-			healthyTask = task
+	var healthyContainer *proto.Container
+	for _, container := range containers {
+		if container.ServiceId == service.Id && container.ActualState == "running" {
+			healthyContainer = container
 			break
 		}
 	}
 
-	if healthyTask == nil {
-		t.Fatal("Task is no longer running after health check period")
+	if healthyContainer == nil {
+		t.Fatal("Container is no longer running after health check period")
 	}
 
-	t.Logf("✓ TCP health check test passed - task %s remained healthy", healthyTask.Id)
+	t.Logf("✓ TCP health check test passed - container %s remained healthy", healthyContainer.Id)
 }
 
 // TestHealthCheckUnhealthy tests that unhealthy tasks are replaced
@@ -260,17 +260,17 @@ func TestHealthCheckUnhealthy(t *testing.T) {
 	for {
 		select {
 		case <-ctx.Done():
-			t.Fatal("Timeout waiting for task to start")
+			t.Fatal("Timeout waiting for container to start")
 		default:
-			tasks, err := c.ListTasks("", "")
+			containers, err := c.ListContainers("", "")
 			if err != nil {
-				t.Fatalf("Failed to list tasks: %v", err)
+				t.Fatalf("Failed to list containers: %v", err)
 			}
 
-			for _, task := range tasks {
-				if task.ServiceId == service.Id && task.ActualState == "running" {
-					initialTaskID = task.Id
-					goto TaskRunning
+			for _, container := range containers {
+				if container.ServiceId == service.Id && container.ActualState == "running" {
+					initialTaskID = container.Id
+					goto ContainerRunning
 				}
 			}
 
@@ -278,46 +278,46 @@ func TestHealthCheckUnhealthy(t *testing.T) {
 		}
 	}
 
-TaskRunning:
-	t.Logf("Initial task %s is running", initialTaskID)
+ContainerRunning:
+	t.Logf("Initial container %s is running", initialTaskID)
 
-	// Wait for health checks to fail and task to be replaced
+	// Wait for health checks to fail and container to be replaced
 	// Health checks every 5s, 2 retries = ~10-15 seconds to fail
 	// Reconciler runs every 10s, so wait up to 45 seconds
-	t.Log("Waiting for health checks to fail and task to be replaced...")
+	t.Log("Waiting for health checks to fail and container to be replaced...")
 	time.Sleep(45 * time.Second)
 
-	// Check if task was replaced
-	tasks, err := c.ListTasks("", "")
+	// Check if container was replaced
+	containers, err := c.ListContainers("", "")
 	if err != nil {
-		t.Fatalf("Failed to list tasks: %v", err)
+		t.Fatalf("Failed to list containers: %v", err)
 	}
 
-	var failedTaskCount int
-	var newRunningTask *proto.Task
+	var failedContainerCount int
+	var newRunningContainer *proto.Container
 
-	for _, task := range tasks {
-		if task.ServiceId == service.Id {
-			if task.Id == initialTaskID && task.ActualState == "failed" {
-				failedTaskCount++
-				t.Logf("Original task %s marked as failed", task.Id)
+	for _, container := range containers {
+		if container.ServiceId == service.Id {
+			if container.Id == initialTaskID && container.ActualState == "failed" {
+				failedContainerCount++
+				t.Logf("Original container %s marked as failed", container.Id)
 			}
-			if task.Id != initialTaskID && task.ActualState == "running" {
-				newRunningTask = task
-				t.Logf("New replacement task %s is running", task.Id)
+			if container.Id != initialTaskID && container.ActualState == "running" {
+				newRunningContainer = container
+				t.Logf("New replacement container %s is running", container.Id)
 			}
 		}
 	}
 
-	if failedTaskCount == 0 {
-		t.Error("Original task was not marked as failed")
+	if failedContainerCount == 0 {
+		t.Error("Original container was not marked as failed")
 	}
 
-	if newRunningTask != nil {
-		t.Logf("✓ Unhealthy task replacement test passed - task %s replaced unhealthy task %s",
-			newRunningTask.Id, initialTaskID)
+	if newRunningContainer != nil {
+		t.Logf("✓ Unhealthy container replacement test passed - container %s replaced unhealthy container %s",
+			newRunningContainer.Id, initialTaskID)
 	} else {
-		t.Log("⚠ Replacement task not yet running, but original task marked as failed (scheduler will create replacement)")
+		t.Log("⚠ Replacement container not yet running, but original container marked as failed (scheduler will create replacement)")
 	}
 }
 
