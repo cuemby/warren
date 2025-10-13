@@ -1,0 +1,288 @@
+# examples/resource-limits.yaml
+#
+# Resource Limits and Reservations
+#
+# This example demonstrates CPU and memory resource management in Warren.
+# Resource limits prevent containers from consuming excessive resources,
+# while reservations ensure containers get minimum guaranteed resources.
+#
+# Features demonstrated:
+# - CPU limits (shares and CFS quota)
+# - Memory limits (hard caps with OOM killer)
+# - Resource reservations (scheduling guarantees)
+# - Graceful shutdown timeouts
+# - Different resource profiles per service
+#
+# Deploy with:
+#   warren apply -f examples/resource-limits.yaml
+
+---
+# Memory-intensive service (database)
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+spec:
+  image: postgres:15
+  replicas: 1
+  mode: replicated
+
+  ports:
+    - containerPort: 5432
+      hostPort: 5432
+      protocol: tcp
+
+  env:
+    - name: POSTGRES_PASSWORD
+      value: secret
+    - name: POSTGRES_SHARED_BUFFERS
+      value: "512MB"
+
+  volumes:
+    - source: pg-data
+      target: /var/lib/postgresql/data
+
+  # Heavy resource allocation for database
+  resources:
+    limits:
+      # CPU: 2 cores (2048 shares)
+      # 1024 shares = 1 CPU core
+      cpuShares: 2048
+
+      # Memory: 2GB hard limit
+      # Container killed if exceeded (OOM)
+      memoryBytes: 2147483648  # 2 * 1024^3
+
+    reservations:
+      # Guaranteed: 1 core, 1GB
+      # Scheduler ensures node has these resources available
+      cpuShares: 1024
+      memoryBytes: 1073741824  # 1 * 1024^3
+
+  # Graceful shutdown for database
+  stopTimeout: 30  # Wait 30s for graceful stop before SIGKILL
+
+  healthCheck:
+    type: tcp
+    endpoint: localhost:5432
+    interval: 30s
+    timeout: 5s
+    retries: 3
+    startPeriod: 30s
+
+---
+# CPU-intensive service (worker)
+apiVersion: v1
+kind: Service
+metadata:
+  name: worker
+spec:
+  image: my-worker:latest
+  replicas: 4
+  mode: replicated
+
+  env:
+    - name: WORKER_THREADS
+      value: "4"
+
+  # High CPU, moderate memory
+  resources:
+    limits:
+      # CPU: 4 cores
+      cpuShares: 4096
+
+      # Memory: 1GB
+      memoryBytes: 1073741824
+
+    reservations:
+      # Guaranteed: 2 cores, 512MB
+      cpuShares: 2048
+      memoryBytes: 536870912
+
+  # Quick shutdown for workers
+  stopTimeout: 5
+
+  healthCheck:
+    type: exec
+    command: ["/bin/sh", "-c", "pgrep -f worker-process"]
+    interval: 30s
+    timeout: 5s
+    retries: 3
+
+---
+# Lightweight service (web frontend)
+apiVersion: v1
+kind: Service
+metadata:
+  name: web
+spec:
+  image: nginx:alpine
+  replicas: 3
+  mode: replicated
+
+  ports:
+    - containerPort: 80
+      protocol: tcp
+
+  # Minimal resources
+  resources:
+    limits:
+      # CPU: 0.5 cores
+      cpuShares: 512
+
+      # Memory: 128MB
+      memoryBytes: 134217728  # 128 * 1024^2
+
+    reservations:
+      # Guaranteed: 0.25 cores, 64MB
+      cpuShares: 256
+      memoryBytes: 67108864  # 64 * 1024^2
+
+  stopTimeout: 10
+
+  healthCheck:
+    type: http
+    endpoint: http://localhost:80/
+    interval: 30s
+    timeout: 5s
+    retries: 3
+
+---
+# Background service (monitoring agent)
+apiVersion: v1
+kind: Service
+metadata:
+  name: monitor
+spec:
+  image: monitoring-agent:latest
+  # Global mode: one replica per worker node
+  mode: global
+
+  # Very light resources (monitoring shouldn't impact workloads)
+  resources:
+    limits:
+      # CPU: 0.1 cores (100 shares)
+      cpuShares: 100
+
+      # Memory: 64MB
+      memoryBytes: 67108864
+
+    # No reservations - best effort scheduling
+    # Will run on any node with available capacity
+
+  stopTimeout: 5
+
+  healthCheck:
+    type: tcp
+    endpoint: localhost:9090
+    interval: 60s
+    timeout: 5s
+    retries: 3
+
+---
+# Volume definitions
+apiVersion: v1
+kind: Volume
+metadata:
+  name: pg-data
+spec:
+  driver: local
+
+# Resource Concepts:
+#
+# CPU Shares:
+# - Relative weight (not hard limit)
+# - 1024 shares = 1 CPU core worth of weight
+# - Container with 2048 shares gets 2x CPU of container with 1024 shares
+# - Only matters under contention (idle CPU can burst)
+#
+# CPU Quota (future):
+# - Hard limit on CPU usage
+# - cpuQuota: 50000 = 50% of one core (50ms per 100ms period)
+# - Enforced even when CPU is idle
+# - More predictable than shares
+#
+# Memory:
+# - Hard limit (OOM killer enforces)
+# - Container killed if limit exceeded
+# - No sharing or bursting
+# - Set reasonable limits to prevent OOM on node
+#
+# Reservations:
+# - Guarantees for scheduling
+# - Scheduler only places task if node has capacity
+# - Does not enforce limits
+# - Prevents overcommitment
+#
+# Stop Timeout:
+# - Seconds to wait for SIGTERM before SIGKILL
+# - Default: 10 seconds
+# - Databases: 30+ seconds (flush buffers)
+# - Workers: 5-15 seconds (finish tasks)
+# - Stateless web: 10 seconds (drain connections)
+
+# Scheduling Behavior:
+#
+# 1. Scheduler checks node resources:
+#    - Node: 8 CPUs (8192 shares), 16GB RAM
+#    - Allocated: 4096 shares, 8GB RAM
+#    - Available: 4096 shares, 8GB RAM
+#
+# 2. Task requires (reservations):
+#    - CPU: 2048 shares
+#    - Memory: 2GB
+#
+# 3. Node has capacity:
+#    - Available (4096, 8GB) >= Required (2048, 2GB) ✓
+#    - Task scheduled to node
+#
+# 4. Node capacity updated:
+#    - Allocated: 4096 + 2048 = 6144 shares
+#    - Allocated: 8GB + 2GB = 10GB
+#    - Available: 8192 - 6144 = 2048 shares
+#    - Available: 16GB - 10GB = 6GB
+
+# Best Practices:
+#
+# 1. Set limits for all services
+#    - Prevents resource exhaustion
+#    - Enables better scheduling
+#
+# 2. Set reservations for critical services
+#    - Guarantees minimum resources
+#    - Prevents overcommitment
+#
+# 3. Memory limits < Node capacity
+#    - Leave headroom for OS (1-2GB)
+#    - Prevents node OOM
+#
+# 4. Test limits in staging
+#    - Monitor actual usage
+#    - Adjust limits accordingly
+#
+# 5. Use appropriate stop timeouts
+#    - Databases: 30+ seconds
+#    - Stateless apps: 10 seconds
+#    - Background jobs: 60+ seconds
+#
+# 6. Monitor resource usage
+#    - warren node list (see allocations)
+#    - Prometheus metrics
+#    - Container stats
+
+# Monitoring:
+#
+#   # View node resources
+#   warren node list
+#
+#   # Inspect node details
+#   warren node inspect worker-1
+#
+#   # View task resource usage (future)
+#   warren task stats <task-id>
+#
+#   # Prometheus metrics
+#   node_cpu_used{node="worker-1"}
+#   node_memory_used{node="worker-1"}
+#   container_cpu_usage{container="postgres-1"}
+#   container_memory_usage{container="postgres-1"}

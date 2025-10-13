@@ -1,0 +1,182 @@
+# examples/health-checks.yaml
+#
+# Health Check Examples
+#
+# This example demonstrates all three types of health checks in Warren:
+# HTTP, TCP, and Exec probes. Health checks ensure only healthy containers
+# receive traffic and failed containers are automatically replaced.
+#
+# Features demonstrated:
+# - HTTP health checks (web servers, APIs)
+# - TCP health checks (databases, caches)
+# - Exec health checks (custom scripts)
+# - Configurable intervals, timeouts, and retries
+# - Start period for slow-starting containers
+#
+# Deploy with:
+#   warren apply -f examples/health-checks.yaml
+
+---
+# Web server with HTTP health check
+apiVersion: v1
+kind: Service
+metadata:
+  name: web
+spec:
+  image: nginx:latest
+  replicas: 3
+  mode: replicated
+
+  ports:
+    - containerPort: 80
+      protocol: tcp
+      publishMode: host
+
+  # HTTP health check
+  # Sends GET request and expects 200-399 status code
+  healthCheck:
+    type: http
+    endpoint: http://localhost:80/
+    interval: 30s    # Check every 30 seconds
+    timeout: 5s      # Timeout after 5 seconds
+    retries: 3       # Mark unhealthy after 3 consecutive failures
+    startPeriod: 10s # Grace period before starting checks
+
+---
+# PostgreSQL database with TCP health check
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+spec:
+  image: postgres:15
+  replicas: 1
+  mode: replicated
+
+  ports:
+    - containerPort: 5432
+      hostPort: 5432
+      protocol: tcp
+      publishMode: host
+
+  env:
+    - name: POSTGRES_PASSWORD
+      value: secret
+
+  volumes:
+    - source: pg-data
+      target: /var/lib/postgresql/data
+      readOnly: false
+
+  # TCP health check
+  # Attempts TCP connection to port
+  healthCheck:
+    type: tcp
+    endpoint: localhost:5432
+    interval: 30s
+    timeout: 3s
+    retries: 3
+    startPeriod: 30s  # Postgres takes time to initialize
+
+---
+# Application with custom exec health check
+apiVersion: v1
+kind: Service
+metadata:
+  name: app
+spec:
+  image: my-app:latest
+  replicas: 2
+  mode: replicated
+
+  ports:
+    - containerPort: 8080
+      protocol: tcp
+      publishMode: host
+
+  # Exec health check
+  # Runs command inside container, exit 0 = healthy
+  healthCheck:
+    type: exec
+    command:
+      - /bin/sh
+      - -c
+      - |
+        # Custom health check script
+        # Check if app is responding
+        curl -sf http://localhost:8080/health > /dev/null || exit 1
+        # Check if database connection is alive
+        nc -z postgres 5432 || exit 1
+        # All checks passed
+        exit 0
+    interval: 30s
+    timeout: 10s
+    retries: 3
+    startPeriod: 15s
+
+---
+# Volume for PostgreSQL data
+apiVersion: v1
+kind: Volume
+metadata:
+  name: pg-data
+spec:
+  driver: local
+
+# Health Check Behavior:
+#
+# 1. Start Period:
+#    - Grace period after container starts
+#    - Health check failures during this period are ignored
+#    - Allows slow-starting apps to initialize
+#    - Default: 0s (no grace period)
+#
+# 2. Interval:
+#    - Time between health checks
+#    - Lower = faster failure detection, higher overhead
+#    - Higher = slower detection, lower overhead
+#    - Default: 30s
+#
+# 3. Timeout:
+#    - Max time to wait for health check response
+#    - Should be less than interval
+#    - Default: 10s
+#
+# 4. Retries:
+#    - Consecutive failures before marking unhealthy
+#    - Prevents false positives from transient failures
+#    - Default: 3
+#
+# 5. Health States:
+#    - Healthy: N consecutive successes (N = retries)
+#    - Unhealthy: N consecutive failures (N = retries)
+#    - Unknown: During start period or initial checks
+#
+# Automatic Recovery:
+#
+# When a task fails health checks:
+# 1. Task marked as unhealthy in cluster state
+# 2. Ingress controller stops routing traffic to task
+# 3. Reconciler detects unhealthy task (10s loop)
+# 4. New task created on different node (if available)
+# 5. Old task stopped after new task is healthy
+#
+# Monitoring:
+#
+#   # View task health status
+#   warren task list
+#
+#   # Inspect task details
+#   warren task inspect <task-id>
+#
+#   # View health check events
+#   warren logs | grep health
+#
+# Best Practices:
+#
+# 1. Always use health checks for production services
+# 2. Set reasonable timeouts (< 5s for HTTP/TCP)
+# 3. Use startPeriod for slow-starting apps
+# 4. Test health check endpoints work correctly
+# 5. Monitor health check failure rates
+# 6. Use retries >= 3 to avoid false positives

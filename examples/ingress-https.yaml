@@ -1,0 +1,153 @@
+# examples/ingress-https.yaml
+#
+# HTTPS Ingress with Let's Encrypt
+#
+# This example demonstrates automatic HTTPS with Let's Encrypt certificate
+# provisioning. Warren's ingress controller handles certificate requests,
+# challenges, and auto-renewal (30 days before expiry).
+#
+# Features demonstrated:
+# - HTTPS on port 443 with Let's Encrypt
+# - Automatic certificate provisioning
+# - HTTP to HTTPS redirect
+# - Multi-service routing
+# - Path-based routing
+#
+# Prerequisites:
+# - Domain pointing to your Warren cluster
+# - Port 80 accessible for HTTP-01 challenge
+# - Port 443 accessible for HTTPS traffic
+#
+# Deploy with:
+#   warren apply -f examples/ingress-https.yaml
+#
+# Access at:
+#   https://api.example.com
+#   https://api.example.com/docs
+
+---
+# API service
+apiVersion: v1
+kind: Service
+metadata:
+  name: api
+spec:
+  image: my-api:latest
+  replicas: 2
+  mode: replicated
+
+  ports:
+    - name: http
+      containerPort: 8080
+      protocol: tcp
+      publishMode: host
+
+  healthCheck:
+    type: http
+    endpoint: http://localhost:8080/health
+    interval: 30s
+    timeout: 5s
+    retries: 3
+
+  env:
+    - name: PORT
+      value: "8080"
+    - name: ENV
+      value: "production"
+
+  resources:
+    limits:
+      cpuShares: 2048
+      memoryBytes: 1073741824  # 1GB
+
+---
+# Documentation service
+apiVersion: v1
+kind: Service
+metadata:
+  name: docs
+spec:
+  image: my-docs:latest
+  replicas: 1
+  mode: replicated
+
+  ports:
+    - name: http
+      containerPort: 80
+      protocol: tcp
+      publishMode: host
+
+  healthCheck:
+    type: http
+    endpoint: http://localhost:80/
+    interval: 30s
+    timeout: 5s
+    retries: 3
+
+---
+# HTTPS Ingress with Let's Encrypt
+apiVersion: v1
+kind: Ingress
+metadata:
+  name: https-ingress
+spec:
+  rules:
+    # Main API endpoint
+    - host: api.example.com
+      paths:
+        # API routes
+        - path: /api
+          pathType: Prefix
+          serviceName: api
+          servicePort: 8080
+
+        # Documentation routes
+        - path: /docs
+          pathType: Prefix
+          serviceName: docs
+          servicePort: 80
+
+        # Root redirects to docs
+        - path: /
+          pathType: Exact
+          serviceName: docs
+          servicePort: 80
+
+  # TLS configuration with Let's Encrypt
+  tls:
+    # Domains to provision certificates for
+    domains:
+      - api.example.com
+
+    # Enable automatic Let's Encrypt provisioning
+    autoIssue: true
+
+    # Email for Let's Encrypt notifications (renewals, expirations)
+    acmeEmail: admin@example.com
+
+    # Let's Encrypt directory (default: production)
+    # Use "staging" for testing to avoid rate limits
+    # acmeDirectory: staging
+
+# How it works:
+#
+# 1. Warren detects new ingress with autoIssue: true
+# 2. Initiates ACME HTTP-01 challenge with Let's Encrypt
+# 3. Let's Encrypt validates domain ownership via HTTP
+# 4. Certificate issued and stored in BoltDB (Raft replicated)
+# 5. HTTPS server starts on port 8443
+# 6. Certificate auto-renewed 30 days before expiry
+#
+# Certificate status:
+#   warren certificate list
+#   warren certificate inspect api.example.com
+#
+# Manual certificate upload (alternative to Let's Encrypt):
+#   warren certificate create api.example.com --cert cert.pem --key key.pem
+#
+# Troubleshooting:
+# - Ensure DNS points to your server
+# - Check port 80 is accessible (for HTTP-01 challenge)
+# - Check port 443 is accessible (for HTTPS traffic)
+# - Review manager logs for ACME errors
+# - Use acmeDirectory: staging for testing

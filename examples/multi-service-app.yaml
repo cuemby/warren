@@ -1,0 +1,626 @@
+# examples/multi-service-app.yaml
+#
+# Complete 3-Tier Application Stack with Redis Cache
+#
+# This example demonstrates a production-ready, multi-service application
+# architecture using Warren. It includes a web frontend, API backend, PostgreSQL
+# database, and Redis cache layer, all interconnected with proper security,
+# health checks, and resource management.
+#
+# Architecture:
+#
+#   [Internet] --> [Ingress] --> [Web Frontend (React/Vue)]
+#                             --> [API Backend (Node.js/Go)]
+#                                      |
+#                                      +--> [PostgreSQL Database]
+#                                      +--> [Redis Cache]
+#
+# Features demonstrated:
+# - Multi-service deployment (4 services)
+# - Service interconnection and DNS
+# - Secrets for sensitive data (passwords, API keys)
+# - Volumes for data persistence
+# - Health checks for all services
+# - Ingress with path-based routing
+# - Resource limits per service
+# - Graceful shutdown handling
+# - Production best practices
+#
+# Prerequisites:
+# - Warren cluster initialized (warren manager start)
+# - At least 2 worker nodes for HA
+# - Total resources: 8 CPU cores, 8GB RAM, 50GB disk
+#
+# Deploy with:
+#   warren apply -f examples/multi-service-app.yaml
+#
+# Access at:
+#   http://<cluster-ip>:8080        (Web UI)
+#   http://<cluster-ip>:8080/api    (API endpoints)
+#
+# Monitor with:
+#   warren service list
+#   warren task list
+#   warren node list
+
+---
+# ============================================================================
+# SECRETS
+# ============================================================================
+# Store sensitive data encrypted with AES-256-GCM
+# Mounted as tmpfs (memory-only) in containers at /run/secrets/
+
+# Database credentials
+apiVersion: v1
+kind: Secret
+metadata:
+  name: db-password
+spec:
+  type: Opaque
+  # Base64 encoded "postgres_prod_2024_secure!"
+  data: cG9zdGdyZXNfcHJvZF8yMDI0X3NlY3VyZSE=
+
+---
+# Redis password
+apiVersion: v1
+kind: Secret
+metadata:
+  name: redis-password
+spec:
+  type: Opaque
+  # Base64 encoded "redis_cache_key_2024"
+  data: cmVkaXNfY2FjaGVfa2V5XzIwMjQ=
+
+---
+# API secret key for JWT signing
+apiVersion: v1
+kind: Secret
+metadata:
+  name: api-secret-key
+spec:
+  type: Opaque
+  # Base64 encoded 32-byte random key
+  data: YWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXoxMjM0NTY=
+
+---
+# Third-party API keys
+apiVersion: v1
+kind: Secret
+metadata:
+  name: external-api-keys
+spec:
+  type: Opaque
+  # Base64 encoded JSON: {"stripe":"sk_live_xxx","sendgrid":"SG.xxx"}
+  data: eyJzdHJpcGUiOiJza19saXZlX3h4eCIsInNlbmRncmlkIjoiU0cueHh4In0=
+
+---
+# ============================================================================
+# VOLUMES
+# ============================================================================
+# Persistent storage for stateful services
+# Local volumes have node affinity (tasks scheduled to same node)
+
+# PostgreSQL data directory
+apiVersion: v1
+kind: Volume
+metadata:
+  name: postgres-data
+spec:
+  driver: local
+  driverOpts:
+    type: none
+    device: /var/lib/warren/volumes/postgres-data
+    o: bind
+  labels:
+    app: database
+    tier: backend
+
+---
+# Redis data directory (persistence enabled)
+apiVersion: v1
+kind: Volume
+metadata:
+  name: redis-data
+spec:
+  driver: local
+  driverOpts:
+    type: none
+    device: /var/lib/warren/volumes/redis-data
+    o: bind
+  labels:
+    app: cache
+    tier: backend
+
+---
+# Application logs volume (shared across API replicas)
+apiVersion: v1
+kind: Volume
+metadata:
+  name: app-logs
+spec:
+  driver: local
+  driverOpts:
+    type: none
+    device: /var/lib/warren/volumes/app-logs
+    o: bind
+  labels:
+    app: api
+    tier: backend
+
+---
+# ============================================================================
+# DATABASE SERVICE (PostgreSQL)
+# ============================================================================
+# Single replica with persistent storage and health checks
+# Memory-intensive workload with guaranteed resources
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  labels:
+    app: database
+    tier: backend
+    environment: production
+spec:
+  image: postgres:15-alpine
+  replicas: 1
+  mode: replicated
+
+  ports:
+    - name: postgres
+      containerPort: 5432
+      hostPort: 5432
+      protocol: tcp
+      publishMode: host
+
+  # Mount database password as file
+  secrets:
+    - db-password
+
+  # Persistent storage for database files
+  volumes:
+    - source: postgres-data
+      target: /var/lib/postgresql/data
+      readOnly: false
+
+  env:
+    # Database configuration
+    - name: POSTGRES_DB
+      value: myapp_production
+    - name: POSTGRES_USER
+      value: myapp
+    # Read password from secret file
+    - name: POSTGRES_PASSWORD_FILE
+      value: /run/secrets/db-password
+    # Performance tuning
+    - name: POSTGRES_SHARED_BUFFERS
+      value: "512MB"
+    - name: POSTGRES_MAX_CONNECTIONS
+      value: "200"
+    - name: POSTGRES_WORK_MEM
+      value: "4MB"
+
+  # Resource allocation: 2 CPU cores, 2GB RAM
+  resources:
+    limits:
+      cpuShares: 2048      # 2 cores
+      memoryBytes: 2147483648  # 2GB
+    reservations:
+      cpuShares: 1024      # Guaranteed 1 core
+      memoryBytes: 1073741824  # Guaranteed 1GB
+
+  # Graceful shutdown to flush buffers
+  stopTimeout: 30
+
+  # TCP health check on PostgreSQL port
+  healthCheck:
+    type: tcp
+    endpoint: localhost:5432
+    interval: 30s
+    timeout: 5s
+    retries: 3
+    startPeriod: 30s  # Postgres needs time to initialize
+
+---
+# ============================================================================
+# CACHE SERVICE (Redis)
+# ============================================================================
+# Single replica with persistence (RDB snapshots)
+# Low resource footprint with fast access
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+  labels:
+    app: cache
+    tier: backend
+    environment: production
+spec:
+  image: redis:7-alpine
+  replicas: 1
+  mode: replicated
+
+  ports:
+    - name: redis
+      containerPort: 6379
+      protocol: tcp
+
+  secrets:
+    - redis-password
+
+  volumes:
+    - source: redis-data
+      target: /data
+      readOnly: false
+
+  # Redis with password and persistence
+  command:
+    - redis-server
+    - --requirepass
+    - $(cat /run/secrets/redis-password)
+    - --appendonly
+    - "yes"
+    - --maxmemory
+    - "512mb"
+    - --maxmemory-policy
+    - allkeys-lru
+
+  # Light resources: 1 core, 1GB RAM
+  resources:
+    limits:
+      cpuShares: 1024
+      memoryBytes: 1073741824
+    reservations:
+      cpuShares: 512
+      memoryBytes: 536870912
+
+  stopTimeout: 10
+
+  healthCheck:
+    type: tcp
+    endpoint: localhost:6379
+    interval: 30s
+    timeout: 3s
+    retries: 3
+    startPeriod: 10s
+
+---
+# ============================================================================
+# API SERVICE (Backend)
+# ============================================================================
+# Horizontally scaled API layer (3 replicas)
+# Connects to PostgreSQL and Redis
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: api
+  labels:
+    app: backend
+    tier: api
+    environment: production
+spec:
+  image: mycompany/myapp-api:v1.2.3
+  replicas: 3
+  mode: replicated
+
+  ports:
+    - name: http
+      containerPort: 3000
+      protocol: tcp
+      publishMode: host
+
+  # Mount all required secrets
+  secrets:
+    - db-password
+    - redis-password
+    - api-secret-key
+    - external-api-keys
+
+  volumes:
+    - source: app-logs
+      target: /var/log/app
+      readOnly: false
+
+  env:
+    # Server configuration
+    - name: NODE_ENV
+      value: production
+    - name: PORT
+      value: "3000"
+    - name: LOG_LEVEL
+      value: info
+    - name: LOG_DIR
+      value: /var/log/app
+
+    # Database connection
+    - name: DATABASE_HOST
+      value: postgres
+    - name: DATABASE_PORT
+      value: "5432"
+    - name: DATABASE_NAME
+      value: myapp_production
+    - name: DATABASE_USER
+      value: myapp
+    - name: DATABASE_PASSWORD_FILE
+      value: /run/secrets/db-password
+    - name: DATABASE_POOL_SIZE
+      value: "20"
+
+    # Redis connection
+    - name: REDIS_HOST
+      value: redis
+    - name: REDIS_PORT
+      value: "6379"
+    - name: REDIS_PASSWORD_FILE
+      value: /run/secrets/redis-password
+
+    # API configuration
+    - name: JWT_SECRET_FILE
+      value: /run/secrets/api-secret-key
+    - name: EXTERNAL_API_KEYS_FILE
+      value: /run/secrets/external-api-keys
+
+    # Feature flags
+    - name: ENABLE_METRICS
+      value: "true"
+    - name: ENABLE_RATE_LIMITING
+      value: "true"
+
+  # Moderate resources: 1 core, 1GB RAM per replica
+  resources:
+    limits:
+      cpuShares: 1024
+      memoryBytes: 1073741824
+    reservations:
+      cpuShares: 512
+      memoryBytes: 536870912
+
+  stopTimeout: 15  # Finish in-flight requests
+
+  # HTTP health check on /health endpoint
+  healthCheck:
+    type: http
+    endpoint: http://localhost:3000/health
+    interval: 30s
+    timeout: 5s
+    retries: 3
+    startPeriod: 15s  # API needs time to connect to DB/Redis
+
+---
+# ============================================================================
+# WEB SERVICE (Frontend)
+# ============================================================================
+# Static file server with React/Vue app (3 replicas)
+# Lightweight nginx-based service
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: web
+  labels:
+    app: frontend
+    tier: web
+    environment: production
+spec:
+  image: mycompany/myapp-web:v1.2.3
+  replicas: 3
+  mode: replicated
+
+  ports:
+    - name: http
+      containerPort: 80
+      protocol: tcp
+      publishMode: host
+
+  env:
+    # Nginx configuration
+    - name: API_BASE_URL
+      value: http://api:3000
+    - name: ENABLE_GZIP
+      value: "true"
+    - name: CACHE_MAX_AGE
+      value: "3600"
+
+  # Minimal resources: 0.5 cores, 256MB RAM
+  resources:
+    limits:
+      cpuShares: 512
+      memoryBytes: 268435456
+    reservations:
+      cpuShares: 256
+      memoryBytes: 134217728
+
+  stopTimeout: 10
+
+  healthCheck:
+    type: http
+    endpoint: http://localhost:80/
+    interval: 30s
+    timeout: 5s
+    retries: 3
+    startPeriod: 5s
+
+---
+# ============================================================================
+# INGRESS (Load Balancer)
+# ============================================================================
+# Routes external traffic to web and API services
+# Path-based routing with proper request handling
+
+apiVersion: v1
+kind: Ingress
+metadata:
+  name: app-ingress
+  labels:
+    app: ingress
+    environment: production
+spec:
+  rules:
+    # Route all traffic through single entry point
+    - host: myapp.example.com
+      paths:
+        # API routes (prefix matching)
+        - path: /api
+          pathType: Prefix
+          serviceName: api
+          servicePort: 3000
+
+        # Health check endpoint (exact match)
+        - path: /health
+          pathType: Exact
+          serviceName: api
+          servicePort: 3000
+
+        # All other routes go to web frontend (SPA)
+        - path: /
+          pathType: Prefix
+          serviceName: web
+          servicePort: 80
+
+# ============================================================================
+# DEPLOYMENT INSTRUCTIONS
+# ============================================================================
+#
+# 1. Initialize cluster (if not done):
+#    warren manager start --address <manager-ip>
+#
+# 2. Add worker nodes for HA:
+#    # On manager:
+#    warren manager generate-token --role worker
+#
+#    # On each worker:
+#    warren worker start --address <worker-ip> --join-token <token>
+#
+# 3. Apply this configuration:
+#    warren apply -f examples/multi-service-app.yaml
+#
+# 4. Monitor deployment:
+#    warren service list
+#    warren task list
+#
+# 5. Wait for all services to be healthy:
+#    # All tasks should show "running" with healthy status
+#    watch warren task list
+#
+# 6. Test the application:
+#    # Get cluster IP
+#    warren node list
+#
+#    # Access web UI
+#    curl http://<node-ip>:8080
+#
+#    # Test API
+#    curl http://<node-ip>:8080/api/health
+#
+# ============================================================================
+# SCALING OPERATIONS
+# ============================================================================
+#
+# Scale API backend:
+#   warren service update api --replicas 5
+#
+# Scale web frontend:
+#   warren service update web --replicas 5
+#
+# Scale down:
+#   warren service update api --replicas 2
+#
+# ============================================================================
+# MONITORING
+# ============================================================================
+#
+# Check service status:
+#   warren service list
+#   warren service inspect api
+#
+# Check task health:
+#   warren task list
+#   warren task inspect <task-id>
+#
+# View logs:
+#   warren logs api
+#   warren logs postgres
+#
+# Check resource usage:
+#   warren node list
+#   warren node inspect <node-id>
+#
+# ============================================================================
+# TROUBLESHOOTING
+# ============================================================================
+#
+# API can't connect to database:
+#   1. Check postgres is running: warren task list | grep postgres
+#   2. Check health: warren task inspect <postgres-task-id>
+#   3. Verify network: warren service inspect postgres
+#   4. Check logs: warren logs postgres
+#
+# Redis connection errors:
+#   1. Verify redis is running: warren task list | grep redis
+#   2. Check password secret: warren secret list
+#   3. Review logs: warren logs redis
+#
+# Web frontend not loading:
+#   1. Check ingress: warren service inspect app-ingress
+#   2. Verify web tasks: warren task list | grep web
+#   3. Test direct connection: curl http://<node-ip>:<web-port>
+#
+# Out of resources:
+#   1. Check node capacity: warren node list
+#   2. Review resource limits: warren service inspect <service>
+#   3. Add more workers or reduce limits
+#
+# ============================================================================
+# PRODUCTION BEST PRACTICES
+# ============================================================================
+#
+# 1. High Availability:
+#    - Run 3+ manager nodes (Raft quorum)
+#    - Deploy 2+ worker nodes
+#    - Use replicas >= 2 for stateless services
+#    - Consider read replicas for database
+#
+# 2. Security:
+#    - Use secrets for all sensitive data
+#    - Enable TLS for ingress (see ingress-https.yaml)
+#    - Rotate secrets regularly
+#    - Use network policies (future feature)
+#
+# 3. Resource Management:
+#    - Set limits on all services
+#    - Use reservations for critical services
+#    - Monitor resource usage regularly
+#    - Leave headroom for system overhead
+#
+# 4. Data Management:
+#    - Backup volumes regularly (postgres-data, redis-data)
+#    - Test restore procedures
+#    - Monitor disk usage
+#    - Use remote storage for production (NFS, S3)
+#
+# 5. Monitoring & Observability:
+#    - Enable health checks on all services
+#    - Collect metrics (Prometheus)
+#    - Aggregate logs (ELK, Loki)
+#    - Set up alerting (critical services down)
+#
+# 6. Deployment Strategy:
+#    - Use rolling updates for zero-downtime
+#    - Test in staging first
+#    - Tag images with semantic versions
+#    - Keep rollback versions available
+#
+# 7. Performance:
+#    - Use Redis for frequently accessed data
+#    - Enable database connection pooling
+#    - Compress HTTP responses
+#    - Cache static assets
+#
+# 8. Documentation:
+#    - Document all environment variables
+#    - Maintain runbook for common issues
+#    - Keep architecture diagrams up to date
+#    - Document scaling procedures

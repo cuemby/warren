@@ -1,0 +1,675 @@
+# examples/ha-cluster.yaml
+#
+# High Availability Cluster Setup Guide
+#
+# This file provides comprehensive instructions and best practices for setting
+# up a production-grade, highly available Warren cluster. It covers multi-manager
+# Raft consensus, worker node scaling, network configuration, security hardening,
+# monitoring, backup procedures, and disaster recovery.
+#
+# NOTE: This is primarily a documentation file with configuration examples.
+# Most steps are executed via CLI commands, not YAML application.
+#
+# Target Architecture:
+#
+#   ┌─────────────────────────────────────────────────────────────┐
+#   │                     Load Balancer (Optional)                │
+#   │                    Round-robin to managers                  │
+#   └─────────────────────────────────────────────────────────────┘
+#                               │
+#           ┌───────────────────┼───────────────────┐
+#           │                   │                   │
+#   ┌───────▼──────┐    ┌──────▼──────┐    ┌──────▼──────┐
+#   │  Manager 1   │◄──►│  Manager 2  │◄──►│  Manager 3  │
+#   │   (Leader)   │    │ (Follower)  │    │ (Follower)  │
+#   └──────┬───────┘    └──────┬──────┘    └──────┬──────┘
+#          │                   │                   │
+#          │         Raft Consensus (Quorum)       │
+#          │                                        │
+#   ┌──────▼────────────────────────────────────────▼──────┐
+#   │                                                       │
+#   │  ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐│
+#   │  │Worker 1 │  │Worker 2 │  │Worker 3 │  │Worker N ││
+#   │  │ (Tasks) │  │ (Tasks) │  │ (Tasks) │  │ (Tasks) ││
+#   │  └─────────┘  └─────────┘  └─────────┘  └─────────┘│
+#   │                                                       │
+#   └───────────────────────────────────────────────────────┘
+#
+# Why High Availability?
+#
+# 1. **Fault Tolerance**: Cluster continues operating if manager fails
+# 2. **Zero Downtime**: Rolling updates without service interruption
+# 3. **Data Durability**: Raft replicates state across all managers
+# 4. **Automatic Failover**: New leader elected within seconds
+# 5. **Split-Brain Prevention**: Quorum ensures consistency
+#
+# Quorum Requirements:
+#
+# | Managers | Quorum | Max Failures |
+# |----------|--------|--------------|
+# |    1     |   1    |      0       |  (NOT HA)
+# |    3     |   2    |      1       |  ✓ Recommended
+# |    5     |   3    |      2       |  ✓ High paranoia
+# |    7     |   4    |      3       |  (Rarely needed)
+#
+# Best Practice: Use 3 managers for most production workloads
+
+---
+# ============================================================================
+# STEP 1: INFRASTRUCTURE REQUIREMENTS
+# ============================================================================
+#
+# Hardware Requirements (per node):
+#
+# Manager Nodes (minimum 3):
+#   CPU:     2+ cores (4 cores recommended)
+#   RAM:     4GB minimum (8GB recommended)
+#   Disk:    20GB SSD (low latency critical for Raft)
+#   Network: 1Gbps, <10ms latency between managers
+#
+# Worker Nodes (minimum 2):
+#   CPU:     4+ cores (depends on workload)
+#   RAM:     8GB minimum (depends on workload)
+#   Disk:    50GB+ (depends on volumes)
+#   Network: 1Gbps
+#
+# Network Requirements:
+#
+# Ports (all nodes):
+#   2377/tcp   - gRPC API, manager-to-manager Raft
+#   8443/tcp   - Ingress HTTPS (if using TLS)
+#   8080/tcp   - Ingress HTTP
+#   4789/udp   - Overlay network VXLAN (future)
+#
+# Firewall Rules:
+#   Manager to Manager: 2377/tcp (bidirectional)
+#   Worker to Manager:  2377/tcp (outbound only)
+#   Internet to Ingress: 80/tcp, 443/tcp
+#
+# DNS/Hostnames:
+#   manager1.example.com -> 10.0.1.10
+#   manager2.example.com -> 10.0.1.11
+#   manager3.example.com -> 10.0.1.12
+#   worker1.example.com  -> 10.0.2.10
+#   worker2.example.com  -> 10.0.2.11
+
+---
+# ============================================================================
+# STEP 2: INITIALIZE FIRST MANAGER
+# ============================================================================
+#
+# On manager1.example.com (10.0.1.10):
+
+# Install Warren (see docs/getting-started.md)
+# wget https://github.com/cuemby/warren/releases/download/v0.1.0/warren-linux-amd64
+# chmod +x warren-linux-amd64
+# sudo mv warren-linux-amd64 /usr/local/bin/warren
+
+# Initialize cluster as first manager
+# warren manager start --address 10.0.1.10
+#
+# Output:
+# Manager node initialized successfully
+# Node ID: mgr-abc123def456
+# Cluster ID: cluster-xyz789
+# Raft port: 2377
+# API port: 2377
+#
+# To add more managers, run:
+#   warren manager generate-token --role manager
+#
+# To add workers, run:
+#   warren manager generate-token --role worker
+
+---
+# ============================================================================
+# STEP 3: ADD ADDITIONAL MANAGERS (FOR QUORUM)
+# ============================================================================
+#
+# On manager1 (already initialized):
+
+# Generate manager join token
+# warren manager generate-token --role manager
+#
+# Output:
+# Join token: WMGR-1-abc123def456-cluster-xyz789
+# Valid for: 24 hours
+# Use this token to join additional managers
+
+# On manager2.example.com (10.0.1.11):
+
+# Join cluster as manager
+# warren manager start --address 10.0.1.11 \
+#   --join-token WMGR-1-abc123def456-cluster-xyz789 \
+#   --manager-address 10.0.1.10:2377
+#
+# Output:
+# Joining cluster as manager...
+# Connected to cluster: cluster-xyz789
+# Node ID: mgr-def789ghi012
+# Manager added successfully
+# Raft cluster: [10.0.1.10:2377, 10.0.1.11:2377]
+
+# On manager3.example.com (10.0.1.12):
+
+# Join cluster as manager
+# warren manager start --address 10.0.1.12 \
+#   --join-token WMGR-1-abc123def456-cluster-xyz789 \
+#   --manager-address 10.0.1.10:2377
+#
+# Output:
+# Joining cluster as manager...
+# Connected to cluster: cluster-xyz789
+# Node ID: mgr-ghi345jkl678
+# Manager added successfully
+# Raft cluster: [10.0.1.10:2377, 10.0.1.11:2377, 10.0.1.12:2377]
+
+# Verify cluster status (on any manager):
+# warren node list
+#
+# Expected output:
+# ID              ROLE      STATUS    ADDRESS      CPU    MEMORY    TASKS
+# mgr-abc123...   manager   ready     10.0.1.10    2/4    2GB/8GB   0
+# mgr-def789...   manager   ready     10.0.1.11    2/4    2GB/8GB   0
+# mgr-ghi345...   manager   ready     10.0.1.12    2/4    2GB/8GB   0
+
+---
+# ============================================================================
+# STEP 4: ADD WORKER NODES
+# ============================================================================
+#
+# On any manager:
+
+# Generate worker join token
+# warren manager generate-token --role worker
+#
+# Output:
+# Join token: WWKR-1-xyz789abc123-cluster-xyz789
+# Valid for: 24 hours
+
+# On worker1.example.com (10.0.2.10):
+
+# Join as worker
+# warren worker start --address 10.0.2.10 \
+#   --join-token WWKR-1-xyz789abc123-cluster-xyz789 \
+#   --manager-address 10.0.1.10:2377
+#
+# Output:
+# Joining cluster as worker...
+# Connected to manager: 10.0.1.10:2377
+# Node ID: wkr-mno901pqr234
+# Worker started successfully
+# Heartbeat interval: 5s
+
+# On worker2.example.com (10.0.2.11):
+
+# Join as worker
+# warren worker start --address 10.0.2.11 \
+#   --join-token WWKR-1-xyz789abc123-cluster-xyz789 \
+#   --manager-address 10.0.1.10:2377
+
+# Verify all nodes (on any manager):
+# warren node list
+#
+# Expected output:
+# ID              ROLE      STATUS    ADDRESS      CPU     MEMORY     TASKS
+# mgr-abc123...   manager   ready     10.0.1.10    2/4     2GB/8GB    0
+# mgr-def789...   manager   ready     10.0.1.11    2/4     2GB/8GB    0
+# mgr-ghi345...   manager   ready     10.0.1.12    2/4     2GB/8GB    0
+# wkr-mno901...   worker    ready     10.0.2.10    4/16    8GB/32GB   0
+# wkr-pqr234...   worker    ready     10.0.2.11    4/16    8GB/32GB   0
+
+---
+# ============================================================================
+# STEP 5: DEPLOY PRODUCTION SERVICES
+# ============================================================================
+#
+# See multi-service-app.yaml for complete example
+# Key considerations for HA:
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: production-api
+spec:
+  image: myapp:v1.0.0
+  # Multiple replicas for high availability
+  replicas: 3
+  mode: replicated
+
+  ports:
+    - containerPort: 8080
+      protocol: tcp
+
+  # Health checks ensure only healthy tasks receive traffic
+  healthCheck:
+    type: http
+    endpoint: http://localhost:8080/health
+    interval: 30s
+    timeout: 5s
+    retries: 3
+    startPeriod: 15s
+
+  # Resource limits prevent one service from starving others
+  resources:
+    limits:
+      cpuShares: 2048
+      memoryBytes: 2147483648
+    reservations:
+      cpuShares: 1024
+      memoryBytes: 1073741824
+
+  # Graceful shutdown to finish in-flight requests
+  stopTimeout: 15
+
+  # Anti-affinity to spread replicas across nodes (future)
+  # placement:
+  #   constraints:
+  #     - node.role == worker
+  #   preferences:
+  #     - spread: node.id
+
+---
+# ============================================================================
+# STEP 6: CONFIGURE LOAD BALANCING (OPTIONAL)
+# ============================================================================
+#
+# For production, use external load balancer to distribute API traffic
+# across all manager nodes:
+#
+# HAProxy example (/etc/haproxy/haproxy.cfg):
+#
+# frontend warren_api
+#     bind *:2377
+#     mode tcp
+#     default_backend warren_managers
+#
+# backend warren_managers
+#     mode tcp
+#     balance roundrobin
+#     option tcp-check
+#     server manager1 10.0.1.10:2377 check
+#     server manager2 10.0.1.11:2377 check
+#     server manager3 10.0.1.12:2377 check
+#
+# Nginx TCP load balancing example:
+#
+# stream {
+#     upstream warren_managers {
+#         server 10.0.1.10:2377;
+#         server 10.0.1.11:2377;
+#         server 10.0.1.12:2377;
+#     }
+#
+#     server {
+#         listen 2377;
+#         proxy_pass warren_managers;
+#     }
+# }
+#
+# Then configure CLI to use load balancer:
+# export WARREN_MANAGER=lb.example.com:2377
+# warren service list
+
+---
+# ============================================================================
+# STEP 7: MONITORING SETUP
+# ============================================================================
+#
+# Warren exposes Prometheus metrics on each node
+# Recommended monitoring stack:
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus
+spec:
+  image: prom/prometheus:latest
+  replicas: 1
+  mode: replicated
+
+  ports:
+    - containerPort: 9090
+      hostPort: 9090
+      protocol: tcp
+
+  volumes:
+    - source: prometheus-data
+      target: /prometheus
+      readOnly: false
+
+  # Scrape all Warren nodes
+  # prometheus.yml configuration:
+  #
+  # scrape_configs:
+  #   - job_name: 'warren-managers'
+  #     static_configs:
+  #       - targets:
+  #         - '10.0.1.10:2377'
+  #         - '10.0.1.11:2377'
+  #         - '10.0.1.12:2377'
+  #
+  #   - job_name: 'warren-workers'
+  #     static_configs:
+  #       - targets:
+  #         - '10.0.2.10:2377'
+  #         - '10.0.2.11:2377'
+
+---
+apiVersion: v1
+kind: Volume
+metadata:
+  name: prometheus-data
+spec:
+  driver: local
+
+---
+# Grafana for visualization
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana
+spec:
+  image: grafana/grafana:latest
+  replicas: 1
+  mode: replicated
+
+  ports:
+    - containerPort: 3000
+      hostPort: 3000
+      protocol: tcp
+
+  volumes:
+    - source: grafana-data
+      target: /var/lib/grafana
+      readOnly: false
+
+  env:
+    - name: GF_SECURITY_ADMIN_PASSWORD
+      value: changeme
+
+---
+apiVersion: v1
+kind: Volume
+metadata:
+  name: grafana-data
+spec:
+  driver: local
+
+---
+# Key Metrics to Monitor:
+#
+# Raft Health:
+#   - raft_leader_election_count (should be 0 for stable cluster)
+#   - raft_commit_latency_ms (should be <10ms)
+#   - raft_log_entries (grows over time)
+#
+# Node Health:
+#   - node_status (1=ready, 0=down)
+#   - node_cpu_available
+#   - node_memory_available
+#   - node_heartbeat_lag_ms
+#
+# Service Health:
+#   - service_desired_replicas
+#   - service_running_replicas
+#   - task_health_status
+#   - task_restart_count
+#
+# Resource Usage:
+#   - container_cpu_usage_percent
+#   - container_memory_usage_bytes
+#   - node_disk_usage_percent
+
+---
+# ============================================================================
+# STEP 8: BACKUP PROCEDURES
+# ============================================================================
+#
+# Backup Raft data (BoltDB) from any manager:
+
+#!/bin/bash
+# backup-warren.sh
+#
+# BACKUP_DIR="/var/backups/warren"
+# DATE=$(date +%Y%m%d_%H%M%S)
+# MANAGER_DATA="/var/lib/warren"
+#
+# # Create backup directory
+# mkdir -p $BACKUP_DIR
+#
+# # Stop warren manager (or take snapshot while running)
+# systemctl stop warren-manager
+#
+# # Backup BoltDB
+# cp $MANAGER_DATA/raft.db $BACKUP_DIR/raft-$DATE.db
+#
+# # Backup cluster config
+# cp -r $MANAGER_DATA/config $BACKUP_DIR/config-$DATE
+#
+# # Start warren manager
+# systemctl start warren-manager
+#
+# # Compress backup
+# tar czf $BACKUP_DIR/warren-backup-$DATE.tar.gz \
+#     $BACKUP_DIR/raft-$DATE.db \
+#     $BACKUP_DIR/config-$DATE
+#
+# # Upload to S3 (optional)
+# aws s3 cp $BACKUP_DIR/warren-backup-$DATE.tar.gz \
+#     s3://my-backups/warren/
+#
+# # Clean up old backups (keep last 30 days)
+# find $BACKUP_DIR -name "warren-backup-*.tar.gz" -mtime +30 -delete
+
+# Restore from backup:
+#
+# systemctl stop warren-manager
+# tar xzf /var/backups/warren/warren-backup-20250113.tar.gz -C /var/lib/warren
+# systemctl start warren-manager
+# warren node list  # Verify restore
+
+# Backup volumes (application data):
+#
+# for volume in postgres-data redis-data app-logs; do
+#   tar czf /var/backups/volumes/$volume-$DATE.tar.gz \
+#       /var/lib/warren/volumes/$volume
+# done
+
+---
+# ============================================================================
+# STEP 9: DISASTER RECOVERY
+# ============================================================================
+#
+# Scenario 1: Single Manager Failure
+#
+# Impact: None (if 3+ managers). Raft automatically elects new leader.
+# Recovery: Start failed manager or add new one with join token
+#
+# Steps:
+#   1. Verify cluster has quorum: warren node list
+#   2. Remove failed node: warren node remove <node-id>
+#   3. Add new manager: warren manager start --join-token ...
+#
+# Scenario 2: Majority Manager Failure (Lost Quorum)
+#
+# Impact: Cluster read-only, no new tasks scheduled
+# Recovery: Restore majority of managers from backup
+#
+# Steps:
+#   1. Restore Raft DB on 2+ managers
+#   2. Start managers
+#   3. Verify quorum: warren node list
+#   4. Resume operations
+#
+# Scenario 3: Worker Node Failure
+#
+# Impact: Tasks rescheduled to other workers automatically
+# Recovery: Add new worker or restart failed worker
+#
+# Steps:
+#   1. Warren detects failure (missed heartbeats)
+#   2. Reconciler reschedules tasks to healthy workers
+#   3. Optional: Remove failed worker: warren node remove <node-id>
+#
+# Scenario 4: Network Partition
+#
+# Impact: Split-brain prevented by Raft quorum
+# Recovery: Restore network connectivity
+#
+# Majority partition (2/3 managers): Continues operating
+# Minority partition (1/3 managers): Read-only, no updates
+#
+# Scenario 5: Complete Cluster Failure
+#
+# Recovery: Rebuild from backups
+#
+# Steps:
+#   1. Restore Raft DB backup
+#   2. Initialize first manager with restored data
+#   3. Add remaining managers
+#   4. Add workers
+#   5. Verify services: warren service list
+#   6. Restore volume data from backups
+
+---
+# ============================================================================
+# STEP 10: SECURITY HARDENING
+# ============================================================================
+#
+# TLS/mTLS for API (M6+):
+#
+# Warren uses mTLS for all gRPC communication
+# Certificates auto-generated during cluster init
+#
+# Certificate locations:
+#   /var/lib/warren/certs/ca.pem       (Cluster CA)
+#   /var/lib/warren/certs/server.pem   (Manager cert)
+#   /var/lib/warren/certs/server-key.pem (Manager key)
+#
+# Rotate certificates:
+#   warren certificate rotate --node <node-id>
+#
+# Firewall rules (iptables):
+#
+# # Allow manager-to-manager
+# iptables -A INPUT -p tcp --dport 2377 -s 10.0.1.0/24 -j ACCEPT
+#
+# # Allow worker-to-manager
+# iptables -A INPUT -p tcp --dport 2377 -s 10.0.2.0/24 -j ACCEPT
+#
+# # Deny all other 2377
+# iptables -A INPUT -p tcp --dport 2377 -j DROP
+#
+# Secret rotation:
+#
+# # Create new secret
+# echo -n "new_password" | warren secret create db-password-v2 -
+#
+# # Update service to use new secret
+# warren service update myapp --secret-rm db-password --secret-add db-password-v2
+#
+# # Delete old secret
+# warren secret delete db-password
+#
+# OS hardening:
+#   - Disable root SSH
+#   - Use SSH key authentication
+#   - Enable automatic security updates
+#   - Run CIS benchmark scans
+#   - Enable audit logging
+
+---
+# ============================================================================
+# PRODUCTION BEST PRACTICES
+# ============================================================================
+#
+# 1. Capacity Planning:
+#    - Always maintain N+1 capacity (handle 1 node failure)
+#    - Monitor resource usage, add nodes at 70% utilization
+#    - Plan for peak load (2-3x average)
+#
+# 2. Deployment Strategy:
+#    - Use blue-green or canary deployments
+#    - Test in staging environment first
+#    - Roll back immediately if errors increase
+#    - Keep previous image version available
+#
+# 3. Monitoring & Alerting:
+#    - Alert on: manager down, worker down, service unhealthy
+#    - Monitor: CPU, memory, disk, network, task health
+#    - Set up PagerDuty/Opsgenie for critical alerts
+#    - Review metrics weekly
+#
+# 4. Backup & Recovery:
+#    - Automated daily backups
+#    - Test restore procedures monthly
+#    - Store backups off-site (S3, GCS)
+#    - Document recovery runbook
+#
+# 5. Documentation:
+#    - Maintain network diagram
+#    - Document all services and dependencies
+#    - Keep runbook for common issues
+#    - Record all production changes
+#
+# 6. Access Control:
+#    - Limit SSH access to managers
+#    - Use bastion host for production access
+#    - Audit all admin actions
+#    - Rotate credentials regularly
+#
+# 7. Change Management:
+#    - Schedule maintenance windows
+#    - Notify stakeholders of changes
+#    - Have rollback plan for all changes
+#    - Post-mortem for incidents
+#
+# 8. Testing:
+#    - Load test before production launch
+#    - Chaos engineering (kill random nodes)
+#    - Disaster recovery drills quarterly
+#    - Upgrade testing in staging
+#
+# ============================================================================
+# SCALING OPERATIONS
+# ============================================================================
+#
+# Scale horizontally (add nodes):
+#   warren manager generate-token --role worker
+#   # On new node: warren worker start ...
+#
+# Scale vertically (upgrade hardware):
+#   1. Drain node: warren node drain <node-id>
+#   2. Wait for tasks to migrate
+#   3. Stop warren: systemctl stop warren-worker
+#   4. Upgrade hardware
+#   5. Start warren: systemctl start warren-worker
+#   6. Undrain: warren node undrain <node-id>
+#
+# Scale services:
+#   warren service update api --replicas 10
+#
+# Auto-scaling (future):
+#   - Monitor CPU/memory via Prometheus
+#   - Trigger scale up/down via API
+#   - Use Kubernetes HPA-like logic
+#
+# ============================================================================
+# ADDITIONAL RESOURCES
+# ============================================================================
+#
+# Documentation:
+#   - Warren docs: https://github.com/cuemby/warren/tree/main/docs
+#   - Getting started: docs/getting-started.md
+#   - Troubleshooting: docs/troubleshooting.md
+#   - HA concepts: docs/concepts/ha-architecture.md
+#
+# Community:
+#   - GitHub Issues: https://github.com/cuemby/warren/issues
+#   - Discussions: https://github.com/cuemby/warren/discussions
+#
+# Related Projects:
+#   - Docker Swarm (inspiration)
+#   - Kubernetes (alternative)
+#   - Nomad (alternative)

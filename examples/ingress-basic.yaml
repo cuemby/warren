@@ -1,0 +1,92 @@
+# examples/ingress-basic.yaml
+#
+# Basic HTTP Ingress Example
+#
+# This example demonstrates simple HTTP routing to a backend service.
+# Perfect for getting started with Warren's built-in ingress controller.
+#
+# Features demonstrated:
+# - HTTP service on port 80
+# - Simple host-based routing
+# - Health checks for automatic failover
+# - Multiple replicas with load balancing
+#
+# Deploy with:
+#   warren apply -f examples/ingress-basic.yaml
+#
+# Access at:
+#   curl http://myapp.local
+#   curl -H "Host: myapp.local" http://localhost:8000
+
+---
+# Backend service
+apiVersion: v1
+kind: Service
+metadata:
+  name: web
+spec:
+  image: nginx:latest
+  replicas: 3
+  mode: replicated
+
+  # Container port
+  ports:
+    - name: http
+      containerPort: 80
+      hostPort: 0  # Auto-assign (not published externally)
+      protocol: tcp
+      publishMode: host
+
+  # Health check ensures only healthy replicas receive traffic
+  healthCheck:
+    type: http
+    endpoint: http://localhost:80/
+    interval: 30s
+    timeout: 5s
+    retries: 3
+
+  # Environment variables
+  env:
+    - name: NGINX_PORT
+      value: "80"
+    - name: ENV
+      value: "production"
+
+  # Resource limits
+  resources:
+    limits:
+      cpuShares: 1024      # 1 CPU
+      memoryBytes: 536870912  # 512MB
+    reservations:
+      cpuShares: 512       # 0.5 CPU
+      memoryBytes: 268435456  # 256MB
+
+  # Restart policy
+  restartPolicy:
+    condition: on-failure
+    maxAttempts: 3
+    delay: 5s
+
+---
+# HTTP Ingress (no TLS)
+apiVersion: v1
+kind: Ingress
+metadata:
+  name: web-ingress
+spec:
+  rules:
+    # Route requests for myapp.local to web service
+    - host: myapp.local
+      paths:
+        - path: /
+          pathType: Prefix
+          serviceName: web
+          servicePort: 80
+
+# Notes:
+#
+# 1. The ingress controller runs on port 8000 (HTTP)
+# 2. Add "127.0.0.1 myapp.local" to /etc/hosts for local testing
+# 3. Requests are load balanced across all 3 replicas
+# 4. Unhealthy replicas are automatically excluded from routing
+# 5. For HTTPS, see examples/ingress-https.yaml

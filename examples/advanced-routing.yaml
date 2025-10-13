@@ -1,0 +1,865 @@
+# examples/advanced-routing.yaml
+#
+# Advanced Ingress Routing and Middleware
+#
+# This example demonstrates Warren's advanced ingress capabilities including
+# rate limiting, IP filtering, header manipulation, path rewriting, TLS with
+# multiple domains, and comprehensive middleware configurations for production
+# environments.
+#
+# Features demonstrated:
+# - Multiple domains with TLS (Let's Encrypt)
+# - Path-based routing with regex support
+# - Rate limiting per endpoint
+# - IP whitelist/blacklist
+# - Header manipulation (add, modify, remove)
+# - Path rewriting and redirects
+# - CORS configuration
+# - Request/response middleware
+# - Circuit breaking (future)
+# - Sticky sessions (future)
+#
+# Architecture:
+#
+#   Internet --> [Ingress :443]
+#                    |
+#        +-----------+-----------+-----------+
+#        |           |           |           |
+#    [api.com]  [admin.com]  [cdn.com]  [*.app.com]
+#        |           |           |           |
+#     [API svc]  [Admin svc] [Static svc] [User svc]
+#
+# Prerequisites:
+# - DNS A records pointing to your cluster
+# - Port 80 accessible (HTTP-01 challenge)
+# - Port 443 accessible (HTTPS traffic)
+#
+# Deploy with:
+#   warren apply -f examples/advanced-routing.yaml
+
+---
+# ============================================================================
+# BACKEND SERVICES
+# ============================================================================
+
+# Public API service (high traffic, rate limited)
+apiVersion: v1
+kind: Service
+metadata:
+  name: api
+  labels:
+    tier: api
+    access: public
+spec:
+  image: myapp/api:v2.0.0
+  replicas: 5
+  mode: replicated
+
+  ports:
+    - name: http
+      containerPort: 8080
+      protocol: tcp
+
+  env:
+    - name: API_VERSION
+      value: "v2"
+    - name: RATE_LIMIT_ENABLED
+      value: "false"  # Ingress handles rate limiting
+
+  resources:
+    limits:
+      cpuShares: 2048
+      memoryBytes: 2147483648
+    reservations:
+      cpuShares: 1024
+      memoryBytes: 1073741824
+
+  healthCheck:
+    type: http
+    endpoint: http://localhost:8080/health
+    interval: 30s
+    timeout: 5s
+    retries: 3
+    startPeriod: 15s
+
+---
+# Admin dashboard service (restricted access)
+apiVersion: v1
+kind: Service
+metadata:
+  name: admin
+  labels:
+    tier: admin
+    access: restricted
+spec:
+  image: myapp/admin:v1.5.0
+  replicas: 2
+  mode: replicated
+
+  ports:
+    - name: http
+      containerPort: 3000
+      protocol: tcp
+
+  env:
+    - name: ADMIN_MODE
+      value: "true"
+    - name: SESSION_TIMEOUT
+      value: "3600"
+
+  resources:
+    limits:
+      cpuShares: 1024
+      memoryBytes: 1073741824
+
+  healthCheck:
+    type: http
+    endpoint: http://localhost:3000/health
+    interval: 30s
+    timeout: 5s
+    retries: 3
+
+---
+# Static asset CDN service (very high traffic, aggressive caching)
+apiVersion: v1
+kind: Service
+metadata:
+  name: static
+  labels:
+    tier: cdn
+    access: public
+spec:
+  image: nginx:alpine
+  replicas: 3
+  mode: replicated
+
+  ports:
+    - name: http
+      containerPort: 80
+      protocol: tcp
+
+  volumes:
+    - source: static-assets
+      target: /usr/share/nginx/html
+      readOnly: true
+
+  resources:
+    limits:
+      cpuShares: 512
+      memoryBytes: 268435456
+
+  healthCheck:
+    type: http
+    endpoint: http://localhost:80/health.html
+    interval: 30s
+    timeout: 3s
+    retries: 3
+
+---
+# User-specific application (multi-tenant)
+apiVersion: v1
+kind: Service
+metadata:
+  name: user-app
+  labels:
+    tier: app
+    access: authenticated
+spec:
+  image: myapp/user-app:v1.8.0
+  replicas: 4
+  mode: replicated
+
+  ports:
+    - name: http
+      containerPort: 9000
+      protocol: tcp
+
+  env:
+    - name: MULTI_TENANT
+      value: "true"
+
+  resources:
+    limits:
+      cpuShares: 1024
+      memoryBytes: 1073741824
+
+  healthCheck:
+    type: http
+    endpoint: http://localhost:9000/health
+    interval: 30s
+    timeout: 5s
+    retries: 3
+
+---
+# WebSocket service (long-lived connections)
+apiVersion: v1
+kind: Service
+metadata:
+  name: websocket
+  labels:
+    tier: realtime
+    access: public
+spec:
+  image: myapp/websocket:v1.2.0
+  replicas: 3
+  mode: replicated
+
+  ports:
+    - name: ws
+      containerPort: 8081
+      protocol: tcp
+
+  env:
+    - name: WS_TIMEOUT
+      value: "3600"
+
+  resources:
+    limits:
+      cpuShares: 1024
+      memoryBytes: 536870912
+
+  healthCheck:
+    type: tcp
+    endpoint: localhost:8081
+    interval: 30s
+    timeout: 5s
+    retries: 3
+
+---
+# Volume for static assets
+apiVersion: v1
+kind: Volume
+metadata:
+  name: static-assets
+spec:
+  driver: local
+
+---
+# ============================================================================
+# ADVANCED INGRESS CONFIGURATION
+# ============================================================================
+
+apiVersion: v1
+kind: Ingress
+metadata:
+  name: advanced-ingress
+  labels:
+    environment: production
+  annotations:
+    # Global middleware settings
+    warren.io/enable-access-logs: "true"
+    warren.io/compression: "gzip"
+    warren.io/compression-level: "6"
+spec:
+  # ========================================================================
+  # RULE 1: Public API (api.example.com)
+  # ========================================================================
+  rules:
+    - host: api.example.com
+      # Middleware configuration for this host
+      middleware:
+        # Rate limiting: prevent abuse
+        rateLimit:
+          enabled: true
+          # Requests per second per IP
+          requestsPerSecond: 100
+          # Burst capacity
+          burst: 200
+          # Key for rate limiting (IP, header, cookie)
+          key: $remote_addr
+
+        # CORS configuration
+        cors:
+          enabled: true
+          allowOrigins:
+            - "https://app.example.com"
+            - "https://admin.example.com"
+          allowMethods:
+            - GET
+            - POST
+            - PUT
+            - DELETE
+            - OPTIONS
+          allowHeaders:
+            - Authorization
+            - Content-Type
+            - X-Request-ID
+          allowCredentials: true
+          maxAge: 3600
+
+        # Add security headers
+        headers:
+          add:
+            X-Content-Type-Options: "nosniff"
+            X-Frame-Options: "DENY"
+            X-XSS-Protection: "1; mode=block"
+            Strict-Transport-Security: "max-age=31536000; includeSubDomains"
+          remove:
+            - Server
+            - X-Powered-By
+
+        # Request timeout
+        timeout:
+          read: 30s
+          write: 30s
+          idle: 120s
+
+      paths:
+        # Public API v2 endpoints
+        - path: /v2/users
+          pathType: Prefix
+          serviceName: api
+          servicePort: 8080
+          # Path-specific rate limit (stricter)
+          middleware:
+            rateLimit:
+              requestsPerSecond: 50
+              burst: 100
+
+        - path: /v2/products
+          pathType: Prefix
+          serviceName: api
+          servicePort: 8080
+
+        # Public API v1 (deprecated, redirect to v2)
+        - path: /v1
+          pathType: Prefix
+          serviceName: api
+          servicePort: 8080
+          middleware:
+            redirect:
+              enabled: true
+              scheme: https
+              # Rewrite /v1/* to /v2/*
+              replacePathPrefix: /v1,/v2
+              permanent: true  # 301 redirect
+
+        # WebSocket endpoint (no rate limit on connections)
+        - path: /v2/ws
+          pathType: Exact
+          serviceName: websocket
+          servicePort: 8081
+          middleware:
+            rateLimit:
+              enabled: false
+            # WebSocket-specific settings
+            websocket:
+              enabled: true
+              readBufferSize: 1024
+              writeBufferSize: 1024
+
+        # Health check (no middleware)
+        - path: /health
+          pathType: Exact
+          serviceName: api
+          servicePort: 8080
+          middleware:
+            rateLimit:
+              enabled: false
+            auth:
+              enabled: false
+
+  # ========================================================================
+  # RULE 2: Admin Dashboard (admin.example.com)
+  # ========================================================================
+    - host: admin.example.com
+      middleware:
+        # IP whitelist: only allow admin IPs
+        ipFilter:
+          enabled: true
+          mode: whitelist
+          # Office IPs, VPN gateway
+          allowList:
+            - 203.0.113.0/24      # Office network
+            - 198.51.100.50/32    # VPN gateway
+            - 192.0.2.100/32      # Admin home IP
+
+        # Stricter rate limiting
+        rateLimit:
+          enabled: true
+          requestsPerSecond: 20
+          burst: 40
+
+        # Basic auth (additional layer)
+        # Note: Use with mTLS client certificates in production
+        auth:
+          enabled: true
+          type: basic
+          realm: "Admin Area"
+          # Users managed via Warren secrets
+          secretName: admin-htpasswd
+
+        # Add admin-specific headers
+        headers:
+          add:
+            X-Admin-Access: "true"
+            Cache-Control: "no-store, no-cache, must-revalidate"
+
+      paths:
+        - path: /
+          pathType: Prefix
+          serviceName: admin
+          servicePort: 3000
+
+        # Admin API with extra strict rate limit
+        - path: /api/admin
+          pathType: Prefix
+          serviceName: admin
+          servicePort: 3000
+          middleware:
+            rateLimit:
+              requestsPerSecond: 5
+              burst: 10
+
+  # ========================================================================
+  # RULE 3: Static CDN (cdn.example.com)
+  # ========================================================================
+    - host: cdn.example.com
+      middleware:
+        # Aggressive caching for static assets
+        headers:
+          add:
+            Cache-Control: "public, max-age=31536000, immutable"
+            X-Content-Type-Options: "nosniff"
+            Access-Control-Allow-Origin: "*"
+
+        # Very high rate limit (CDN traffic)
+        rateLimit:
+          enabled: true
+          requestsPerSecond: 1000
+          burst: 2000
+
+        # Compression
+        compression:
+          enabled: true
+          types:
+            - text/html
+            - text/css
+            - text/javascript
+            - application/javascript
+            - application/json
+            - image/svg+xml
+          minLength: 1024
+
+      paths:
+        # Static assets by extension
+        - path: /static
+          pathType: Prefix
+          serviceName: static
+          servicePort: 80
+
+        # Images with different caching
+        - path: /images
+          pathType: Prefix
+          serviceName: static
+          servicePort: 80
+          middleware:
+            headers:
+              add:
+                Cache-Control: "public, max-age=604800"  # 7 days
+
+  # ========================================================================
+  # RULE 4: Wildcard subdomain (*.app.example.com)
+  # ========================================================================
+    - host: "*.app.example.com"
+      middleware:
+        # Extract tenant from subdomain
+        headers:
+          add:
+            # Pass subdomain to backend
+            X-Tenant-ID: "$subdomain"
+            X-Forwarded-Host: "$host"
+
+        # Per-tenant rate limiting
+        rateLimit:
+          enabled: true
+          requestsPerSecond: 50
+          burst: 100
+          # Rate limit by subdomain (tenant)
+          key: $subdomain
+
+        # JWT authentication
+        auth:
+          enabled: true
+          type: jwt
+          # JWT secret from Warren secret
+          secretName: jwt-secret
+          header: Authorization
+          scheme: Bearer
+
+      paths:
+        - path: /
+          pathType: Prefix
+          serviceName: user-app
+          servicePort: 9000
+
+  # ========================================================================
+  # RULE 5: Default/Catch-all (no host match)
+  # ========================================================================
+    - host: "*"
+      middleware:
+        # Block all unmatched domains (prevent DNS rebinding)
+        response:
+          statusCode: 403
+          body: "Forbidden: Invalid host header"
+          headers:
+            Content-Type: "text/plain"
+
+  # ========================================================================
+  # TLS CONFIGURATION
+  # ========================================================================
+  tls:
+    # Multiple domains with Let's Encrypt
+    domains:
+      - api.example.com
+      - admin.example.com
+      - cdn.example.com
+      - "*.app.example.com"  # Wildcard (requires DNS-01 challenge)
+
+    # Let's Encrypt auto-provisioning
+    autoIssue: true
+    acmeEmail: devops@example.com
+
+    # Use production Let's Encrypt (not staging)
+    acmeDirectory: production
+
+    # Minimum TLS version
+    minVersion: "1.2"
+
+    # Cipher suites (secure defaults)
+    cipherSuites:
+      - TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+      - TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+      - TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256
+      - TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384
+
+    # ALPN protocols
+    alpnProtocols:
+      - h2      # HTTP/2
+      - http/1.1
+
+    # Certificate auto-renewal (30 days before expiry)
+    autoRenew: true
+
+  # ========================================================================
+  # GLOBAL MIDDLEWARE (applies to all rules)
+  # ========================================================================
+  globalMiddleware:
+    # Request logging
+    accessLog:
+      enabled: true
+      format: json
+      fields:
+        - timestamp
+        - remote_addr
+        - request_method
+        - request_uri
+        - status
+        - body_bytes_sent
+        - http_user_agent
+        - request_time
+        - upstream_addr
+
+    # Request tracing
+    tracing:
+      enabled: true
+      # Propagate trace ID
+      header: X-Trace-ID
+
+    # Circuit breaker (fail fast on backend errors)
+    circuitBreaker:
+      enabled: true
+      # Open circuit after N failures
+      threshold: 5
+      # Time window for counting failures
+      window: 60s
+      # Time to wait before retry (half-open state)
+      timeout: 30s
+
+    # Retry on failure
+    retry:
+      enabled: true
+      attempts: 3
+      backoff: exponential
+      initialInterval: 100ms
+      maxInterval: 2s
+      # Only retry on specific status codes
+      retryOn:
+        - 502
+        - 503
+        - 504
+
+    # Request size limits
+    limits:
+      # Max request body size
+      maxBodySize: 10485760  # 10MB
+      # Max header size
+      maxHeaderSize: 8192    # 8KB
+
+---
+# ============================================================================
+# SECRETS FOR MIDDLEWARE
+# ============================================================================
+
+# Admin basic auth credentials
+apiVersion: v1
+kind: Secret
+metadata:
+  name: admin-htpasswd
+spec:
+  type: Opaque
+  # Format: username:bcrypt_hash (generated with htpasswd)
+  # Example: admin:$2y$10$...
+  data: YWRtaW46JDJ5JDEwJC4uLg==
+
+---
+# JWT signing secret
+apiVersion: v1
+kind: Secret
+metadata:
+  name: jwt-secret
+spec:
+  type: Opaque
+  # 256-bit secret for HS256
+  data: c2VjcmV0X2tleV9mb3Jfand0X3NpZ25pbmdfMjU2X2JpdHM=
+
+---
+# ============================================================================
+# USAGE EXAMPLES
+# ============================================================================
+#
+# Test rate limiting:
+#   # Should succeed (within limit)
+#   for i in {1..50}; do
+#     curl -s -o /dev/null -w "%{http_code}\n" https://api.example.com/v2/users
+#   done
+#
+#   # Should fail with 429 (too many requests)
+#   for i in {1..200}; do
+#     curl -s -o /dev/null -w "%{http_code}\n" https://api.example.com/v2/users
+#   done
+#
+# Test IP whitelist (admin):
+#   # From allowed IP: 200 OK
+#   curl https://admin.example.com/
+#
+#   # From other IP: 403 Forbidden
+#   curl https://admin.example.com/
+#
+# Test CORS:
+#   curl -H "Origin: https://app.example.com" \
+#        -H "Access-Control-Request-Method: POST" \
+#        -H "Access-Control-Request-Headers: X-Requested-With" \
+#        -X OPTIONS https://api.example.com/v2/users
+#
+# Test header manipulation:
+#   curl -I https://api.example.com/v2/users
+#   # Should see: X-Content-Type-Options, X-Frame-Options, etc.
+#
+# Test redirect (v1 to v2):
+#   curl -L https://api.example.com/v1/users
+#   # Should redirect to /v2/users
+#
+# Test wildcard subdomain:
+#   curl https://tenant1.app.example.com/
+#   curl https://tenant2.app.example.com/
+#   # Backend receives X-Tenant-ID header
+#
+# Test WebSocket:
+#   wscat -c wss://api.example.com/v2/ws
+#
+# Test compression:
+#   curl -H "Accept-Encoding: gzip" https://cdn.example.com/static/app.js
+#   # Response should be gzipped
+
+---
+# ============================================================================
+# MONITORING INGRESS
+# ============================================================================
+#
+# View ingress status:
+#   warren service inspect advanced-ingress
+#
+# Check rate limiting stats (future):
+#   warren ingress stats advanced-ingress --rate-limit
+#
+# Monitor via Prometheus:
+#   ingress_requests_total{host="api.example.com", path="/v2/users"}
+#   ingress_rate_limit_exceeded{host="api.example.com"}
+#   ingress_ip_blocked{host="admin.example.com"}
+#   ingress_request_duration_seconds{host="api.example.com"}
+#
+# View access logs:
+#   warren logs advanced-ingress | jq .
+#
+# Sample log entry:
+#   {
+#     "timestamp": "2025-01-13T10:30:00Z",
+#     "remote_addr": "203.0.113.50",
+#     "request_method": "GET",
+#     "request_uri": "/v2/users?page=1",
+#     "status": 200,
+#     "body_bytes_sent": 1234,
+#     "http_user_agent": "Mozilla/5.0...",
+#     "request_time": 0.125,
+#     "upstream_addr": "10.0.2.10:8080"
+#   }
+
+---
+# ============================================================================
+# ADVANCED PATTERNS
+# ============================================================================
+#
+# Blue-Green Deployment:
+#   # Create new service version
+#   warren service create api-v3 --image myapp/api:v3.0.0 --replicas 3
+#
+#   # Update ingress to route 10% traffic to v3 (canary)
+#   warren ingress update advanced-ingress \
+#     --path /v2 --split api:90,api-v3:10
+#
+#   # Monitor metrics, increase to 50%
+#   warren ingress update advanced-ingress \
+#     --path /v2 --split api:50,api-v3:50
+#
+#   # Full cutover to v3
+#   warren ingress update advanced-ingress \
+#     --path /v2 --service api-v3
+#
+# A/B Testing:
+#   # Route based on cookie
+#   middleware:
+#     routing:
+#       rules:
+#         - condition: cookie("experiment") == "variant-b"
+#           service: api-variant-b
+#         - default: true
+#           service: api
+#
+# Geo-based Routing:
+#   # Route based on client IP location
+#   middleware:
+#     geoip:
+#       enabled: true
+#     routing:
+#       rules:
+#         - condition: country("US")
+#           service: api-us
+#         - condition: country("EU")
+#           service: api-eu
+#         - default: true
+#           service: api-global
+#
+# mTLS Client Authentication:
+#   tls:
+#     clientAuth:
+#       enabled: true
+#       # Require valid client certificate
+#       mode: require
+#       # CA for verifying client certs
+#       caSecretName: client-ca
+#
+# OAuth2/OIDC Integration:
+#   middleware:
+#     auth:
+#       type: oauth2
+#       provider: google
+#       clientID: xxx
+#       clientSecretName: google-oauth-secret
+#       redirectURL: https://api.example.com/oauth/callback
+#       scopes:
+#         - openid
+#         - email
+#         - profile
+
+---
+# ============================================================================
+# TROUBLESHOOTING
+# ============================================================================
+#
+# 429 Too Many Requests:
+#   - Check rate limit configuration
+#   - Verify client IP (behind proxy?)
+#   - Consider increasing limit for legitimate traffic
+#   - Use different rate limit keys (user ID vs IP)
+#
+# 403 Forbidden (IP filter):
+#   - Verify client IP is in whitelist
+#   - Check for proxy/CDN IPs (X-Forwarded-For)
+#   - Review firewall rules
+#   - Check blacklist for accidental blocks
+#
+# 502 Bad Gateway:
+#   - Check backend service health
+#   - Verify service is running: warren task list
+#   - Check backend logs: warren logs api
+#   - Review circuit breaker state
+#
+# 504 Gateway Timeout:
+#   - Increase timeout values
+#   - Check backend performance
+#   - Review slow queries/operations
+#   - Scale backend replicas
+#
+# TLS certificate issues:
+#   - Verify DNS points to cluster
+#   - Check port 80 accessible (HTTP-01)
+#   - Review Let's Encrypt logs
+#   - Try staging directory first
+#   - Check certificate status: warren certificate list
+#
+# CORS errors:
+#   - Verify allowOrigins includes client domain
+#   - Check allowMethods includes request method
+#   - Ensure allowHeaders includes custom headers
+#   - Review browser console for specific error
+
+---
+# ============================================================================
+# PERFORMANCE TUNING
+# ============================================================================
+#
+# Connection pooling:
+#   - Keep-alive to backends
+#   - Connection reuse
+#   - Idle connection timeout
+#
+# Caching:
+#   - Cache at CDN (Cloudflare, CloudFront)
+#   - Response caching in ingress (future)
+#   - Cache-Control headers
+#
+# HTTP/2:
+#   - Enabled by default with TLS
+#   - Multiplexing reduces latency
+#   - Server push for resources (future)
+#
+# Load balancing:
+#   - Round-robin (default)
+#   - Least connections (future)
+#   - Weighted (canary deployments)
+#   - Sticky sessions by cookie (future)
+#
+# Request buffering:
+#   - Buffer requests before forwarding
+#   - Protects slow backends
+#   - Configurable buffer size
+
+---
+# ============================================================================
+# PRODUCTION CHECKLIST
+# ============================================================================
+#
+# [ ] TLS certificates provisioned and valid
+# [ ] Rate limits configured appropriately
+# [ ] IP whitelists reviewed and up to date
+# [ ] CORS origins match actual client domains
+# [ ] Security headers enabled (HSTS, CSP, etc.)
+# [ ] Access logs enabled and forwarded to SIEM
+# [ ] Monitoring and alerts configured
+# [ ] Circuit breakers tuned for backend SLAs
+# [ ] Request timeouts set appropriately
+# [ ] WebSocket upgrades working correctly
+# [ ] Load testing completed successfully
+# [ ] Disaster recovery procedures documented
+# [ ] Incident response runbook prepared
