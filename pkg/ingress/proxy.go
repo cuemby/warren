@@ -78,7 +78,7 @@ func (p *Proxy) Start(ctx context.Context) error {
 		return fmt.Errorf("failed to listen on :8000: %w", err)
 	}
 
-	log.Info(fmt.Sprintf("Ingress proxy listening on :8000 (HTTP)"))
+	log.Info("Ingress proxy listening on :8000 (HTTP)")
 
 	// Serve HTTP in goroutine
 	go func() {
@@ -103,7 +103,7 @@ func (p *Proxy) Start(ctx context.Context) error {
 		if err != nil {
 			log.Warn(fmt.Sprintf("Failed to listen on :8443: %v", err))
 		} else {
-			log.Info(fmt.Sprintf("Ingress proxy listening on :8443 (HTTPS)"))
+			log.Info("Ingress proxy listening on :8443 (HTTPS)")
 
 			// Serve HTTPS in goroutine
 			go func() {
@@ -339,7 +339,7 @@ func (p *Proxy) ReloadTLSCertificates() error {
 			return err
 		}
 
-		log.Info(fmt.Sprintf("Starting HTTPS server on :8443"))
+		log.Info("Starting HTTPS server on :8443")
 
 		// Serve HTTPS in goroutine
 		go func() {

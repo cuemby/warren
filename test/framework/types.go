@@ -137,8 +137,8 @@ type TestContext struct {
 	Cancel context.CancelFunc
 	// Timeout is the default timeout for operations
 	Timeout time.Duration
-	// Cleanup functions to run after test
-	cleanup []func()
+	// Cleanup functions to run after test (unused currently, reserved for future use)
+	_ []func()
 }
 
 // TestingT is an interface matching testing.T

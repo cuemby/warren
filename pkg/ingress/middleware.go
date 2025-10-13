@@ -160,7 +160,7 @@ func (m *Middleware) CheckAccessControl(r *http.Request, config *types.AccessCon
 	for _, cidr := range config.DeniedIPs {
 		if matchCIDR(ip, cidr) {
 			log.Warn(fmt.Sprintf("Access denied for %s (matched deny rule: %s)", clientIP, cidr))
-			return false, fmt.Sprintf("Access denied by IP filter")
+			return false, "Access denied by IP filter"
 		}
 	}
 

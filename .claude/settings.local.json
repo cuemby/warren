@@ -86,7 +86,17 @@
       "Bash(GOTOOLCHAIN=local go test:*)",
       "Bash(GOTOOLCHAIN=local go mod:*)",
       "Bash(git mv:*)",
-      "Bash(do git mv test/lima/$f test/lima-legacy/$f)"
+      "Bash(do git mv test/lima/$f test/lima-legacy/$f)",
+      "Bash(do)",
+      "Bash(if [ -f \"/Users/ar4mirez/Developer/Work/cuemby/warren/$file\" ])",
+      "Bash(then)",
+      "Bash(echo \"✓ Fixed: $file\")",
+      "Bash(fi)",
+      "Bash(sort:*)",
+      "Bash(GIT_AUTHOR_NAME=\"Claude\" GIT_AUTHOR_EMAIL=\"noreply@anthropic.com\" GIT_COMMITTER_NAME=\"Claude\" GIT_COMMITTER_EMAIL=\"noreply@anthropic.com\" git commit -m \"docs: add comprehensive E2E validation and performance benchmarking guides\n\nPhase 1 Week 3 - Validation & Performance Documentation\n\nCreate detailed guides for end-to-end validation and performance\nbenchmarking to ensure Warren v1.1.0 is production-ready.\n\n**E2E Validation Guide** (docs/e2e-validation.md):\n- Complete deployment steps (3 managers + 3 workers)\n- 8-phase validation checklist:\n  1. Cluster Health\n  2. Service Deployment\n  3. Scaling Operations\n  4. Leader Failover\n  5. Secrets Management\n  6. Volumes\n  7. Built-in Ingress\n  8. Health Monitoring\n- 3 comprehensive test scenarios:\n  - Basic service deployment\n  - Rolling updates\n  - Load testing\n- Performance verification procedures\n- Health & monitoring checks\n- Troubleshooting guide\n- Success criteria for production readiness\n\n**Performance Benchmarking Guide** (docs/performance-benchmarking.md):\n- Performance targets (latency, throughput, resources)\n- 5 core metrics with benchmarking scripts:\n  - Service creation latency (target: <500ms)\n  - Task scheduling latency (target: <100ms/task)\n  - API request latency (target: <50ms p50)\n  - Raft performance (target: >10 ops/sec)\n  - Reconciliation performance (target: <5s/cycle)\n- 4 benchmark scenarios:\n  - Baseline performance\n  - Sustained load (100 tasks)\n  - Burst load (50 services)\n  - Failover performance\n- Performance analysis tools\n- Optimization tips\n- Performance reporting templates\n\n**Coverage**:\n- 850+ lines of comprehensive documentation\n- Ready-to-use bash scripts for benchmarking\n- Clear success criteria\n- Production-ready validation procedures\n\n**Benefits**:\n- Systematic validation process\n- Performance baseline establishment\n- Identify bottlenecks before production\n- Reproducible benchmarking\n- Operational readiness verification\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\")",
+      "Bash(git filter-branch:*)",
+      "Bash(git stash:*)",
+      "Bash(find:*)"
     ],
     "deny": [],
     "ask": []

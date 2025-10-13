@@ -386,7 +386,7 @@ func TestCertCache(t *testing.T) {
 	}
 
 	if cached == nil {
-		t.Error("Cached certificate should not be nil")
+		t.Fatal("Cached certificate should not be nil")
 	}
 
 	if cached.Cert.Subject.CommonName != "worker-"+nodeID {

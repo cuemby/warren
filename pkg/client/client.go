@@ -384,7 +384,7 @@ func requestCertificate(addr, token, certDir string) error {
 	}
 	creds := credentials.NewTLS(tlsConfig)
 
-	conn, err := grpc.Dial(addr, grpc.WithTransportCredentials(creds))
+	conn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(creds))
 	if err != nil {
 		return fmt.Errorf("failed to connect to manager: %w", err)
 	}
@@ -453,7 +453,7 @@ func connectWithMTLS(addr, certDir string) (*grpc.ClientConn, error) {
 
 	// Create gRPC connection with TLS
 	creds := credentials.NewTLS(tlsConfig)
-	conn, err := grpc.Dial(addr, grpc.WithTransportCredentials(creds))
+	conn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(creds))
 	if err != nil {
 		return nil, fmt.Errorf("failed to dial manager: %w", err)
 	}

@@ -3,6 +3,7 @@ package worker
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -121,10 +122,10 @@ func TestGetSecretPathMultipleTasks(t *testing.T) {
 	}
 
 	// Verify both paths are under SecretsBasePath
-	if !filepath.HasPrefix(path1, SecretsBasePath) {
+	if !strings.HasPrefix(path1, SecretsBasePath) {
 		t.Errorf("GetSecretPath() path not under SecretsBasePath: %q", path1)
 	}
-	if !filepath.HasPrefix(path2, SecretsBasePath) {
+	if !strings.HasPrefix(path2, SecretsBasePath) {
 		t.Errorf("GetSecretPath() path not under SecretsBasePath: %q", path2)
 	}
 }

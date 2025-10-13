@@ -24,6 +24,7 @@ import (
 	"github.com/hashicorp/raft"
 	raftboltdb "github.com/hashicorp/raft-boltdb"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 // Manager represents a Warren cluster manager node
@@ -943,7 +944,7 @@ func (m *Manager) DeleteIngress(ingressID string) error {
 func (m *Manager) StartIngress() error {
 	// Create gRPC connection for the ingress proxy to query the manager
 	// For M7.1 MVP, we'll use a simple insecure connection (mTLS will be added in M7.2)
-	grpcConn, err := grpc.Dial(m.bindAddr, grpc.WithInsecure()) // #nosec G402
+	grpcConn, err := grpc.NewClient(m.bindAddr, grpc.WithTransportCredentials(insecure.NewCredentials())) // #nosec G402
 	if err != nil {
 		return fmt.Errorf("failed to create gRPC connection for ingress: %w", err)
 	}

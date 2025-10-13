@@ -129,7 +129,8 @@ func TestResolverInstanceResolution(t *testing.T) {
 	t.Skip("Skipping until memory store is implemented")
 }
 
-// Helper function to generate consistent task IDs for tests
+// Helper function to generate consistent task IDs for tests (unused currently, reserved for future tests)
+// nolint:unused // Reserved for future DNS resolution tests
 func generateTaskID(num int) string {
 	switch num {
 	case 1:

@@ -556,7 +556,7 @@ func (w *Worker) requestCertificate(token string) error {
 	}
 	creds := credentials.NewTLS(tlsConfig)
 
-	conn, err := grpc.Dial(w.managerAddr, grpc.WithTransportCredentials(creds))
+	conn, err := grpc.NewClient(w.managerAddr, grpc.WithTransportCredentials(creds))
 	if err != nil {
 		return fmt.Errorf("failed to connect to manager: %w", err)
 	}
@@ -634,7 +634,7 @@ func (w *Worker) connectWithMTLS(certDir string) (*grpc.ClientConn, error) {
 
 	// Create gRPC connection with TLS
 	creds := credentials.NewTLS(tlsConfig)
-	conn, err := grpc.Dial(w.managerAddr, grpc.WithTransportCredentials(creds))
+	conn, err := grpc.NewClient(w.managerAddr, grpc.WithTransportCredentials(creds))
 	if err != nil {
 		return nil, fmt.Errorf("failed to dial manager: %w", err)
 	}
