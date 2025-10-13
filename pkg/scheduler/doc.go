@@ -1,15 +1,15 @@
 /*
-Package scheduler provides task scheduling and orchestration for Warren clusters.
+Package scheduler provides container scheduling and orchestration for Warren clusters.
 
-The scheduler is responsible for assigning pending tasks to healthy worker nodes
+The scheduler is responsible for assigning pending containers to healthy worker nodes
 based on resource availability, volume affinity, and load balancing requirements.
 It runs as a continuous background process, ensuring that service replica counts
-match their desired state and that tasks are evenly distributed across the cluster.
+match their desired state and that containers are evenly distributed across the cluster.
 
 # Architecture
 
 The scheduler operates on a fixed 5-second interval, processing all services and
-their associated tasks in each cycle:
+their associated containers in each cycle:
 
 	┌────────────────────────────────────────────────────────────┐
 	│                    Scheduler Loop                          │
@@ -21,9 +21,9 @@ their associated tasks in each cycle:
 	│  1. List all services and worker nodes                    │
 	│  2. Filter nodes: Ready + Worker role only                │
 	│  3. For each service:                                      │
-	│     • List existing tasks                                  │
+	│     • List existing containers                             │
 	│     • Compare actual vs desired state                      │
-	│     • Create missing tasks OR remove excess tasks          │
+	│     • Create missing containers OR remove excess           │
 	└────────────────┬───────────────────────────────────────────┘
 	                 │
 	    ┌────────────┴────────────┐
@@ -41,7 +41,7 @@ their associated tasks in each cycle:
 
 # Core Components
 
-Scheduler: The main scheduling engine that orchestrates task placement.
+Scheduler: The main scheduling engine that orchestrates container placement.
 
 	scheduler := NewScheduler(manager)
 	scheduler.Start()  // Begins 5-second scheduling loop
@@ -56,37 +56,37 @@ resilient to restarts.
 ## Replicated Service Scheduling
 
 Replicated services specify a desired replica count. The scheduler ensures
-exactly that many tasks are running:
+exactly that many containers are running:
 
 	Service: nginx (replicas=3)
-	Current tasks: 2 running
-	Action: Create 1 new task
+	Current containers: 2 running
+	Action: Create 1 new container
 
-Node selection uses a simple round-robin algorithm with task counting:
+Node selection uses a simple round-robin algorithm with container counting:
 
- 1. Count tasks per node (only running tasks)
- 2. Select node with fewest tasks
- 3. Create task on selected node
+ 1. Count containers per node (only running containers)
+ 2. Select node with fewest containers
+ 3. Create container on selected node
 
 ## Global Service Scheduling
 
-Global services run exactly one task per worker node:
+Global services run exactly one container per worker node:
 
 	Service: monitoring-agent (mode=global)
 	Worker nodes: 5
-	Action: Ensure 1 task per node
+	Action: Ensure 1 container per node
 
-The scheduler automatically creates tasks when new nodes join and removes tasks
+The scheduler automatically creates containers when new nodes join and removes containers
 when nodes are decommissioned.
 
 ## Volume Affinity
 
-When a service uses volumes, tasks must be scheduled on the node where the
+When a service uses volumes, containers must be scheduled on the node where the
 volume resides:
 
 	Service: database (volume=db-data)
 	Volume: db-data (nodeID=worker-1)
-	Constraint: Task MUST run on worker-1
+	Constraint: Container MUST run on worker-1
 
 This ensures data locality for stateful workloads. If a volume doesn't exist
 yet, the scheduler selects a node using standard load balancing, and the volume
@@ -130,8 +130,8 @@ is created on that node.
 		{ID: "node-2", Role: types.NodeRoleWorker, Status: types.NodeStatusReady},
 	}
 
-	// Scheduler will create 3 tasks distributed across 2 nodes
-	// Expected: 2 tasks on one node, 1 task on the other
+	// Scheduler will create 3 containers distributed across 2 nodes
+	// Expected: 2 containers on one node, 1 container on the other
 
 ## Volume-Aware Scheduling
 
@@ -158,7 +158,7 @@ is created on that node.
 		Driver: "local",
 	}
 
-	// Scheduler will place task on worker-2 due to volume affinity
+	// Scheduler will place container on worker-2 due to volume affinity
 
 # Integration Points
 
@@ -168,18 +168,18 @@ The scheduler depends on the manager package for all cluster state operations:
 
   - ListServices() - Get all services
   - ListNodes() - Get all worker nodes
-  - ListTasksByService(serviceID) - Get tasks for a service
-  - CreateTask(task) - Create new task
-  - UpdateTask(task) - Update task state
+  - ListContainersByService(serviceID) - Get containers for a service
+  - CreateContainer(container) - Create new container
+  - UpdateContainer(container) - Update container state
   - GetVolumeByName(name) - Check volume affinity
 
 ## Reconciler Coordination
 
 The scheduler works in tandem with the reconciler:
 
-  - Scheduler: Creates tasks to meet desired state
-  - Reconciler: Detects failures and marks tasks for replacement
-  - Scheduler: Sees failed tasks and creates replacements
+  - Scheduler: Creates containers to meet desired state
+  - Reconciler: Detects failures and marks containers for replacement
+  - Scheduler: Sees failed containers and creates replacements
 
 This separation of concerns ensures clean boundaries:
 
@@ -188,12 +188,12 @@ This separation of concerns ensures clean boundaries:
 
 ## Worker Integration
 
-Workers pull tasks assigned to them via the manager:
+Workers pull containers assigned to them via the manager:
 
- 1. Scheduler assigns task to node-1
- 2. Worker on node-1 polls for tasks (via manager)
- 3. Worker starts container for task
- 4. Worker reports task state back to manager
+ 1. Scheduler assigns container to node-1
+ 2. Worker on node-1 polls for containers (via manager)
+ 3. Worker starts runtime container
+ 4. Worker reports container state back to manager
 
 # Design Patterns
 
@@ -220,11 +220,11 @@ The scheduler implements the reconciliation loop pattern common in orchestrators
 
 ## Separation of Concerns
 
-The scheduler only creates and removes tasks. It does NOT:
+The scheduler only creates and removes containers. It does NOT:
 
-  - Start/stop containers (worker's job)
-  - Monitor task health (reconciler's job)
-  - Update task runtime state (worker's job)
+  - Start/stop runtime containers (worker's job)
+  - Monitor container health (reconciler's job)
+  - Update container runtime state (worker's job)
 
 This clear separation prevents coupling and makes each component testable.
 
@@ -232,15 +232,15 @@ This clear separation prevents coupling and makes each component testable.
 
 ## Time Complexity
 
-Per scheduling cycle (N services, M nodes, T tasks):
+Per scheduling cycle (N services, M nodes, C containers):
 
   - List services: O(N)
   - List nodes: O(M)
-  - List tasks per service: O(T)
-  - Node selection: O(M * T) worst case (counting tasks per node)
-  - Overall: O(N * (T + M))
+  - List containers per service: O(C)
+  - Node selection: O(M * C) worst case (counting containers per node)
+  - Overall: O(N * (C + M))
 
-For a typical cluster (100 services, 10 nodes, 500 tasks):
+For a typical cluster (100 services, 10 nodes, 500 containers):
   - ~0.5-1 second per scheduling cycle
   - Well within 5-second interval
 
@@ -249,12 +249,12 @@ For a typical cluster (100 services, 10 nodes, 500 tasks):
 Minimal memory footprint:
 
   - No caching (reads from manager each cycle)
-  - Temporary allocations for node/task lists
+  - Temporary allocations for node/container lists
   - ~10-20 MB for typical cluster sizes
 
 ## Scheduling Latency
 
-Time from service creation to task running:
+Time from service creation to container running:
 
   - Best case: 5 seconds (next scheduler cycle)
   - Worst case: 10 seconds (just missed previous cycle)
@@ -265,7 +265,7 @@ aware of increased CPU usage and API load on the manager.
 
 # Troubleshooting
 
-## Tasks Not Being Created
+## Containers Not Being Created
 
 Check these common issues:
 
@@ -282,25 +282,25 @@ Check these common issues:
   - Ensure replica count > 0
   - Check volume constraints (volume must exist or be creatable)
 
-## Tasks Stuck in "Pending"
+## Containers Stuck in "Pending"
 
-The scheduler creates tasks but workers start them. Debug:
+The scheduler creates containers but workers start them. Debug:
 
 1. Check worker logs:
-  - Worker should see assigned tasks
+  - Worker should see assigned containers
   - Look for containerd/image pull errors
 
-2. Check task details:
+2. Check container details:
   - Run: warren service ps <service-name>
-  - Look at task error messages
+  - Look at container error messages
 
-## Uneven Task Distribution
+## Uneven Container Distribution
 
-If tasks are not evenly distributed:
+If containers are not evenly distributed:
 
-1. Check task state filtering:
-  - Only running tasks count toward load balancing
-  - Failed/completed tasks don't affect placement
+1. Check container state filtering:
+  - Only running containers count toward load balancing
+  - Failed/completed containers don't affect placement
 
 2. Verify node readiness:
   - Scheduler only uses "Ready" worker nodes
@@ -308,7 +308,7 @@ If tasks are not evenly distributed:
 
 ## Volume Affinity Not Working
 
-If tasks aren't being pinned to volume nodes:
+If containers aren't being pinned to volume nodes:
 
 1. Verify volume exists:
   - Run: warren volume ls
@@ -324,15 +324,15 @@ The scheduler doesn't currently export Prometheus metrics, but you can monitor:
 
 ## Log-based Metrics
 
-  - "Created task" - New task created
+  - "Created container" - New container created
   - "Scheduler error" - Scheduling failure
   - "Selecting node X for service Y (volume affinity)" - Volume pinning
 
 ## Manager Metrics
 
-  - Tasks created per service (via manager API)
-  - Task state distribution (pending/running/failed)
-  - Node utilization (tasks per node)
+  - Containers created per service (via manager API)
+  - Container state distribution (pending/running/failed)
+  - Node utilization (containers per node)
 
 # Best Practices
 
@@ -352,7 +352,7 @@ The scheduler doesn't currently export Prometheus metrics, but you can monitor:
   - Consider node labels for volume placement control (future feature)
 
 4. Resource Constraints
-  - Scheduler respects task resource limits (CPU/memory)
+  - Scheduler respects container resource limits (CPU/memory)
   - Ensure nodes have sufficient capacity for all replicas
   - Monitor node resource usage to prevent over-subscription
 
@@ -360,7 +360,7 @@ The scheduler doesn't currently export Prometheus metrics, but you can monitor:
 
   - pkg/reconciler - Failure detection and auto-healing
   - pkg/manager - Cluster state management
-  - pkg/worker - Task execution on worker nodes
+  - pkg/worker - Container execution on worker nodes
   - pkg/volume - Volume lifecycle management
   - docs/concepts/services.md - Service modes and scaling
 */

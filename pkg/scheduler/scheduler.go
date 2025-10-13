@@ -12,7 +12,7 @@ import (
 	"github.com/rs/zerolog"
 )
 
-// Scheduler assigns tasks to nodes based on resource availability
+// Scheduler assigns containers to nodes based on resource availability
 type Scheduler struct {
 	manager *manager.Manager
 	logger  zerolog.Logger
@@ -92,42 +92,42 @@ func (s *Scheduler) schedule() error {
 	return nil
 }
 
-// scheduleService ensures the service has the correct number of tasks
+// scheduleService ensures the service has the correct number of containers
 func (s *Scheduler) scheduleService(service *types.Service, nodes []*types.Node) error {
-	// Get existing tasks for this service
-	tasks, err := s.manager.ListTasksByService(service.ID)
+	// Get existing containers for this service
+	containers, err := s.manager.ListContainersByService(service.ID)
 	if err != nil {
-		return fmt.Errorf("failed to list tasks: %w", err)
+		return fmt.Errorf("failed to list containers: %w", err)
 	}
 
 	if service.Mode == types.ServiceModeGlobal {
-		return s.scheduleGlobalService(service, nodes, tasks)
+		return s.scheduleGlobalService(service, nodes, containers)
 	}
-	return s.scheduleReplicatedService(service, nodes, tasks)
+	return s.scheduleReplicatedService(service, nodes, containers)
 }
 
-// scheduleGlobalService ensures one task per node for global services
-func (s *Scheduler) scheduleGlobalService(service *types.Service, nodes []*types.Node, tasks []*types.Task) error {
-	// Build map of active tasks by node
-	nodeTaskMap := make(map[string]*types.Task)
-	for _, task := range tasks {
-		if task.DesiredState == types.TaskStateRunning &&
-			(task.ActualState == types.TaskStatePending || task.ActualState == types.TaskStateRunning) {
-			nodeTaskMap[task.NodeID] = task
+// scheduleGlobalService ensures one container per node for global services
+func (s *Scheduler) scheduleGlobalService(service *types.Service, nodes []*types.Node, containers []*types.Container) error {
+	// Build map of active containers by node
+	nodeContainerMap := make(map[string]*types.Container)
+	for _, container := range containers {
+		if container.DesiredState == types.ContainerStateRunning &&
+			(container.ActualState == types.ContainerStatePending || container.ActualState == types.ContainerStateRunning) {
+			nodeContainerMap[container.NodeID] = container
 		}
 	}
 
-	// Ensure each node has exactly one task
+	// Ensure each node has exactly one container
 	for _, node := range nodes {
-		if _, exists := nodeTaskMap[node.ID]; !exists {
-			// Create task for this node
-			task := &types.Task{
+		if _, exists := nodeContainerMap[node.ID]; !exists {
+			// Create container for this node
+			container := &types.Container{
 				ID:            uuid.New().String(),
 				ServiceID:     service.ID,
 				ServiceName:   service.Name,
 				NodeID:        node.ID,
-				DesiredState:  types.TaskStateRunning,
-				ActualState:   types.TaskStatePending,
+				DesiredState:  types.ContainerStateRunning,
+				ActualState:   types.ContainerStatePending,
 				Image:         service.Image,
 				Env:           service.Env,
 				Mounts:        service.Volumes,
@@ -139,42 +139,42 @@ func (s *Scheduler) scheduleGlobalService(service *types.Service, nodes []*types
 				CreatedAt:     time.Now(),
 			}
 
-			if err := s.manager.CreateTask(task); err != nil {
-				return fmt.Errorf("failed to create task: %w", err)
+			if err := s.manager.CreateContainer(container); err != nil {
+				return fmt.Errorf("failed to create container: %w", err)
 			}
 
 			s.logger.Info().
-				Str("task_id", task.ID).
+				Str("container_id", container.ID).
 				Str("service_name", service.Name).
 				Str("node_id", node.ID).
-				Msg("Created global task")
+				Msg("Created global container")
 		}
 	}
 
-	// Remove tasks for nodes that no longer exist
-	for _, task := range tasks {
-		if task.DesiredState != types.TaskStateRunning {
+	// Remove containers for nodes that no longer exist
+	for _, container := range containers {
+		if container.DesiredState != types.ContainerStateRunning {
 			continue
 		}
 
 		nodeExists := false
 		for _, node := range nodes {
-			if node.ID == task.NodeID {
+			if node.ID == container.NodeID {
 				nodeExists = true
 				break
 			}
 		}
 
 		if !nodeExists {
-			task.DesiredState = types.TaskStateShutdown
-			if err := s.manager.UpdateTask(task); err != nil {
-				s.logger.Error().Err(err).Str("task_id", task.ID).Msg("Failed to shutdown task")
+			container.DesiredState = types.ContainerStateShutdown
+			if err := s.manager.UpdateContainer(container); err != nil {
+				s.logger.Error().Err(err).Str("container_id", container.ID).Msg("Failed to shutdown container")
 				continue
 			}
 			s.logger.Info().
-				Str("task_id", task.ID).
-				Str("node_id", task.NodeID).
-				Msg("Removed global task (node no longer exists)")
+				Str("container_id", container.ID).
+				Str("node_id", container.NodeID).
+				Msg("Removed global container (node no longer exists)")
 		}
 	}
 
@@ -182,24 +182,24 @@ func (s *Scheduler) scheduleGlobalService(service *types.Service, nodes []*types
 }
 
 // scheduleReplicatedService handles replicated service scheduling
-func (s *Scheduler) scheduleReplicatedService(service *types.Service, nodes []*types.Node, tasks []*types.Task) error {
-	// Count running/pending tasks
-	activeTasks := 0
-	for _, task := range tasks {
-		if task.DesiredState == types.TaskStateRunning &&
-			(task.ActualState == types.TaskStatePending || task.ActualState == types.TaskStateRunning) {
-			activeTasks++
+func (s *Scheduler) scheduleReplicatedService(service *types.Service, nodes []*types.Node, containers []*types.Container) error {
+	// Count running/pending containers
+	activeContainers := 0
+	for _, container := range containers {
+		if container.DesiredState == types.ContainerStateRunning &&
+			(container.ActualState == types.ContainerStatePending || container.ActualState == types.ContainerStateRunning) {
+			activeContainers++
 		}
 	}
 
-	desiredTasks := service.Replicas
-	tasksToCreate := desiredTasks - activeTasks
+	desiredContainers := service.Replicas
+	containersToCreate := desiredContainers - activeContainers
 
-	// Create missing tasks
-	if tasksToCreate > 0 {
-		for i := 0; i < tasksToCreate; i++ {
+	// Create missing containers
+	if containersToCreate > 0 {
+		for i := 0; i < containersToCreate; i++ {
 			// Check if service has volume requirements
-			node, err := s.selectNodeForService(service, nodes, tasks)
+			node, err := s.selectNodeForService(service, nodes, containers)
 			if err != nil {
 				return fmt.Errorf("failed to select node: %w", err)
 			}
@@ -207,13 +207,13 @@ func (s *Scheduler) scheduleReplicatedService(service *types.Service, nodes []*t
 				return fmt.Errorf("no suitable node found")
 			}
 
-			task := &types.Task{
+			container := &types.Container{
 				ID:            uuid.New().String(),
 				ServiceID:     service.ID,
 				ServiceName:   service.Name,
 				NodeID:        node.ID,
-				DesiredState:  types.TaskStateRunning,
-				ActualState:   types.TaskStatePending,
+				DesiredState:  types.ContainerStateRunning,
+				ActualState:   types.ContainerStatePending,
 				Image:         service.Image,
 				Env:           service.Env,
 				Mounts:        service.Volumes,
@@ -225,30 +225,30 @@ func (s *Scheduler) scheduleReplicatedService(service *types.Service, nodes []*t
 				CreatedAt:     time.Now(),
 			}
 
-			if err := s.manager.CreateTask(task); err != nil {
-				return fmt.Errorf("failed to create task: %w", err)
+			if err := s.manager.CreateContainer(container); err != nil {
+				return fmt.Errorf("failed to create container: %w", err)
 			}
 
 			s.logger.Info().
-				Str("task_id", task.ID).
+				Str("container_id", container.ID).
 				Str("service_name", service.Name).
 				Str("node_id", node.ID).
-				Msg("Created task")
+				Msg("Created container")
 		}
 	}
 
-	// Remove excess tasks
-	if tasksToCreate < 0 {
-		tasksToRemove := -tasksToCreate
+	// Remove excess containers
+	if containersToCreate < 0 {
+		containersToRemove := -containersToCreate
 		removed := 0
-		for _, task := range tasks {
-			if removed >= tasksToRemove {
+		for _, container := range containers {
+			if removed >= containersToRemove {
 				break
 			}
-			if task.DesiredState == types.TaskStateRunning {
-				task.DesiredState = types.TaskStateShutdown
-				if err := s.manager.UpdateTask(task); err != nil {
-					s.logger.Error().Err(err).Str("task_id", task.ID).Msg("Failed to shutdown task")
+			if container.DesiredState == types.ContainerStateRunning {
+				container.DesiredState = types.ContainerStateShutdown
+				if err := s.manager.UpdateContainer(container); err != nil {
+					s.logger.Error().Err(err).Str("container_id", container.ID).Msg("Failed to shutdown container")
 					continue
 				}
 				removed++
@@ -260,7 +260,7 @@ func (s *Scheduler) scheduleReplicatedService(service *types.Service, nodes []*t
 }
 
 // selectNodeForService selects a node for a service, considering volume affinity
-func (s *Scheduler) selectNodeForService(service *types.Service, nodes []*types.Node, existingTasks []*types.Task) (*types.Node, error) {
+func (s *Scheduler) selectNodeForService(service *types.Service, nodes []*types.Node, existingContainers []*types.Container) (*types.Node, error) {
 	// Check if service has volume requirements
 	if len(service.Volumes) > 0 {
 		// Find node with volume affinity
@@ -286,31 +286,31 @@ func (s *Scheduler) selectNodeForService(service *types.Service, nodes []*types.
 	}
 
 	// No volume affinity, use standard selection
-	return s.selectNode(nodes, existingTasks), nil
+	return s.selectNode(nodes, existingContainers), nil
 }
 
 // selectNode implements simple round-robin node selection
-func (s *Scheduler) selectNode(nodes []*types.Node, existingTasks []*types.Task) *types.Node {
+func (s *Scheduler) selectNode(nodes []*types.Node, existingContainers []*types.Container) *types.Node {
 	if len(nodes) == 0 {
 		return nil
 	}
 
-	// Count tasks per node
-	taskCounts := make(map[string]int)
-	for _, task := range existingTasks {
-		if task.DesiredState == types.TaskStateRunning {
-			taskCounts[task.NodeID]++
+	// Count containers per node
+	containerCounts := make(map[string]int)
+	for _, container := range existingContainers {
+		if container.DesiredState == types.ContainerStateRunning {
+			containerCounts[container.NodeID]++
 		}
 	}
 
-	// Find node with fewest tasks (simple load balancing)
+	// Find node with fewest containers (simple load balancing)
 	var selectedNode *types.Node
-	minTasks := int(^uint(0) >> 1) // Max int
+	minContainers := int(^uint(0) >> 1) // Max int
 
 	for _, node := range nodes {
-		count := taskCounts[node.ID]
-		if count < minTasks {
-			minTasks = count
+		count := containerCounts[node.ID]
+		if count < minContainers {
+			minContainers = count
 			selectedNode = node
 		}
 	}

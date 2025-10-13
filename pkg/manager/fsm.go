@@ -87,27 +87,27 @@ func (f *WarrenFSM) Apply(log *raft.Log) interface{} {
 		}
 		return f.store.DeleteService(serviceID)
 
-	// Task operations
-	case "create_task":
-		var task types.Task
-		if err := json.Unmarshal(cmd.Data, &task); err != nil {
+	// Container operations
+	case "create_container":
+		var container types.Container
+		if err := json.Unmarshal(cmd.Data, &container); err != nil {
 			return err
 		}
-		return f.store.CreateTask(&task)
+		return f.store.CreateContainer(&container)
 
-	case "update_task":
-		var task types.Task
-		if err := json.Unmarshal(cmd.Data, &task); err != nil {
+	case "update_container":
+		var container types.Container
+		if err := json.Unmarshal(cmd.Data, &container); err != nil {
 			return err
 		}
-		return f.store.UpdateTask(&task)
+		return f.store.UpdateContainer(&container)
 
-	case "delete_task":
-		var taskID string
-		if err := json.Unmarshal(cmd.Data, &taskID); err != nil {
+	case "delete_container":
+		var containerID string
+		if err := json.Unmarshal(cmd.Data, &containerID); err != nil {
 			return err
 		}
-		return f.store.DeleteTask(taskID)
+		return f.store.DeleteContainer(containerID)
 
 	// Secret operations
 	case "create_secret":
@@ -198,9 +198,9 @@ func (f *WarrenFSM) Snapshot() (raft.FSMSnapshot, error) {
 		return nil, fmt.Errorf("failed to list services: %w", err)
 	}
 
-	tasks, err := f.store.ListTasks()
+	containers, err := f.store.ListContainers()
 	if err != nil {
-		return nil, fmt.Errorf("failed to list tasks: %w", err)
+		return nil, fmt.Errorf("failed to list containers: %w", err)
 	}
 
 	secrets, err := f.store.ListSecrets()
@@ -231,7 +231,7 @@ func (f *WarrenFSM) Snapshot() (raft.FSMSnapshot, error) {
 	snapshot := &WarrenSnapshot{
 		Nodes:           nodes,
 		Services:        services,
-		Tasks:           tasks,
+		Containers:      containers,
 		Secrets:         secrets,
 		Volumes:         volumes,
 		Networks:        networks,
@@ -268,9 +268,9 @@ func (f *WarrenFSM) Restore(rc io.ReadCloser) error {
 		}
 	}
 
-	for _, task := range snapshot.Tasks {
-		if err := f.store.CreateTask(task); err != nil {
-			return fmt.Errorf("failed to restore task: %w", err)
+	for _, container := range snapshot.Containers {
+		if err := f.store.CreateContainer(container); err != nil {
+			return fmt.Errorf("failed to restore container: %w", err)
 		}
 	}
 
@@ -311,7 +311,7 @@ func (f *WarrenFSM) Restore(rc io.ReadCloser) error {
 type WarrenSnapshot struct {
 	Nodes           []*types.Node
 	Services        []*types.Service
-	Tasks           []*types.Task
+	Containers      []*types.Container
 	Secrets         []*types.Secret
 	Volumes         []*types.Volume
 	Networks        []*types.Network
