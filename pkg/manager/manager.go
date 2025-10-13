@@ -508,45 +508,45 @@ func (m *Manager) DeleteService(id string) error {
 	return m.Apply(cmd)
 }
 
-// CreateTask creates a new task
-func (m *Manager) CreateTask(task *types.Task) error {
-	data, err := json.Marshal(task)
+// CreateContainer creates a new container
+func (m *Manager) CreateContainer(container *types.Container) error {
+	data, err := json.Marshal(container)
 	if err != nil {
 		return err
 	}
 
 	cmd := Command{
-		Op:   "create_task",
+		Op:   "create_container",
 		Data: data,
 	}
 
 	return m.Apply(cmd)
 }
 
-// UpdateTask updates a task
-func (m *Manager) UpdateTask(task *types.Task) error {
-	data, err := json.Marshal(task)
+// UpdateContainer updates a container
+func (m *Manager) UpdateContainer(container *types.Container) error {
+	data, err := json.Marshal(container)
 	if err != nil {
 		return err
 	}
 
 	cmd := Command{
-		Op:   "update_task",
+		Op:   "update_container",
 		Data: data,
 	}
 
 	return m.Apply(cmd)
 }
 
-// DeleteTask removes a task
-func (m *Manager) DeleteTask(id string) error {
+// DeleteContainer removes a container
+func (m *Manager) DeleteContainer(id string) error {
 	data, err := json.Marshal(id)
 	if err != nil {
 		return err
 	}
 
 	cmd := Command{
-		Op:   "delete_task",
+		Op:   "delete_container",
 		Data: data,
 	}
 
@@ -643,24 +643,24 @@ func (m *Manager) ListServices() ([]*types.Service, error) {
 	return m.store.ListServices()
 }
 
-// GetTask retrieves a task by ID (read from local store)
-func (m *Manager) GetTask(id string) (*types.Task, error) {
-	return m.store.GetTask(id)
+// GetContainer retrieves a container by ID (read from local store)
+func (m *Manager) GetContainer(id string) (*types.Container, error) {
+	return m.store.GetContainer(id)
 }
 
-// ListTasks returns all tasks (read from local store)
-func (m *Manager) ListTasks() ([]*types.Task, error) {
-	return m.store.ListTasks()
+// ListContainers returns all containers (read from local store)
+func (m *Manager) ListContainers() ([]*types.Container, error) {
+	return m.store.ListContainers()
 }
 
-// ListTasksByService returns all tasks for a service (read from local store)
-func (m *Manager) ListTasksByService(serviceID string) ([]*types.Task, error) {
-	return m.store.ListTasksByService(serviceID)
+// ListContainersByService returns all containers for a service (read from local store)
+func (m *Manager) ListContainersByService(serviceID string) ([]*types.Container, error) {
+	return m.store.ListContainersByService(serviceID)
 }
 
-// ListTasksByNode returns all tasks on a node (read from local store)
-func (m *Manager) ListTasksByNode(nodeID string) ([]*types.Task, error) {
-	return m.store.ListTasksByNode(nodeID)
+// ListContainersByNode returns all containers on a node (read from local store)
+func (m *Manager) ListContainersByNode(nodeID string) ([]*types.Container, error) {
+	return m.store.ListContainersByNode(nodeID)
 }
 
 // GetSecret retrieves a secret by ID (read from local store)

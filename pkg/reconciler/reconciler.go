@@ -70,9 +70,9 @@ func (r *Reconciler) reconcile() error {
 		fmt.Printf("Failed to reconcile nodes: %v\n", err)
 	}
 
-	// Reconcile tasks
-	if err := r.reconcileTasks(); err != nil {
-		fmt.Printf("Failed to reconcile tasks: %v\n", err)
+	// Reconcile containers
+	if err := r.reconcileContainers(); err != nil {
+		fmt.Printf("Failed to reconcile containers: %v\n", err)
 	}
 
 	return nil
@@ -102,65 +102,65 @@ func (r *Reconciler) reconcileNodes() error {
 	return nil
 }
 
-// reconcileTasks ensures failed tasks are replaced
-func (r *Reconciler) reconcileTasks() error {
-	tasks, err := r.manager.ListTasks()
+// reconcileContainers ensures failed containers are replaced
+func (r *Reconciler) reconcileContainers() error {
+	containers, err := r.manager.ListContainers()
 	if err != nil {
-		return fmt.Errorf("failed to list tasks: %w", err)
+		return fmt.Errorf("failed to list containers: %w", err)
 	}
 
-	for _, task := range tasks {
-		// Handle failed tasks
-		if task.ActualState == types.TaskStateFailed && task.DesiredState == types.TaskStateRunning {
-			fmt.Printf("Task %s failed on node %s, marking for cleanup\n", task.ID, task.NodeID)
+	for _, container := range containers {
+		// Handle failed containers
+		if container.ActualState == types.ContainerStateFailed && container.DesiredState == types.ContainerStateRunning {
+			fmt.Printf("Container %s failed on node %s, marking for cleanup\n", container.ID, container.NodeID)
 
-			// Mark task as shutdown (scheduler will create replacement)
-			task.DesiredState = types.TaskStateShutdown
-			if err := r.manager.UpdateTask(task); err != nil {
-				fmt.Printf("Failed to mark task %s for cleanup: %v\n", task.ID, err)
+			// Mark container as shutdown (scheduler will create replacement)
+			container.DesiredState = types.ContainerStateShutdown
+			if err := r.manager.UpdateContainer(container); err != nil {
+				fmt.Printf("Failed to mark container %s for cleanup: %v\n", container.ID, err)
 			}
 		}
 
-		// Handle unhealthy tasks
-		if task.ActualState == types.TaskStateRunning && task.DesiredState == types.TaskStateRunning {
-			if task.HealthStatus != nil && !task.HealthStatus.Healthy {
-				// Check if task has exceeded failure threshold
+		// Handle unhealthy containers
+		if container.ActualState == types.ContainerStateRunning && container.DesiredState == types.ContainerStateRunning {
+			if container.HealthStatus != nil && !container.HealthStatus.Healthy {
+				// Check if container has exceeded failure threshold
 				// For now, we use a simple check: if unhealthy, mark as failed
-				fmt.Printf("Task %s is unhealthy (%d consecutive failures): %s\n",
-					task.ID, task.HealthStatus.ConsecutiveFailures, task.HealthStatus.Message)
+				fmt.Printf("Container %s is unhealthy (%d consecutive failures): %s\n",
+					container.ID, container.HealthStatus.ConsecutiveFailures, container.HealthStatus.Message)
 
-				// Mark task as failed so it gets replaced
-				task.ActualState = types.TaskStateFailed
-				task.Error = fmt.Sprintf("health check failed: %s", task.HealthStatus.Message)
-				if err := r.manager.UpdateTask(task); err != nil {
-					fmt.Printf("Failed to mark unhealthy task %s as failed: %v\n", task.ID, err)
+				// Mark container as failed so it gets replaced
+				container.ActualState = types.ContainerStateFailed
+				container.Error = fmt.Sprintf("health check failed: %s", container.HealthStatus.Message)
+				if err := r.manager.UpdateContainer(container); err != nil {
+					fmt.Printf("Failed to mark unhealthy container %s as failed: %v\n", container.ID, err)
 				}
 			}
 		}
 
-		// Handle tasks on down nodes
-		node, err := r.manager.GetNode(task.NodeID)
+		// Handle containers on down nodes
+		node, err := r.manager.GetNode(container.NodeID)
 		if err != nil {
 			continue
 		}
 
-		if node.Status == types.NodeStatusDown && task.DesiredState == types.TaskStateRunning {
-			fmt.Printf("Task %s on down node %s, marking for rescheduling\n", task.ID, node.ID)
+		if node.Status == types.NodeStatusDown && container.DesiredState == types.ContainerStateRunning {
+			fmt.Printf("Container %s on down node %s, marking for rescheduling\n", container.ID, node.ID)
 
-			// Mark task as failed so scheduler can create replacement
-			task.ActualState = types.TaskStateFailed
-			task.DesiredState = types.TaskStateShutdown
-			if err := r.manager.UpdateTask(task); err != nil {
-				fmt.Printf("Failed to mark task %s as failed: %v\n", task.ID, err)
+			// Mark container as failed so scheduler can create replacement
+			container.ActualState = types.ContainerStateFailed
+			container.DesiredState = types.ContainerStateShutdown
+			if err := r.manager.UpdateContainer(container); err != nil {
+				fmt.Printf("Failed to mark container %s as failed: %v\n", container.ID, err)
 			}
 		}
 
-		// Clean up completed shutdown tasks
-		if task.DesiredState == types.TaskStateShutdown && task.ActualState == types.TaskStateComplete {
-			// Task can be deleted after some grace period
-			if time.Since(task.FinishedAt) > 5*time.Minute {
-				if err := r.manager.DeleteTask(task.ID); err != nil {
-					fmt.Printf("Failed to delete completed task %s: %v\n", task.ID, err)
+		// Clean up completed shutdown containers
+		if container.DesiredState == types.ContainerStateShutdown && container.ActualState == types.ContainerStateComplete {
+			// Container can be deleted after some grace period
+			if time.Since(container.FinishedAt) > 5*time.Minute {
+				if err := r.manager.DeleteContainer(container.ID); err != nil {
+					fmt.Printf("Failed to delete completed container %s: %v\n", container.ID, err)
 				}
 			}
 		}

@@ -12,14 +12,14 @@ import (
 
 var (
 	// Bucket names
-	bucketNodes          = []byte("nodes")
-	bucketServices       = []byte("services")
-	bucketTasks          = []byte("tasks")
-	bucketSecrets        = []byte("secrets")
-	bucketVolumes        = []byte("volumes")
-	bucketNetworks       = []byte("networks")
-	bucketCA             = []byte("ca")
-	bucketIngresses      = []byte("ingresses")
+	bucketNodes           = []byte("nodes")
+	bucketServices        = []byte("services")
+	bucketContainers      = []byte("containers")
+	bucketSecrets         = []byte("secrets")
+	bucketVolumes         = []byte("volumes")
+	bucketNetworks        = []byte("networks")
+	bucketCA              = []byte("ca")
+	bucketIngresses       = []byte("ingresses")
 	bucketTLSCertificates = []byte("tls_certificates")
 )
 
@@ -42,7 +42,7 @@ func NewBoltStore(dataDir string) (*BoltStore, error) {
 		buckets := [][]byte{
 			bucketNodes,
 			bucketServices,
-			bucketTasks,
+			bucketContainers,
 			bucketSecrets,
 			bucketVolumes,
 			bucketNetworks,
@@ -198,84 +198,84 @@ func (s *BoltStore) DeleteService(id string) error {
 	})
 }
 
-// Task operations
-func (s *BoltStore) CreateTask(task *types.Task) error {
+// Container operations
+func (s *BoltStore) CreateContainer(container *types.Container) error {
 	return s.db.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket(bucketTasks)
-		data, err := json.Marshal(task)
+		b := tx.Bucket(bucketContainers)
+		data, err := json.Marshal(container)
 		if err != nil {
 			return err
 		}
-		return b.Put([]byte(task.ID), data)
+		return b.Put([]byte(container.ID), data)
 	})
 }
 
-func (s *BoltStore) GetTask(id string) (*types.Task, error) {
-	var task types.Task
+func (s *BoltStore) GetContainer(id string) (*types.Container, error) {
+	var container types.Container
 	err := s.db.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket(bucketTasks)
+		b := tx.Bucket(bucketContainers)
 		data := b.Get([]byte(id))
 		if data == nil {
-			return fmt.Errorf("task not found: %s", id)
+			return fmt.Errorf("container not found: %s", id)
 		}
-		return json.Unmarshal(data, &task)
+		return json.Unmarshal(data, &container)
 	})
-	return &task, err
+	return &container, err
 }
 
-func (s *BoltStore) ListTasks() ([]*types.Task, error) {
-	var tasks []*types.Task
+func (s *BoltStore) ListContainers() ([]*types.Container, error) {
+	var containers []*types.Container
 	err := s.db.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket(bucketTasks)
+		b := tx.Bucket(bucketContainers)
 		return b.ForEach(func(k, v []byte) error {
-			var task types.Task
-			if err := json.Unmarshal(v, &task); err != nil {
+			var container types.Container
+			if err := json.Unmarshal(v, &container); err != nil {
 				return err
 			}
-			tasks = append(tasks, &task)
+			containers = append(containers, &container)
 			return nil
 		})
 	})
-	return tasks, err
+	return containers, err
 }
 
-func (s *BoltStore) ListTasksByService(serviceID string) ([]*types.Task, error) {
-	tasks, err := s.ListTasks()
+func (s *BoltStore) ListContainersByService(serviceID string) ([]*types.Container, error) {
+	containers, err := s.ListContainers()
 	if err != nil {
 		return nil, err
 	}
 
-	var filtered []*types.Task
-	for _, task := range tasks {
-		if task.ServiceID == serviceID {
-			filtered = append(filtered, task)
+	var filtered []*types.Container
+	for _, container := range containers {
+		if container.ServiceID == serviceID {
+			filtered = append(filtered, container)
 		}
 	}
 	return filtered, nil
 }
 
-func (s *BoltStore) ListTasksByNode(nodeID string) ([]*types.Task, error) {
-	tasks, err := s.ListTasks()
+func (s *BoltStore) ListContainersByNode(nodeID string) ([]*types.Container, error) {
+	containers, err := s.ListContainers()
 	if err != nil {
 		return nil, err
 	}
 
-	var filtered []*types.Task
-	for _, task := range tasks {
-		if task.NodeID == nodeID {
-			filtered = append(filtered, task)
+	var filtered []*types.Container
+	for _, container := range containers {
+		if container.NodeID == nodeID {
+			filtered = append(filtered, container)
 		}
 	}
 	return filtered, nil
 }
 
-func (s *BoltStore) UpdateTask(task *types.Task) error {
-	return s.CreateTask(task)
+func (s *BoltStore) UpdateContainer(container *types.Container) error {
+	return s.CreateContainer(container)
 }
 
-func (s *BoltStore) DeleteTask(id string) error {
+func (s *BoltStore) DeleteContainer(id string) error {
 	return s.db.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket(bucketTasks)
+		b := tx.Bucket(bucketContainers)
 		return b.Delete([]byte(id))
 	})
 }

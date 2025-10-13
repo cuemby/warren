@@ -454,43 +454,43 @@ func TestSchedulerPerformance(t *testing.T) {
 			t.Fatalf("Failed to get service: %v", err)
 		}
 
-		tasks, err := leader.Client.ListTasks(svc.Id, "")
+		containers, err := leader.Client.ListContainers(svc.Id, "")
 		if err != nil {
-			t.Fatalf("Failed to list tasks: %v", err)
+			t.Fatalf("Failed to list containers: %v", err)
 		}
 
-		// Analyze task distribution across nodes
-		nodeTaskCount := make(map[string]int)
-		runningTasks := 0
+		// Analyze container distribution across nodes
+		nodeContainerCount := make(map[string]int)
+		runningContainers := 0
 
-		for _, task := range tasks {
-			if task.ActualState == "running" {
-				runningTasks++
+		for _, container := range containers {
+			if container.ActualState == "running" {
+				runningContainers++
 			}
-			if task.NodeId != "" {
-				nodeTaskCount[task.NodeId]++
+			if container.NodeId != "" {
+				nodeContainerCount[container.NodeId]++
 			}
 		}
 
-		t.Logf("Task distribution:")
-		for nodeID, count := range nodeTaskCount {
-			percentage := float64(count) / float64(len(tasks)) * 100
-			t.Logf("  Node %s: %d tasks (%.1f%%)", nodeID, count, percentage)
+		t.Logf("Container distribution:")
+		for nodeID, count := range nodeContainerCount {
+			percentage := float64(count) / float64(len(containers)) * 100
+			t.Logf("  Node %s: %d containers (%.1f%%)", nodeID, count, percentage)
 		}
 
 		// Check distribution quality
-		if len(nodeTaskCount) < 2 {
-			t.Error("Poor task distribution: all tasks on single node")
+		if len(nodeContainerCount) < 2 {
+			t.Error("Poor container distribution: all containers on single node")
 		}
 
 		// Check for severe imbalance (more than 60% on one node)
-		for nodeID, count := range nodeTaskCount {
-			percentage := float64(count) / float64(len(tasks)) * 100
+		for nodeID, count := range nodeContainerCount {
+			percentage := float64(count) / float64(len(containers)) * 100
 			if percentage > 60.0 {
-				t.Errorf("Unbalanced distribution: node %s has %.1f%% of tasks", nodeID, percentage)
+				t.Errorf("Unbalanced distribution: node %s has %.1f%% of containers", nodeID, percentage)
 			}
 		}
 
-		t.Logf("✓ Scheduler distributed %d tasks across %d workers", len(tasks), len(nodeTaskCount))
+		t.Logf("✓ Scheduler distributed %d containers across %d workers", len(containers), len(nodeContainerCount))
 	})
 }

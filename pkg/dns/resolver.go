@@ -69,22 +69,22 @@ func (r *Resolver) resolveService(name string) ([]dns.RR, error) {
 		return nil, fmt.Errorf("service not found: %s", serviceName)
 	}
 
-	// Get all tasks for this service
-	tasks, err := r.store.ListTasks()
+	// Get all containers for this service
+	containers, err := r.store.ListContainers()
 	if err != nil {
-		return nil, fmt.Errorf("failed to list tasks: %w", err)
+		return nil, fmt.Errorf("failed to list containers: %w", err)
 	}
 
-	// Filter tasks for this service that are running and healthy
+	// Filter containers for this service that are running and healthy
 	var healthyIPs []net.IP
-	for _, task := range tasks {
-		if task.ServiceID == service.ID &&
-			task.ActualState == types.TaskStateRunning &&
-			(task.HealthStatus == nil || task.HealthStatus.Healthy) {
+	for _, container := range containers {
+		if container.ServiceID == service.ID &&
+			container.ActualState == types.ContainerStateRunning &&
+			(container.HealthStatus == nil || container.HealthStatus.Healthy) {
 
-			// Get task IP (for now, we'll use a placeholder)
+			// Get container IP (for now, we'll use a placeholder)
 			// TODO: Real container IPs will come from containerd networking
-			if ip := r.getTaskIP(task); ip != nil {
+			if ip := r.getContainerIP(container); ip != nil {
 				healthyIPs = append(healthyIPs, ip)
 			}
 		}
@@ -144,15 +144,15 @@ func (r *Resolver) resolveInstance(name string) (*dns.A, error) {
 	}
 
 	// Get all tasks for this service
-	tasks, err := r.store.ListTasks()
+	tasks, err := r.store.ListContainers()
 	if err != nil {
 		return nil, fmt.Errorf("failed to list tasks: %w", err)
 	}
 
 	// Filter running tasks for this service and sort by creation time
-	var serviceTasks []*types.Task
+	var serviceTasks []*types.Container
 	for _, task := range tasks {
-		if task.ServiceID == service.ID && task.ActualState == types.TaskStateRunning {
+		if task.ServiceID == service.ID && task.ActualState == types.ContainerStateRunning {
 			serviceTasks = append(serviceTasks, task)
 		}
 	}
@@ -161,9 +161,9 @@ func (r *Resolver) resolveInstance(name string) (*dns.A, error) {
 		return nil, fmt.Errorf("no running instances for service: %s", serviceName)
 	}
 
-	// Sort tasks by creation time (oldest first = instance 1)
+	// Sort containers by creation time (oldest first = instance 1)
 	// This gives us consistent instance numbering
-	sortTasksByCreationTime(serviceTasks)
+	sortContainersByCreationTime(serviceTasks)
 
 	// Check if instance number is valid (1-indexed)
 	if instanceNum < 1 || instanceNum > len(serviceTasks) {
@@ -174,7 +174,7 @@ func (r *Resolver) resolveInstance(name string) (*dns.A, error) {
 	task := serviceTasks[instanceNum-1]
 
 	// Get task IP
-	ip := r.getTaskIP(task)
+	ip := r.getContainerIP(task)
 	if ip == nil {
 		return nil, fmt.Errorf("no IP for instance %s-%d", serviceName, instanceNum)
 	}
@@ -215,10 +215,10 @@ func (r *Resolver) makeFQDN(name string) string {
 	return name
 }
 
-// getTaskIP returns the IP address for a task
+// getContainerIP returns the IP address for a task
 // TODO: In Phase C (VIP), this will return container IPs from containerd
 // For now, we return a placeholder IP based on task ID hash
-func (r *Resolver) getTaskIP(task *types.Task) net.IP {
+func (r *Resolver) getContainerIP(task *types.Container) net.IP {
 	// Placeholder implementation
 	// In a real implementation, we would:
 	// 1. Query containerd for the container's network namespace
@@ -238,13 +238,13 @@ func (r *Resolver) shuffleIPs(ips []net.IP) {
 	})
 }
 
-// sortTasksByCreationTime sorts tasks by creation time (oldest first)
-func sortTasksByCreationTime(tasks []*types.Task) {
+// sortContainersByCreationTime sorts containers by creation time (oldest first)
+func sortContainersByCreationTime(containers []*types.Container) {
 	// Simple bubble sort by creation time
-	for i := 0; i < len(tasks)-1; i++ {
-		for j := 0; j < len(tasks)-i-1; j++ {
-			if tasks[j].CreatedAt.After(tasks[j+1].CreatedAt) {
-				tasks[j], tasks[j+1] = tasks[j+1], tasks[j]
+	for i := 0; i < len(containers)-1; i++ {
+		for j := 0; j < len(containers)-i-1; j++ {
+			if containers[j].CreatedAt.After(containers[j+1].CreatedAt) {
+				containers[j], containers[j+1] = containers[j+1], containers[j]
 			}
 		}
 	}

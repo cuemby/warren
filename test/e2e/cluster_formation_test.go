@@ -160,29 +160,29 @@ func TestClusterFormation(t *testing.T) {
 			t.Errorf("Expected %d replicas, got %d", replicas, svc.Replicas)
 		}
 
-		// List tasks
-		tasks, err := leader.Client.ListTasks(svc.Id, "")
+		// List containers
+		containers, err := leader.Client.ListContainers(svc.Id, "")
 		if err != nil {
-			t.Fatalf("Failed to list tasks: %v", err)
+			t.Fatalf("Failed to list containers: %v", err)
 		}
 
-		t.Logf("Service tasks:")
-		for _, task := range tasks {
-			t.Logf("  - Task: %s, Node: %s, State: %s", task.Id, task.NodeId, task.ActualState)
+		t.Logf("Service containers:")
+		for _, container := range containers {
+			t.Logf("  - Container: %s, Node: %s, State: %s", container.Id, container.NodeId, container.ActualState)
 		}
 
-		// Verify tasks are distributed (not all on same node)
+		// Verify containers are distributed (not all on same node)
 		nodeMap := make(map[string]int)
-		for _, task := range tasks {
-			if task.ActualState == "running" {
-				nodeMap[task.NodeId]++
+		for _, container := range containers {
+			if container.ActualState == "running" {
+				nodeMap[container.NodeId]++
 			}
 		}
 
 		if len(nodeMap) == 1 {
-			t.Log("⚠ All tasks scheduled on same node (load balancing may need improvement)")
+			t.Log("⚠ All containers scheduled on same node (load balancing may need improvement)")
 		} else {
-			t.Logf("✓ Tasks distributed across %d nodes", len(nodeMap))
+			t.Logf("✓ Containers distributed across %d nodes", len(nodeMap))
 		}
 	})
 
@@ -382,23 +382,23 @@ func TestClusterFormationManagerOnly(t *testing.T) {
 			t.Errorf("Expected service name %s, got %s", serviceName, svc.Name)
 		}
 
-		tasks, err := leader.Client.ListTasks(svc.Id, "")
+		containers, err := leader.Client.ListContainers(svc.Id, "")
 		if err != nil {
-			t.Fatalf("Failed to list tasks: %v", err)
+			t.Fatalf("Failed to list containers: %v", err)
 		}
 
-		// Tasks should exist but be in pending state (no workers available)
+		// Containers should exist but be in pending state (no workers available)
 		runningCount := 0
-		for _, task := range tasks {
-			if task.ActualState == "running" {
+		for _, container := range containers {
+			if container.ActualState == "running" {
 				runningCount++
 			}
 		}
 
 		if runningCount > 0 {
-			t.Logf("⚠ Found %d running tasks (expected 0 since no workers)", runningCount)
+			t.Logf("⚠ Found %d running containers (expected 0 since no workers)", runningCount)
 		} else {
-			t.Log("✓ Service created but tasks pending (no workers available)")
+			t.Log("✓ Service created but containers pending (no workers available)")
 		}
 	})
 }

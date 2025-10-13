@@ -39,19 +39,19 @@ func (a *Assertions) ServiceRunning(name string, client *Client) {
 		a.t.Fatalf("Failed to get service %s: %v", name, err)
 	}
 
-	// Check via tasks (Service proto has no status field)
-	tasks, err := client.Client.ListTasks(svc.Id, "")
+	// Check via containers (Service proto has no status field)
+	containers, err := client.Client.ListContainers(svc.Id, "")
 	if err != nil {
-		a.t.Fatalf("Failed to list tasks for service %s: %v", name, err)
+		a.t.Fatalf("Failed to list containers for service %s: %v", name, err)
 	}
 
-	for _, task := range tasks {
-		if task.ActualState == "running" {
-			return // At least one task running
+	for _, container := range containers {
+		if container.ActualState == "running" {
+			return // At least one container running
 		}
 	}
 
-	a.t.Fatalf("Service %s has no running tasks", name)
+	a.t.Fatalf("Service %s has no running containers", name)
 }
 
 // ServiceReplicas asserts that a service has the expected number of running replicas
@@ -63,14 +63,14 @@ func (a *Assertions) ServiceReplicas(name string, expected int, client *Client) 
 		a.t.Fatalf("Failed to get service %s: %v", name, err)
 	}
 
-	tasks, err := client.Client.ListTasks(svc.Id, "")
+	containers, err := client.Client.ListContainers(svc.Id, "")
 	if err != nil {
-		a.t.Fatalf("Failed to list tasks for service %s: %v", name, err)
+		a.t.Fatalf("Failed to list containers for service %s: %v", name, err)
 	}
 
 	running := 0
-	for _, task := range tasks {
-		if task.ActualState == "running" {
+	for _, container := range containers {
+		if container.ActualState == "running" {
 			running++
 		}
 	}
@@ -95,49 +95,49 @@ func (a *Assertions) ServiceDeleted(name string, client *Client) {
 	}
 }
 
-// TaskRunning asserts that a task is running
-func (a *Assertions) TaskRunning(taskID string, client *Client) {
+// ContainerRunning asserts that a container is running
+func (a *Assertions) ContainerRunning(containerID string, client *Client) {
 	a.t.Helper()
 
-	tasks, err := client.Client.ListTasks("", "")
+	containers, err := client.Client.ListContainers("", "")
 	if err != nil {
-		a.t.Fatalf("Failed to list tasks: %v", err)
+		a.t.Fatalf("Failed to list containers: %v", err)
 	}
 
-	for _, task := range tasks {
-		if task.Id == taskID {
-			if task.ActualState != "running" {
-				a.t.Fatalf("Task %s is not running (state: %s)", taskID, task.ActualState)
+	for _, container := range containers {
+		if container.Id == containerID {
+			if container.ActualState != "running" {
+				a.t.Fatalf("Container %s is not running (state: %s)", containerID, container.ActualState)
 			}
 			return
 		}
 	}
 
-	a.t.Fatalf("Task %s not found", taskID)
+	a.t.Fatalf("Container %s not found", containerID)
 }
 
-// TaskHealthy asserts that a task is healthy
-// TODO: Task proto doesn't have health_status field yet - using actual_state as proxy
-func (a *Assertions) TaskHealthy(taskID string, client *Client) {
+// ContainerHealthy asserts that a container is healthy
+// TODO: Container proto doesn't have health_status field yet - using actual_state as proxy
+func (a *Assertions) ContainerHealthy(containerID string, client *Client) {
 	a.t.Helper()
 
-	tasks, err := client.Client.ListTasks("", "")
+	containers, err := client.Client.ListContainers("", "")
 	if err != nil {
-		a.t.Fatalf("Failed to list tasks: %v", err)
+		a.t.Fatalf("Failed to list containers: %v", err)
 	}
 
-	for _, task := range tasks {
-		if task.Id == taskID {
-			// For now, check if task is running as proxy for healthy
+	for _, container := range containers {
+		if container.Id == containerID {
+			// For now, check if container is running as proxy for healthy
 			// TODO: Use actual health_status when added to proto
-			if task.ActualState != "running" {
-				a.t.Fatalf("Task %s is not healthy (state: %s)", taskID, task.ActualState)
+			if container.ActualState != "running" {
+				a.t.Fatalf("Container %s is not healthy (state: %s)", containerID, container.ActualState)
 			}
 			return
 		}
 	}
 
-	a.t.Fatalf("Task %s not found", taskID)
+	a.t.Fatalf("Container %s not found", containerID)
 }
 
 // HasLeader asserts that the cluster has a leader

@@ -88,22 +88,22 @@ func TestGlobalServiceScheduling(t *testing.T) {
 	err = sched.schedule()
 	assert.NoError(t, err)
 
-	// Verify one task per node
-	tasks, err := mgr.ListTasksByService(service.ID)
+	// Verify one container per node
+	containers, err := mgr.ListContainersByService(service.ID)
 	assert.NoError(t, err)
-	assert.Len(t, tasks, 2, "Should have exactly 2 tasks (one per worker)")
+	assert.Len(t, containers, 2, "Should have exactly 2 containers (one per worker)")
 
-	// Verify each node has a task
-	tasksByNode := make(map[string]bool)
-	for _, task := range tasks {
-		tasksByNode[task.NodeID] = true
-		assert.Equal(t, service.ID, task.ServiceID)
-		assert.Equal(t, types.TaskStatePending, task.ActualState)
-		assert.Equal(t, types.TaskStateRunning, task.DesiredState)
+	// Verify each node has a container
+	containersByNode := make(map[string]bool)
+	for _, container := range containers {
+		containersByNode[container.NodeID] = true
+		assert.Equal(t, service.ID, container.ServiceID)
+		assert.Equal(t, types.ContainerStatePending, container.ActualState)
+		assert.Equal(t, types.ContainerStateRunning, container.DesiredState)
 	}
 
-	assert.True(t, tasksByNode["worker-1"], "Worker 1 should have a task")
-	assert.True(t, tasksByNode["worker-2"], "Worker 2 should have a task")
+	assert.True(t, containersByNode["worker-1"], "Worker 1 should have a container")
+	assert.True(t, containersByNode["worker-2"], "Worker 2 should have a container")
 
 	// Simulate adding a new worker
 	worker3 := &types.Node{
@@ -127,19 +127,19 @@ func TestGlobalServiceScheduling(t *testing.T) {
 	err = sched.schedule()
 	assert.NoError(t, err)
 
-	// Verify auto-scaling to 3 tasks
-	tasks, err = mgr.ListTasksByService(service.ID)
+	// Verify auto-scaling to 3 containers
+	containers, err = mgr.ListContainersByService(service.ID)
 	assert.NoError(t, err)
-	assert.Len(t, tasks, 3, "Should have auto-scaled to 3 tasks")
+	assert.Len(t, containers, 3, "Should have auto-scaled to 3 containers")
 
-	tasksByNode = make(map[string]bool)
-	for _, task := range tasks {
-		tasksByNode[task.NodeID] = true
+	containersByNode = make(map[string]bool)
+	for _, container := range containers {
+		containersByNode[container.NodeID] = true
 	}
 
-	assert.True(t, tasksByNode["worker-1"])
-	assert.True(t, tasksByNode["worker-2"])
-	assert.True(t, tasksByNode["worker-3"], "New worker should have a task")
+	assert.True(t, containersByNode["worker-1"])
+	assert.True(t, containersByNode["worker-2"])
+	assert.True(t, containersByNode["worker-3"], "New worker should have a container")
 
 	// Simulate removing a worker (mark as down)
 	worker2.Status = types.NodeStatusDown
@@ -150,17 +150,17 @@ func TestGlobalServiceScheduling(t *testing.T) {
 	err = sched.schedule()
 	assert.NoError(t, err)
 
-	// Verify task for removed node is marked for shutdown
-	tasks, err = mgr.ListTasksByService(service.ID)
+	// Verify container for removed node is marked for shutdown
+	containers, err = mgr.ListContainersByService(service.ID)
 	assert.NoError(t, err)
 
-	for _, task := range tasks {
-		if task.NodeID == "worker-2" {
-			// Since worker-2 is down but still exists, task should remain
+	for _, container := range containers {
+		if container.NodeID == "worker-2" {
+			// Since worker-2 is down but still exists, container should remain
 			// Only non-existent nodes trigger shutdown
 			continue
 		}
-		assert.Equal(t, types.TaskStateRunning, task.DesiredState)
+		assert.Equal(t, types.ContainerStateRunning, container.DesiredState)
 	}
 }
 
@@ -243,10 +243,10 @@ func TestReplicatedServiceScheduling(t *testing.T) {
 	err = sched.schedule()
 	assert.NoError(t, err)
 
-	// Verify 3 tasks created
-	tasks, err := mgr.ListTasksByService(service.ID)
+	// Verify 3 containers created
+	containers, err := mgr.ListContainersByService(service.ID)
 	assert.NoError(t, err)
-	assert.Len(t, tasks, 3, "Should have exactly 3 tasks")
+	assert.Len(t, containers, 3, "Should have exactly 3 containers")
 
 	// Scale down to 2 replicas
 	service.Replicas = 2
@@ -257,20 +257,20 @@ func TestReplicatedServiceScheduling(t *testing.T) {
 	err = sched.schedule()
 	assert.NoError(t, err)
 
-	// Verify one task is marked for shutdown
-	tasks, err = mgr.ListTasksByService(service.ID)
+	// Verify one container is marked for shutdown
+	containers, err = mgr.ListContainersByService(service.ID)
 	assert.NoError(t, err)
 
 	runningCount := 0
 	shutdownCount := 0
-	for _, task := range tasks {
-		if task.DesiredState == types.TaskStateRunning {
+	for _, container := range containers {
+		if container.DesiredState == types.ContainerStateRunning {
 			runningCount++
-		} else if task.DesiredState == types.TaskStateShutdown {
+		} else if container.DesiredState == types.ContainerStateShutdown {
 			shutdownCount++
 		}
 	}
 
-	assert.Equal(t, 2, runningCount, "Should have 2 running tasks")
-	assert.Equal(t, 1, shutdownCount, "Should have 1 shutdown task")
+	assert.Equal(t, 2, runningCount, "Should have 2 running containers")
+	assert.Equal(t, 1, shutdownCount, "Should have 1 shutdown container")
 }

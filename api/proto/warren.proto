@@ -22,16 +22,16 @@ service WarrenAPI {
   rpc GetService(GetServiceRequest) returns (GetServiceResponse);
   rpc ListServices(ListServicesRequest) returns (ListServicesResponse);
 
-  // Task operations
-  rpc UpdateTaskStatus(UpdateTaskStatusRequest) returns (UpdateTaskStatusResponse);
-  rpc ListTasks(ListTasksRequest) returns (ListTasksResponse);
-  rpc GetTask(GetTaskRequest) returns (GetTaskResponse);
+  // Container operations
+  rpc UpdateContainerStatus(UpdateContainerStatusRequest) returns (UpdateContainerStatusResponse);
+  rpc ListContainers(ListContainersRequest) returns (ListContainersResponse);
+  rpc GetContainer(GetContainerRequest) returns (GetContainerResponse);
 
-  // Task assignment stream (worker watches for assigned tasks)
-  rpc WatchTasks(WatchTasksRequest) returns (stream TaskEvent);
+  // Container assignment stream (worker watches for assigned containers)
+  rpc WatchContainers(WatchContainersRequest) returns (stream ContainerEvent);
 
   // Health check operations
-  rpc ReportTaskHealth(ReportTaskHealthRequest) returns (ReportTaskHealthResponse);
+  rpc ReportContainerHealth(ReportContainerHealthRequest) returns (ReportContainerHealthResponse);
 
   // Secret operations
   rpc CreateSecret(CreateSecretRequest) returns (CreateSecretResponse);
@@ -105,17 +105,17 @@ message RegisterNodeResponse {
 message HeartbeatRequest {
   string node_id = 1;
   NodeResources available_resources = 2;
-  repeated TaskStatus task_statuses = 3;
+  repeated ContainerStatus container_statuses = 3;
 }
 
 message HeartbeatResponse {
   string status = 1;
 }
 
-message TaskStatus {
-  string task_id = 1;
+message ContainerStatus {
+  string container_id = 1;
   string actual_state = 2; // "running", "failed", "stopped"
-  string container_id = 3;
+  string runtime_container_id = 3;
   string error = 4;
 }
 
@@ -235,7 +235,7 @@ message VolumeMount {
 
 message PortMapping {
   enum PublishMode {
-    HOST = 0;     // Publish on node running the task
+    HOST = 0;     // Publish on node running the container
     INGRESS = 1;  // Publish on all nodes with routing mesh
   }
 
@@ -302,13 +302,13 @@ message ListServicesResponse {
   repeated Service services = 1;
 }
 
-// Task messages
-message Task {
+// Container messages
+message Container {
   string id = 1;
   string service_id = 2;
   string service_name = 3;
   string node_id = 4;
-  string container_id = 5;
+  string runtime_container_id = 5;
   string desired_state = 6; // "running", "shutdown"
   string actual_state = 7; // "pending", "running", "failed", "stopped"
   string image = 8;
@@ -325,42 +325,42 @@ message Task {
   int32 stop_timeout = 19; // Seconds to wait before force-killing (default: 10)
 }
 
-message UpdateTaskStatusRequest {
-  string task_id = 1;
+message UpdateContainerStatusRequest {
+  string container_id = 1;
   string node_id = 2;
   string actual_state = 3;
-  string container_id = 4;
+  string runtime_container_id = 4;
   string error = 5;
 }
 
-message UpdateTaskStatusResponse {
+message UpdateContainerStatusResponse {
   string status = 1;
 }
 
-message ListTasksRequest {
+message ListContainersRequest {
   string service_id = 1; // optional filter
   string node_id = 2; // optional filter
 }
 
-message ListTasksResponse {
-  repeated Task tasks = 1;
+message ListContainersResponse {
+  repeated Container containers = 1;
 }
 
-message GetTaskRequest {
+message GetContainerRequest {
   string id = 1;
 }
 
-message GetTaskResponse {
-  Task task = 1;
+message GetContainerResponse {
+  Container container = 1;
 }
 
-message WatchTasksRequest {
+message WatchContainersRequest {
   string node_id = 1;
 }
 
-message TaskEvent {
+message ContainerEvent {
   string type = 1; // "add", "update", "delete"
-  Task task = 2;
+  Container container = 2;
 }
 
 // Secret messages
@@ -484,8 +484,8 @@ message ClusterServer {
 }
 
 // Health check messages
-message ReportTaskHealthRequest {
-  string task_id = 1;
+message ReportContainerHealthRequest {
+  string container_id = 1;
   bool healthy = 2;
   string message = 3;
   google.protobuf.Timestamp checked_at = 4;
@@ -493,7 +493,7 @@ message ReportTaskHealthRequest {
   int32 consecutive_successes = 6;
 }
 
-message ReportTaskHealthResponse {
+message ReportContainerHealthResponse {
   string status = 1;
 }
 

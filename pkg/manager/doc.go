@@ -183,12 +183,12 @@ Node Operations:
 Service Operations:
   - CreateService: Deploy new service
   - UpdateService: Modify service (triggers rolling update)
-  - DeleteService: Remove service and all tasks
+  - DeleteService: Remove service and all containers
 
-Task Operations:
-  - CreateTask: Create new task instance
-  - UpdateTask: Update task state and metadata
-  - DeleteTask: Remove completed/failed task
+Container Operations:
+  - CreateContainer: Create new container instance
+  - UpdateContainer: Update container state and metadata
+  - DeleteContainer: Remove completed/failed container
 
 Secret Operations:
   - CreateSecret: Store encrypted secret
@@ -235,13 +235,13 @@ Raft Operations:
 
 API Throughput:
   - Service creation: 10/sec (linearizable writes)
-  - Task updates: 100/sec (batched FSM applies)
+  - Container updates: 100/sec (batched FSM applies)
   - Read operations: 1000/sec (leader serving)
 
 Memory Usage:
   - Base manager: 50MB
   - Per service: ~10KB
-  - Per task: ~5KB
+  - Per container: ~5KB
   - Per node: ~2KB
   - Typical 3-manager cluster: ~256MB total
 
@@ -251,7 +251,7 @@ This package integrates with:
 
   - pkg/api: Provides gRPC server implementation
   - pkg/storage: Persists cluster state to BoltDB
-  - pkg/scheduler: Coordinates task scheduling
+  - pkg/scheduler: Coordinates container scheduling
   - pkg/reconciler: Coordinates failure detection
   - pkg/security: Manages secrets encryption and CA
   - pkg/dns: Provides DNS server for service discovery
@@ -359,7 +359,7 @@ Resource Usage:
 
   - pkg/api for gRPC server implementation
   - pkg/storage for state persistence
-  - pkg/scheduler for task scheduling logic
+  - pkg/scheduler for container scheduling logic
   - pkg/reconciler for failure detection
   - docs/concepts/high-availability.md for HA setup
   - docs/raft-tuning.md for Raft configuration

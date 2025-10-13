@@ -58,18 +58,18 @@ func (w *Waiter) WaitForServiceRunning(ctx context.Context, client *Client, name
 			return false
 		}
 
-		tasks, err := client.Client.ListTasks(svc.Id, "")
+		containers, err := client.Client.ListContainers(svc.Id, "")
 		if err != nil {
 			return false
 		}
 
-		for _, task := range tasks {
-			if task.ActualState == "running" {
+		for _, container := range containers {
+			if container.ActualState == "running" {
 				return true
 			}
 		}
 		return false
-	}, fmt.Sprintf("service %s to have running tasks", name))
+	}, fmt.Sprintf("service %s to have running containers", name))
 }
 
 // WaitForServiceDeleted waits for a service to be deleted
@@ -88,14 +88,14 @@ func (w *Waiter) WaitForReplicas(ctx context.Context, client *Client, serviceNam
 			return false
 		}
 
-		tasks, err := client.Client.ListTasks(svc.Id, "")
+		containers, err := client.Client.ListContainers(svc.Id, "")
 		if err != nil {
 			return false
 		}
 
 		running := 0
-		for _, task := range tasks {
-			if task.ActualState == "running" {
+		for _, container := range containers {
+			if container.ActualState == "running" {
 				running++
 			}
 		}
@@ -104,48 +104,48 @@ func (w *Waiter) WaitForReplicas(ctx context.Context, client *Client, serviceNam
 	}, fmt.Sprintf("service %s to have %d running replicas", serviceName, count))
 }
 
-// WaitForTask waits for a specific task to reach a status
-func (w *Waiter) WaitForTask(ctx context.Context, client *Client, taskID string, status string) error {
+// WaitForContainer waits for a specific container to reach a status
+func (w *Waiter) WaitForContainer(ctx context.Context, client *Client, containerID string, status string) error {
 	return w.WaitFor(ctx, func() bool {
-		tasks, err := client.Client.ListTasks("", "")
+		containers, err := client.Client.ListContainers("", "")
 		if err != nil {
 			return false
 		}
 
-		for _, task := range tasks {
-			if task.Id == taskID {
-				return task.ActualState == status
+		for _, container := range containers {
+			if container.Id == containerID {
+				return container.ActualState == status
 			}
 		}
 
 		return false
-	}, fmt.Sprintf("task %s to reach status %s", taskID, status))
+	}, fmt.Sprintf("container %s to reach status %s", containerID, status))
 }
 
-// WaitForTaskRunning waits for a task to be running
-func (w *Waiter) WaitForTaskRunning(ctx context.Context, client *Client, taskID string) error {
-	return w.WaitForTask(ctx, client, taskID, "running")
+// WaitForContainerRunning waits for a container to be running
+func (w *Waiter) WaitForContainerRunning(ctx context.Context, client *Client, containerID string) error {
+	return w.WaitForContainer(ctx, client, containerID, "running")
 }
 
-// WaitForTaskHealthy waits for a task to become healthy
+// WaitForContainerHealthy waits for a container to become healthy
 // TODO: Use actual health_status field when added to proto
-func (w *Waiter) WaitForTaskHealthy(ctx context.Context, client *Client, taskID string) error {
+func (w *Waiter) WaitForContainerHealthy(ctx context.Context, client *Client, containerID string) error {
 	return w.WaitFor(ctx, func() bool {
-		tasks, err := client.Client.ListTasks("", "")
+		containers, err := client.Client.ListContainers("", "")
 		if err != nil {
 			return false
 		}
 
-		for _, task := range tasks {
-			if task.Id == taskID {
+		for _, container := range containers {
+			if container.Id == containerID {
 				// For now, use ActualState as a proxy for health
-				// When health_status is added to proto, replace with: task.HealthStatus == "healthy"
-				return task.ActualState == "running"
+				// When health_status is added to proto, replace with: container.HealthStatus == "healthy"
+				return container.ActualState == "running"
 			}
 		}
 
 		return false
-	}, fmt.Sprintf("task %s to become healthy", taskID))
+	}, fmt.Sprintf("container %s to become healthy", containerID))
 }
 
 // WaitForLeaderElection waits for a leader to be elected in the cluster

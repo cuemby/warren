@@ -38,7 +38,7 @@ func NewSecretsHandler(worker *Worker, encryptionKey []byte) (*SecretsHandler, e
 
 // MountSecretsForTask fetches secrets from manager and mounts them to tmpfs
 // Returns the tmpfs mount path for the container
-func (sh *SecretsHandler) MountSecretsForTask(task *types.Task) (string, error) {
+func (sh *SecretsHandler) MountSecretsForTask(task *types.Container) (string, error) {
 	if len(task.Secrets) == 0 {
 		return "", nil // No secrets to mount
 	}

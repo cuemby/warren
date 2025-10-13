@@ -75,7 +75,7 @@ func (HealthCheck_Type) EnumDescriptor() ([]byte, []int) {
 type PortMapping_PublishMode int32
 
 const (
-	PortMapping_HOST    PortMapping_PublishMode = 0 // Publish on node running the task
+	PortMapping_HOST    PortMapping_PublishMode = 0 // Publish on node running the container
 	PortMapping_INGRESS PortMapping_PublishMode = 1 // Publish on all nodes with routing mesh
 )
 
@@ -419,7 +419,7 @@ type HeartbeatRequest struct {
 	state              protoimpl.MessageState `protogen:"open.v1"`
 	NodeId             string                 `protobuf:"bytes,1,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
 	AvailableResources *NodeResources         `protobuf:"bytes,2,opt,name=available_resources,json=availableResources,proto3" json:"available_resources,omitempty"`
-	TaskStatuses       []*TaskStatus          `protobuf:"bytes,3,rep,name=task_statuses,json=taskStatuses,proto3" json:"task_statuses,omitempty"`
+	ContainerStatuses  []*ContainerStatus     `protobuf:"bytes,3,rep,name=container_statuses,json=containerStatuses,proto3" json:"container_statuses,omitempty"`
 	unknownFields      protoimpl.UnknownFields
 	sizeCache          protoimpl.SizeCache
 }
@@ -468,9 +468,9 @@ func (x *HeartbeatRequest) GetAvailableResources() *NodeResources {
 	return nil
 }
 
-func (x *HeartbeatRequest) GetTaskStatuses() []*TaskStatus {
+func (x *HeartbeatRequest) GetContainerStatuses() []*ContainerStatus {
 	if x != nil {
-		return x.TaskStatuses
+		return x.ContainerStatuses
 	}
 	return nil
 }
@@ -519,30 +519,30 @@ func (x *HeartbeatResponse) GetStatus() string {
 	return ""
 }
 
-type TaskStatus struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	TaskId        string                 `protobuf:"bytes,1,opt,name=task_id,json=taskId,proto3" json:"task_id,omitempty"`
-	ActualState   string                 `protobuf:"bytes,2,opt,name=actual_state,json=actualState,proto3" json:"actual_state,omitempty"` // "running", "failed", "stopped"
-	ContainerId   string                 `protobuf:"bytes,3,opt,name=container_id,json=containerId,proto3" json:"container_id,omitempty"`
-	Error         string                 `protobuf:"bytes,4,opt,name=error,proto3" json:"error,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+type ContainerStatus struct {
+	state              protoimpl.MessageState `protogen:"open.v1"`
+	ContainerId        string                 `protobuf:"bytes,1,opt,name=container_id,json=containerId,proto3" json:"container_id,omitempty"`
+	ActualState        string                 `protobuf:"bytes,2,opt,name=actual_state,json=actualState,proto3" json:"actual_state,omitempty"` // "running", "failed", "stopped"
+	RuntimeContainerId string                 `protobuf:"bytes,3,opt,name=runtime_container_id,json=runtimeContainerId,proto3" json:"runtime_container_id,omitempty"`
+	Error              string                 `protobuf:"bytes,4,opt,name=error,proto3" json:"error,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
-func (x *TaskStatus) Reset() {
-	*x = TaskStatus{}
+func (x *ContainerStatus) Reset() {
+	*x = ContainerStatus{}
 	mi := &file_api_proto_warren_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *TaskStatus) String() string {
+func (x *ContainerStatus) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*TaskStatus) ProtoMessage() {}
+func (*ContainerStatus) ProtoMessage() {}
 
-func (x *TaskStatus) ProtoReflect() protoreflect.Message {
+func (x *ContainerStatus) ProtoReflect() protoreflect.Message {
 	mi := &file_api_proto_warren_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -554,33 +554,33 @@ func (x *TaskStatus) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use TaskStatus.ProtoReflect.Descriptor instead.
-func (*TaskStatus) Descriptor() ([]byte, []int) {
+// Deprecated: Use ContainerStatus.ProtoReflect.Descriptor instead.
+func (*ContainerStatus) Descriptor() ([]byte, []int) {
 	return file_api_proto_warren_proto_rawDescGZIP(), []int{6}
 }
 
-func (x *TaskStatus) GetTaskId() string {
-	if x != nil {
-		return x.TaskId
-	}
-	return ""
-}
-
-func (x *TaskStatus) GetActualState() string {
-	if x != nil {
-		return x.ActualState
-	}
-	return ""
-}
-
-func (x *TaskStatus) GetContainerId() string {
+func (x *ContainerStatus) GetContainerId() string {
 	if x != nil {
 		return x.ContainerId
 	}
 	return ""
 }
 
-func (x *TaskStatus) GetError() string {
+func (x *ContainerStatus) GetActualState() string {
+	if x != nil {
+		return x.ActualState
+	}
+	return ""
+}
+
+func (x *ContainerStatus) GetRuntimeContainerId() string {
+	if x != nil {
+		return x.RuntimeContainerId
+	}
+	return ""
+}
+
+func (x *ContainerStatus) GetError() string {
 	if x != nil {
 		return x.Error
 	}
@@ -2250,46 +2250,46 @@ func (x *ListServicesResponse) GetServices() []*Service {
 	return nil
 }
 
-// Task messages
-type Task struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	ServiceId     string                 `protobuf:"bytes,2,opt,name=service_id,json=serviceId,proto3" json:"service_id,omitempty"`
-	ServiceName   string                 `protobuf:"bytes,3,opt,name=service_name,json=serviceName,proto3" json:"service_name,omitempty"`
-	NodeId        string                 `protobuf:"bytes,4,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
-	ContainerId   string                 `protobuf:"bytes,5,opt,name=container_id,json=containerId,proto3" json:"container_id,omitempty"`
-	DesiredState  string                 `protobuf:"bytes,6,opt,name=desired_state,json=desiredState,proto3" json:"desired_state,omitempty"` // "running", "shutdown"
-	ActualState   string                 `protobuf:"bytes,7,opt,name=actual_state,json=actualState,proto3" json:"actual_state,omitempty"`    // "pending", "running", "failed", "stopped"
-	Image         string                 `protobuf:"bytes,8,opt,name=image,proto3" json:"image,omitempty"`
-	Command       []string               `protobuf:"bytes,9,rep,name=command,proto3" json:"command,omitempty"`
-	Env           map[string]string      `protobuf:"bytes,10,rep,name=env,proto3" json:"env,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	Resources     *ResourceRequirements  `protobuf:"bytes,11,opt,name=resources,proto3" json:"resources,omitempty"`
-	Volumes       []*VolumeMount         `protobuf:"bytes,12,rep,name=volumes,proto3" json:"volumes,omitempty"`
-	HealthCheck   *HealthCheck           `protobuf:"bytes,13,opt,name=health_check,json=healthCheck,proto3" json:"health_check,omitempty"`
-	RestartPolicy *RestartPolicy         `protobuf:"bytes,14,opt,name=restart_policy,json=restartPolicy,proto3" json:"restart_policy,omitempty"`
-	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,15,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	UpdatedAt     *timestamppb.Timestamp `protobuf:"bytes,16,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
-	Error         string                 `protobuf:"bytes,17,opt,name=error,proto3" json:"error,omitempty"`
-	Secrets       []string               `protobuf:"bytes,18,rep,name=secrets,proto3" json:"secrets,omitempty"`                             // Secret names to mount
-	StopTimeout   int32                  `protobuf:"varint,19,opt,name=stop_timeout,json=stopTimeout,proto3" json:"stop_timeout,omitempty"` // Seconds to wait before force-killing (default: 10)
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+// Container messages
+type Container struct {
+	state              protoimpl.MessageState `protogen:"open.v1"`
+	Id                 string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	ServiceId          string                 `protobuf:"bytes,2,opt,name=service_id,json=serviceId,proto3" json:"service_id,omitempty"`
+	ServiceName        string                 `protobuf:"bytes,3,opt,name=service_name,json=serviceName,proto3" json:"service_name,omitempty"`
+	NodeId             string                 `protobuf:"bytes,4,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
+	RuntimeContainerId string                 `protobuf:"bytes,5,opt,name=runtime_container_id,json=runtimeContainerId,proto3" json:"runtime_container_id,omitempty"`
+	DesiredState       string                 `protobuf:"bytes,6,opt,name=desired_state,json=desiredState,proto3" json:"desired_state,omitempty"` // "running", "shutdown"
+	ActualState        string                 `protobuf:"bytes,7,opt,name=actual_state,json=actualState,proto3" json:"actual_state,omitempty"`    // "pending", "running", "failed", "stopped"
+	Image              string                 `protobuf:"bytes,8,opt,name=image,proto3" json:"image,omitempty"`
+	Command            []string               `protobuf:"bytes,9,rep,name=command,proto3" json:"command,omitempty"`
+	Env                map[string]string      `protobuf:"bytes,10,rep,name=env,proto3" json:"env,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	Resources          *ResourceRequirements  `protobuf:"bytes,11,opt,name=resources,proto3" json:"resources,omitempty"`
+	Volumes            []*VolumeMount         `protobuf:"bytes,12,rep,name=volumes,proto3" json:"volumes,omitempty"`
+	HealthCheck        *HealthCheck           `protobuf:"bytes,13,opt,name=health_check,json=healthCheck,proto3" json:"health_check,omitempty"`
+	RestartPolicy      *RestartPolicy         `protobuf:"bytes,14,opt,name=restart_policy,json=restartPolicy,proto3" json:"restart_policy,omitempty"`
+	CreatedAt          *timestamppb.Timestamp `protobuf:"bytes,15,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	UpdatedAt          *timestamppb.Timestamp `protobuf:"bytes,16,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	Error              string                 `protobuf:"bytes,17,opt,name=error,proto3" json:"error,omitempty"`
+	Secrets            []string               `protobuf:"bytes,18,rep,name=secrets,proto3" json:"secrets,omitempty"`                             // Secret names to mount
+	StopTimeout        int32                  `protobuf:"varint,19,opt,name=stop_timeout,json=stopTimeout,proto3" json:"stop_timeout,omitempty"` // Seconds to wait before force-killing (default: 10)
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
-func (x *Task) Reset() {
-	*x = Task{}
+func (x *Container) Reset() {
+	*x = Container{}
 	mi := &file_api_proto_warren_proto_msgTypes[34]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *Task) String() string {
+func (x *Container) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*Task) ProtoMessage() {}
+func (*Container) ProtoMessage() {}
 
-func (x *Task) ProtoReflect() protoreflect.Message {
+func (x *Container) ProtoReflect() protoreflect.Message {
 	mi := &file_api_proto_warren_proto_msgTypes[34]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2301,169 +2301,169 @@ func (x *Task) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use Task.ProtoReflect.Descriptor instead.
-func (*Task) Descriptor() ([]byte, []int) {
+// Deprecated: Use Container.ProtoReflect.Descriptor instead.
+func (*Container) Descriptor() ([]byte, []int) {
 	return file_api_proto_warren_proto_rawDescGZIP(), []int{34}
 }
 
-func (x *Task) GetId() string {
+func (x *Container) GetId() string {
 	if x != nil {
 		return x.Id
 	}
 	return ""
 }
 
-func (x *Task) GetServiceId() string {
+func (x *Container) GetServiceId() string {
 	if x != nil {
 		return x.ServiceId
 	}
 	return ""
 }
 
-func (x *Task) GetServiceName() string {
+func (x *Container) GetServiceName() string {
 	if x != nil {
 		return x.ServiceName
 	}
 	return ""
 }
 
-func (x *Task) GetNodeId() string {
+func (x *Container) GetNodeId() string {
 	if x != nil {
 		return x.NodeId
 	}
 	return ""
 }
 
-func (x *Task) GetContainerId() string {
+func (x *Container) GetRuntimeContainerId() string {
 	if x != nil {
-		return x.ContainerId
+		return x.RuntimeContainerId
 	}
 	return ""
 }
 
-func (x *Task) GetDesiredState() string {
+func (x *Container) GetDesiredState() string {
 	if x != nil {
 		return x.DesiredState
 	}
 	return ""
 }
 
-func (x *Task) GetActualState() string {
+func (x *Container) GetActualState() string {
 	if x != nil {
 		return x.ActualState
 	}
 	return ""
 }
 
-func (x *Task) GetImage() string {
+func (x *Container) GetImage() string {
 	if x != nil {
 		return x.Image
 	}
 	return ""
 }
 
-func (x *Task) GetCommand() []string {
+func (x *Container) GetCommand() []string {
 	if x != nil {
 		return x.Command
 	}
 	return nil
 }
 
-func (x *Task) GetEnv() map[string]string {
+func (x *Container) GetEnv() map[string]string {
 	if x != nil {
 		return x.Env
 	}
 	return nil
 }
 
-func (x *Task) GetResources() *ResourceRequirements {
+func (x *Container) GetResources() *ResourceRequirements {
 	if x != nil {
 		return x.Resources
 	}
 	return nil
 }
 
-func (x *Task) GetVolumes() []*VolumeMount {
+func (x *Container) GetVolumes() []*VolumeMount {
 	if x != nil {
 		return x.Volumes
 	}
 	return nil
 }
 
-func (x *Task) GetHealthCheck() *HealthCheck {
+func (x *Container) GetHealthCheck() *HealthCheck {
 	if x != nil {
 		return x.HealthCheck
 	}
 	return nil
 }
 
-func (x *Task) GetRestartPolicy() *RestartPolicy {
+func (x *Container) GetRestartPolicy() *RestartPolicy {
 	if x != nil {
 		return x.RestartPolicy
 	}
 	return nil
 }
 
-func (x *Task) GetCreatedAt() *timestamppb.Timestamp {
+func (x *Container) GetCreatedAt() *timestamppb.Timestamp {
 	if x != nil {
 		return x.CreatedAt
 	}
 	return nil
 }
 
-func (x *Task) GetUpdatedAt() *timestamppb.Timestamp {
+func (x *Container) GetUpdatedAt() *timestamppb.Timestamp {
 	if x != nil {
 		return x.UpdatedAt
 	}
 	return nil
 }
 
-func (x *Task) GetError() string {
+func (x *Container) GetError() string {
 	if x != nil {
 		return x.Error
 	}
 	return ""
 }
 
-func (x *Task) GetSecrets() []string {
+func (x *Container) GetSecrets() []string {
 	if x != nil {
 		return x.Secrets
 	}
 	return nil
 }
 
-func (x *Task) GetStopTimeout() int32 {
+func (x *Container) GetStopTimeout() int32 {
 	if x != nil {
 		return x.StopTimeout
 	}
 	return 0
 }
 
-type UpdateTaskStatusRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	TaskId        string                 `protobuf:"bytes,1,opt,name=task_id,json=taskId,proto3" json:"task_id,omitempty"`
-	NodeId        string                 `protobuf:"bytes,2,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
-	ActualState   string                 `protobuf:"bytes,3,opt,name=actual_state,json=actualState,proto3" json:"actual_state,omitempty"`
-	ContainerId   string                 `protobuf:"bytes,4,opt,name=container_id,json=containerId,proto3" json:"container_id,omitempty"`
-	Error         string                 `protobuf:"bytes,5,opt,name=error,proto3" json:"error,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+type UpdateContainerStatusRequest struct {
+	state              protoimpl.MessageState `protogen:"open.v1"`
+	ContainerId        string                 `protobuf:"bytes,1,opt,name=container_id,json=containerId,proto3" json:"container_id,omitempty"`
+	NodeId             string                 `protobuf:"bytes,2,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
+	ActualState        string                 `protobuf:"bytes,3,opt,name=actual_state,json=actualState,proto3" json:"actual_state,omitempty"`
+	RuntimeContainerId string                 `protobuf:"bytes,4,opt,name=runtime_container_id,json=runtimeContainerId,proto3" json:"runtime_container_id,omitempty"`
+	Error              string                 `protobuf:"bytes,5,opt,name=error,proto3" json:"error,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
-func (x *UpdateTaskStatusRequest) Reset() {
-	*x = UpdateTaskStatusRequest{}
+func (x *UpdateContainerStatusRequest) Reset() {
+	*x = UpdateContainerStatusRequest{}
 	mi := &file_api_proto_warren_proto_msgTypes[35]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *UpdateTaskStatusRequest) String() string {
+func (x *UpdateContainerStatusRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*UpdateTaskStatusRequest) ProtoMessage() {}
+func (*UpdateContainerStatusRequest) ProtoMessage() {}
 
-func (x *UpdateTaskStatusRequest) ProtoReflect() protoreflect.Message {
+func (x *UpdateContainerStatusRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_api_proto_warren_proto_msgTypes[35]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2475,67 +2475,67 @@ func (x *UpdateTaskStatusRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use UpdateTaskStatusRequest.ProtoReflect.Descriptor instead.
-func (*UpdateTaskStatusRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use UpdateContainerStatusRequest.ProtoReflect.Descriptor instead.
+func (*UpdateContainerStatusRequest) Descriptor() ([]byte, []int) {
 	return file_api_proto_warren_proto_rawDescGZIP(), []int{35}
 }
 
-func (x *UpdateTaskStatusRequest) GetTaskId() string {
-	if x != nil {
-		return x.TaskId
-	}
-	return ""
-}
-
-func (x *UpdateTaskStatusRequest) GetNodeId() string {
-	if x != nil {
-		return x.NodeId
-	}
-	return ""
-}
-
-func (x *UpdateTaskStatusRequest) GetActualState() string {
-	if x != nil {
-		return x.ActualState
-	}
-	return ""
-}
-
-func (x *UpdateTaskStatusRequest) GetContainerId() string {
+func (x *UpdateContainerStatusRequest) GetContainerId() string {
 	if x != nil {
 		return x.ContainerId
 	}
 	return ""
 }
 
-func (x *UpdateTaskStatusRequest) GetError() string {
+func (x *UpdateContainerStatusRequest) GetNodeId() string {
+	if x != nil {
+		return x.NodeId
+	}
+	return ""
+}
+
+func (x *UpdateContainerStatusRequest) GetActualState() string {
+	if x != nil {
+		return x.ActualState
+	}
+	return ""
+}
+
+func (x *UpdateContainerStatusRequest) GetRuntimeContainerId() string {
+	if x != nil {
+		return x.RuntimeContainerId
+	}
+	return ""
+}
+
+func (x *UpdateContainerStatusRequest) GetError() string {
 	if x != nil {
 		return x.Error
 	}
 	return ""
 }
 
-type UpdateTaskStatusResponse struct {
+type UpdateContainerStatusResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Status        string                 `protobuf:"bytes,1,opt,name=status,proto3" json:"status,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *UpdateTaskStatusResponse) Reset() {
-	*x = UpdateTaskStatusResponse{}
+func (x *UpdateContainerStatusResponse) Reset() {
+	*x = UpdateContainerStatusResponse{}
 	mi := &file_api_proto_warren_proto_msgTypes[36]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *UpdateTaskStatusResponse) String() string {
+func (x *UpdateContainerStatusResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*UpdateTaskStatusResponse) ProtoMessage() {}
+func (*UpdateContainerStatusResponse) ProtoMessage() {}
 
-func (x *UpdateTaskStatusResponse) ProtoReflect() protoreflect.Message {
+func (x *UpdateContainerStatusResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_api_proto_warren_proto_msgTypes[36]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2547,19 +2547,19 @@ func (x *UpdateTaskStatusResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use UpdateTaskStatusResponse.ProtoReflect.Descriptor instead.
-func (*UpdateTaskStatusResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use UpdateContainerStatusResponse.ProtoReflect.Descriptor instead.
+func (*UpdateContainerStatusResponse) Descriptor() ([]byte, []int) {
 	return file_api_proto_warren_proto_rawDescGZIP(), []int{36}
 }
 
-func (x *UpdateTaskStatusResponse) GetStatus() string {
+func (x *UpdateContainerStatusResponse) GetStatus() string {
 	if x != nil {
 		return x.Status
 	}
 	return ""
 }
 
-type ListTasksRequest struct {
+type ListContainersRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ServiceId     string                 `protobuf:"bytes,1,opt,name=service_id,json=serviceId,proto3" json:"service_id,omitempty"` // optional filter
 	NodeId        string                 `protobuf:"bytes,2,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`          // optional filter
@@ -2567,20 +2567,20 @@ type ListTasksRequest struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *ListTasksRequest) Reset() {
-	*x = ListTasksRequest{}
+func (x *ListContainersRequest) Reset() {
+	*x = ListContainersRequest{}
 	mi := &file_api_proto_warren_proto_msgTypes[37]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ListTasksRequest) String() string {
+func (x *ListContainersRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ListTasksRequest) ProtoMessage() {}
+func (*ListContainersRequest) ProtoMessage() {}
 
-func (x *ListTasksRequest) ProtoReflect() protoreflect.Message {
+func (x *ListContainersRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_api_proto_warren_proto_msgTypes[37]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2592,46 +2592,46 @@ func (x *ListTasksRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ListTasksRequest.ProtoReflect.Descriptor instead.
-func (*ListTasksRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use ListContainersRequest.ProtoReflect.Descriptor instead.
+func (*ListContainersRequest) Descriptor() ([]byte, []int) {
 	return file_api_proto_warren_proto_rawDescGZIP(), []int{37}
 }
 
-func (x *ListTasksRequest) GetServiceId() string {
+func (x *ListContainersRequest) GetServiceId() string {
 	if x != nil {
 		return x.ServiceId
 	}
 	return ""
 }
 
-func (x *ListTasksRequest) GetNodeId() string {
+func (x *ListContainersRequest) GetNodeId() string {
 	if x != nil {
 		return x.NodeId
 	}
 	return ""
 }
 
-type ListTasksResponse struct {
+type ListContainersResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Tasks         []*Task                `protobuf:"bytes,1,rep,name=tasks,proto3" json:"tasks,omitempty"`
+	Containers    []*Container           `protobuf:"bytes,1,rep,name=containers,proto3" json:"containers,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *ListTasksResponse) Reset() {
-	*x = ListTasksResponse{}
+func (x *ListContainersResponse) Reset() {
+	*x = ListContainersResponse{}
 	mi := &file_api_proto_warren_proto_msgTypes[38]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ListTasksResponse) String() string {
+func (x *ListContainersResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ListTasksResponse) ProtoMessage() {}
+func (*ListContainersResponse) ProtoMessage() {}
 
-func (x *ListTasksResponse) ProtoReflect() protoreflect.Message {
+func (x *ListContainersResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_api_proto_warren_proto_msgTypes[38]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2643,39 +2643,39 @@ func (x *ListTasksResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ListTasksResponse.ProtoReflect.Descriptor instead.
-func (*ListTasksResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use ListContainersResponse.ProtoReflect.Descriptor instead.
+func (*ListContainersResponse) Descriptor() ([]byte, []int) {
 	return file_api_proto_warren_proto_rawDescGZIP(), []int{38}
 }
 
-func (x *ListTasksResponse) GetTasks() []*Task {
+func (x *ListContainersResponse) GetContainers() []*Container {
 	if x != nil {
-		return x.Tasks
+		return x.Containers
 	}
 	return nil
 }
 
-type GetTaskRequest struct {
+type GetContainerRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *GetTaskRequest) Reset() {
-	*x = GetTaskRequest{}
+func (x *GetContainerRequest) Reset() {
+	*x = GetContainerRequest{}
 	mi := &file_api_proto_warren_proto_msgTypes[39]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *GetTaskRequest) String() string {
+func (x *GetContainerRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*GetTaskRequest) ProtoMessage() {}
+func (*GetContainerRequest) ProtoMessage() {}
 
-func (x *GetTaskRequest) ProtoReflect() protoreflect.Message {
+func (x *GetContainerRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_api_proto_warren_proto_msgTypes[39]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2687,39 +2687,39 @@ func (x *GetTaskRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetTaskRequest.ProtoReflect.Descriptor instead.
-func (*GetTaskRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use GetContainerRequest.ProtoReflect.Descriptor instead.
+func (*GetContainerRequest) Descriptor() ([]byte, []int) {
 	return file_api_proto_warren_proto_rawDescGZIP(), []int{39}
 }
 
-func (x *GetTaskRequest) GetId() string {
+func (x *GetContainerRequest) GetId() string {
 	if x != nil {
 		return x.Id
 	}
 	return ""
 }
 
-type GetTaskResponse struct {
+type GetContainerResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Task          *Task                  `protobuf:"bytes,1,opt,name=task,proto3" json:"task,omitempty"`
+	Container     *Container             `protobuf:"bytes,1,opt,name=container,proto3" json:"container,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *GetTaskResponse) Reset() {
-	*x = GetTaskResponse{}
+func (x *GetContainerResponse) Reset() {
+	*x = GetContainerResponse{}
 	mi := &file_api_proto_warren_proto_msgTypes[40]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *GetTaskResponse) String() string {
+func (x *GetContainerResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*GetTaskResponse) ProtoMessage() {}
+func (*GetContainerResponse) ProtoMessage() {}
 
-func (x *GetTaskResponse) ProtoReflect() protoreflect.Message {
+func (x *GetContainerResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_api_proto_warren_proto_msgTypes[40]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2731,39 +2731,39 @@ func (x *GetTaskResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetTaskResponse.ProtoReflect.Descriptor instead.
-func (*GetTaskResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use GetContainerResponse.ProtoReflect.Descriptor instead.
+func (*GetContainerResponse) Descriptor() ([]byte, []int) {
 	return file_api_proto_warren_proto_rawDescGZIP(), []int{40}
 }
 
-func (x *GetTaskResponse) GetTask() *Task {
+func (x *GetContainerResponse) GetContainer() *Container {
 	if x != nil {
-		return x.Task
+		return x.Container
 	}
 	return nil
 }
 
-type WatchTasksRequest struct {
+type WatchContainersRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	NodeId        string                 `protobuf:"bytes,1,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *WatchTasksRequest) Reset() {
-	*x = WatchTasksRequest{}
+func (x *WatchContainersRequest) Reset() {
+	*x = WatchContainersRequest{}
 	mi := &file_api_proto_warren_proto_msgTypes[41]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *WatchTasksRequest) String() string {
+func (x *WatchContainersRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*WatchTasksRequest) ProtoMessage() {}
+func (*WatchContainersRequest) ProtoMessage() {}
 
-func (x *WatchTasksRequest) ProtoReflect() protoreflect.Message {
+func (x *WatchContainersRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_api_proto_warren_proto_msgTypes[41]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2775,40 +2775,40 @@ func (x *WatchTasksRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use WatchTasksRequest.ProtoReflect.Descriptor instead.
-func (*WatchTasksRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use WatchContainersRequest.ProtoReflect.Descriptor instead.
+func (*WatchContainersRequest) Descriptor() ([]byte, []int) {
 	return file_api_proto_warren_proto_rawDescGZIP(), []int{41}
 }
 
-func (x *WatchTasksRequest) GetNodeId() string {
+func (x *WatchContainersRequest) GetNodeId() string {
 	if x != nil {
 		return x.NodeId
 	}
 	return ""
 }
 
-type TaskEvent struct {
+type ContainerEvent struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Type          string                 `protobuf:"bytes,1,opt,name=type,proto3" json:"type,omitempty"` // "add", "update", "delete"
-	Task          *Task                  `protobuf:"bytes,2,opt,name=task,proto3" json:"task,omitempty"`
+	Container     *Container             `protobuf:"bytes,2,opt,name=container,proto3" json:"container,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *TaskEvent) Reset() {
-	*x = TaskEvent{}
+func (x *ContainerEvent) Reset() {
+	*x = ContainerEvent{}
 	mi := &file_api_proto_warren_proto_msgTypes[42]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *TaskEvent) String() string {
+func (x *ContainerEvent) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*TaskEvent) ProtoMessage() {}
+func (*ContainerEvent) ProtoMessage() {}
 
-func (x *TaskEvent) ProtoReflect() protoreflect.Message {
+func (x *ContainerEvent) ProtoReflect() protoreflect.Message {
 	mi := &file_api_proto_warren_proto_msgTypes[42]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2820,21 +2820,21 @@ func (x *TaskEvent) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use TaskEvent.ProtoReflect.Descriptor instead.
-func (*TaskEvent) Descriptor() ([]byte, []int) {
+// Deprecated: Use ContainerEvent.ProtoReflect.Descriptor instead.
+func (*ContainerEvent) Descriptor() ([]byte, []int) {
 	return file_api_proto_warren_proto_rawDescGZIP(), []int{42}
 }
 
-func (x *TaskEvent) GetType() string {
+func (x *ContainerEvent) GetType() string {
 	if x != nil {
 		return x.Type
 	}
 	return ""
 }
 
-func (x *TaskEvent) GetTask() *Task {
+func (x *ContainerEvent) GetContainer() *Container {
 	if x != nil {
-		return x.Task
+		return x.Container
 	}
 	return nil
 }
@@ -4103,9 +4103,9 @@ func (x *ClusterServer) GetSuffrage() string {
 }
 
 // Health check messages
-type ReportTaskHealthRequest struct {
+type ReportContainerHealthRequest struct {
 	state                protoimpl.MessageState `protogen:"open.v1"`
-	TaskId               string                 `protobuf:"bytes,1,opt,name=task_id,json=taskId,proto3" json:"task_id,omitempty"`
+	ContainerId          string                 `protobuf:"bytes,1,opt,name=container_id,json=containerId,proto3" json:"container_id,omitempty"`
 	Healthy              bool                   `protobuf:"varint,2,opt,name=healthy,proto3" json:"healthy,omitempty"`
 	Message              string                 `protobuf:"bytes,3,opt,name=message,proto3" json:"message,omitempty"`
 	CheckedAt            *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=checked_at,json=checkedAt,proto3" json:"checked_at,omitempty"`
@@ -4115,20 +4115,20 @@ type ReportTaskHealthRequest struct {
 	sizeCache            protoimpl.SizeCache
 }
 
-func (x *ReportTaskHealthRequest) Reset() {
-	*x = ReportTaskHealthRequest{}
+func (x *ReportContainerHealthRequest) Reset() {
+	*x = ReportContainerHealthRequest{}
 	mi := &file_api_proto_warren_proto_msgTypes[68]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ReportTaskHealthRequest) String() string {
+func (x *ReportContainerHealthRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ReportTaskHealthRequest) ProtoMessage() {}
+func (*ReportContainerHealthRequest) ProtoMessage() {}
 
-func (x *ReportTaskHealthRequest) ProtoReflect() protoreflect.Message {
+func (x *ReportContainerHealthRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_api_proto_warren_proto_msgTypes[68]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -4140,74 +4140,74 @@ func (x *ReportTaskHealthRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ReportTaskHealthRequest.ProtoReflect.Descriptor instead.
-func (*ReportTaskHealthRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use ReportContainerHealthRequest.ProtoReflect.Descriptor instead.
+func (*ReportContainerHealthRequest) Descriptor() ([]byte, []int) {
 	return file_api_proto_warren_proto_rawDescGZIP(), []int{68}
 }
 
-func (x *ReportTaskHealthRequest) GetTaskId() string {
+func (x *ReportContainerHealthRequest) GetContainerId() string {
 	if x != nil {
-		return x.TaskId
+		return x.ContainerId
 	}
 	return ""
 }
 
-func (x *ReportTaskHealthRequest) GetHealthy() bool {
+func (x *ReportContainerHealthRequest) GetHealthy() bool {
 	if x != nil {
 		return x.Healthy
 	}
 	return false
 }
 
-func (x *ReportTaskHealthRequest) GetMessage() string {
+func (x *ReportContainerHealthRequest) GetMessage() string {
 	if x != nil {
 		return x.Message
 	}
 	return ""
 }
 
-func (x *ReportTaskHealthRequest) GetCheckedAt() *timestamppb.Timestamp {
+func (x *ReportContainerHealthRequest) GetCheckedAt() *timestamppb.Timestamp {
 	if x != nil {
 		return x.CheckedAt
 	}
 	return nil
 }
 
-func (x *ReportTaskHealthRequest) GetConsecutiveFailures() int32 {
+func (x *ReportContainerHealthRequest) GetConsecutiveFailures() int32 {
 	if x != nil {
 		return x.ConsecutiveFailures
 	}
 	return 0
 }
 
-func (x *ReportTaskHealthRequest) GetConsecutiveSuccesses() int32 {
+func (x *ReportContainerHealthRequest) GetConsecutiveSuccesses() int32 {
 	if x != nil {
 		return x.ConsecutiveSuccesses
 	}
 	return 0
 }
 
-type ReportTaskHealthResponse struct {
+type ReportContainerHealthResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Status        string                 `protobuf:"bytes,1,opt,name=status,proto3" json:"status,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *ReportTaskHealthResponse) Reset() {
-	*x = ReportTaskHealthResponse{}
+func (x *ReportContainerHealthResponse) Reset() {
+	*x = ReportContainerHealthResponse{}
 	mi := &file_api_proto_warren_proto_msgTypes[69]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ReportTaskHealthResponse) String() string {
+func (x *ReportContainerHealthResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ReportTaskHealthResponse) ProtoMessage() {}
+func (*ReportContainerHealthResponse) ProtoMessage() {}
 
-func (x *ReportTaskHealthResponse) ProtoReflect() protoreflect.Message {
+func (x *ReportContainerHealthResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_api_proto_warren_proto_msgTypes[69]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -4219,12 +4219,12 @@ func (x *ReportTaskHealthResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ReportTaskHealthResponse.ProtoReflect.Descriptor instead.
-func (*ReportTaskHealthResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use ReportContainerHealthResponse.ProtoReflect.Descriptor instead.
+func (*ReportContainerHealthResponse) Descriptor() ([]byte, []int) {
 	return file_api_proto_warren_proto_rawDescGZIP(), []int{69}
 }
 
-func (x *ReportTaskHealthResponse) GetStatus() string {
+func (x *ReportContainerHealthResponse) GetStatus() string {
 	if x != nil {
 		return x.Status
 	}
@@ -5863,18 +5863,17 @@ const file_api_proto_warren_proto_rawDesc = "" +
 	"\x14RegisterNodeResponse\x12#\n" +
 	"\x04node\x18\x01 \x01(\v2\x0f.warren.v1.NodeR\x04node\x12\x1d\n" +
 	"\n" +
-	"overlay_ip\x18\x02 \x01(\tR\toverlayIp\"\xb2\x01\n" +
+	"overlay_ip\x18\x02 \x01(\tR\toverlayIp\"\xc1\x01\n" +
 	"\x10HeartbeatRequest\x12\x17\n" +
 	"\anode_id\x18\x01 \x01(\tR\x06nodeId\x12I\n" +
-	"\x13available_resources\x18\x02 \x01(\v2\x18.warren.v1.NodeResourcesR\x12availableResources\x12:\n" +
-	"\rtask_statuses\x18\x03 \x03(\v2\x15.warren.v1.TaskStatusR\ftaskStatuses\"+\n" +
+	"\x13available_resources\x18\x02 \x01(\v2\x18.warren.v1.NodeResourcesR\x12availableResources\x12I\n" +
+	"\x12container_statuses\x18\x03 \x03(\v2\x1a.warren.v1.ContainerStatusR\x11containerStatuses\"+\n" +
 	"\x11HeartbeatResponse\x12\x16\n" +
-	"\x06status\x18\x01 \x01(\tR\x06status\"\x81\x01\n" +
-	"\n" +
-	"TaskStatus\x12\x17\n" +
-	"\atask_id\x18\x01 \x01(\tR\x06taskId\x12!\n" +
-	"\factual_state\x18\x02 \x01(\tR\vactualState\x12!\n" +
-	"\fcontainer_id\x18\x03 \x01(\tR\vcontainerId\x12\x14\n" +
+	"\x06status\x18\x01 \x01(\tR\x06status\"\x9f\x01\n" +
+	"\x0fContainerStatus\x12!\n" +
+	"\fcontainer_id\x18\x01 \x01(\tR\vcontainerId\x12!\n" +
+	"\factual_state\x18\x02 \x01(\tR\vactualState\x120\n" +
+	"\x14runtime_container_id\x18\x03 \x01(\tR\x12runtimeContainerId\x12\x14\n" +
 	"\x05error\x18\x04 \x01(\tR\x05error\"3\n" +
 	"\x10ListNodesRequest\x12\x1f\n" +
 	"\vrole_filter\x18\x01 \x01(\tR\n" +
@@ -6010,20 +6009,20 @@ const file_api_proto_warren_proto_rawDesc = "" +
 	"\aservice\x18\x01 \x01(\v2\x12.warren.v1.ServiceR\aservice\"\x15\n" +
 	"\x13ListServicesRequest\"F\n" +
 	"\x14ListServicesResponse\x12.\n" +
-	"\bservices\x18\x01 \x03(\v2\x12.warren.v1.ServiceR\bservices\"\xa6\x06\n" +
-	"\x04Task\x12\x0e\n" +
+	"\bservices\x18\x01 \x03(\v2\x12.warren.v1.ServiceR\bservices\"\xbf\x06\n" +
+	"\tContainer\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1d\n" +
 	"\n" +
 	"service_id\x18\x02 \x01(\tR\tserviceId\x12!\n" +
 	"\fservice_name\x18\x03 \x01(\tR\vserviceName\x12\x17\n" +
-	"\anode_id\x18\x04 \x01(\tR\x06nodeId\x12!\n" +
-	"\fcontainer_id\x18\x05 \x01(\tR\vcontainerId\x12#\n" +
+	"\anode_id\x18\x04 \x01(\tR\x06nodeId\x120\n" +
+	"\x14runtime_container_id\x18\x05 \x01(\tR\x12runtimeContainerId\x12#\n" +
 	"\rdesired_state\x18\x06 \x01(\tR\fdesiredState\x12!\n" +
 	"\factual_state\x18\a \x01(\tR\vactualState\x12\x14\n" +
 	"\x05image\x18\b \x01(\tR\x05image\x12\x18\n" +
-	"\acommand\x18\t \x03(\tR\acommand\x12*\n" +
+	"\acommand\x18\t \x03(\tR\acommand\x12/\n" +
 	"\x03env\x18\n" +
-	" \x03(\v2\x18.warren.v1.Task.EnvEntryR\x03env\x12=\n" +
+	" \x03(\v2\x1d.warren.v1.Container.EnvEntryR\x03env\x12=\n" +
 	"\tresources\x18\v \x01(\v2\x1f.warren.v1.ResourceRequirementsR\tresources\x120\n" +
 	"\avolumes\x18\f \x03(\v2\x16.warren.v1.VolumeMountR\avolumes\x129\n" +
 	"\fhealth_check\x18\r \x01(\v2\x16.warren.v1.HealthCheckR\vhealthCheck\x12?\n" +
@@ -6037,30 +6036,32 @@ const file_api_proto_warren_proto_rawDesc = "" +
 	"\fstop_timeout\x18\x13 \x01(\x05R\vstopTimeout\x1a6\n" +
 	"\bEnvEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xa7\x01\n" +
-	"\x17UpdateTaskStatusRequest\x12\x17\n" +
-	"\atask_id\x18\x01 \x01(\tR\x06taskId\x12\x17\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xc5\x01\n" +
+	"\x1cUpdateContainerStatusRequest\x12!\n" +
+	"\fcontainer_id\x18\x01 \x01(\tR\vcontainerId\x12\x17\n" +
 	"\anode_id\x18\x02 \x01(\tR\x06nodeId\x12!\n" +
-	"\factual_state\x18\x03 \x01(\tR\vactualState\x12!\n" +
-	"\fcontainer_id\x18\x04 \x01(\tR\vcontainerId\x12\x14\n" +
-	"\x05error\x18\x05 \x01(\tR\x05error\"2\n" +
-	"\x18UpdateTaskStatusResponse\x12\x16\n" +
-	"\x06status\x18\x01 \x01(\tR\x06status\"J\n" +
-	"\x10ListTasksRequest\x12\x1d\n" +
+	"\factual_state\x18\x03 \x01(\tR\vactualState\x120\n" +
+	"\x14runtime_container_id\x18\x04 \x01(\tR\x12runtimeContainerId\x12\x14\n" +
+	"\x05error\x18\x05 \x01(\tR\x05error\"7\n" +
+	"\x1dUpdateContainerStatusResponse\x12\x16\n" +
+	"\x06status\x18\x01 \x01(\tR\x06status\"O\n" +
+	"\x15ListContainersRequest\x12\x1d\n" +
 	"\n" +
 	"service_id\x18\x01 \x01(\tR\tserviceId\x12\x17\n" +
-	"\anode_id\x18\x02 \x01(\tR\x06nodeId\":\n" +
-	"\x11ListTasksResponse\x12%\n" +
-	"\x05tasks\x18\x01 \x03(\v2\x0f.warren.v1.TaskR\x05tasks\" \n" +
-	"\x0eGetTaskRequest\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\"6\n" +
-	"\x0fGetTaskResponse\x12#\n" +
-	"\x04task\x18\x01 \x01(\v2\x0f.warren.v1.TaskR\x04task\",\n" +
-	"\x11WatchTasksRequest\x12\x17\n" +
-	"\anode_id\x18\x01 \x01(\tR\x06nodeId\"D\n" +
-	"\tTaskEvent\x12\x12\n" +
-	"\x04type\x18\x01 \x01(\tR\x04type\x12#\n" +
-	"\x04task\x18\x02 \x01(\v2\x0f.warren.v1.TaskR\x04task\"{\n" +
+	"\anode_id\x18\x02 \x01(\tR\x06nodeId\"N\n" +
+	"\x16ListContainersResponse\x124\n" +
+	"\n" +
+	"containers\x18\x01 \x03(\v2\x14.warren.v1.ContainerR\n" +
+	"containers\"%\n" +
+	"\x13GetContainerRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\"J\n" +
+	"\x14GetContainerResponse\x122\n" +
+	"\tcontainer\x18\x01 \x01(\v2\x14.warren.v1.ContainerR\tcontainer\"1\n" +
+	"\x16WatchContainersRequest\x12\x17\n" +
+	"\anode_id\x18\x01 \x01(\tR\x06nodeId\"X\n" +
+	"\x0eContainerEvent\x12\x12\n" +
+	"\x04type\x18\x01 \x01(\tR\x04type\x122\n" +
+	"\tcontainer\x18\x02 \x01(\v2\x14.warren.v1.ContainerR\tcontainer\"{\n" +
 	"\x06Secret\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x129\n" +
@@ -6150,16 +6151,16 @@ const file_api_proto_warren_proto_rawDesc = "" +
 	"\rClusterServer\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x18\n" +
 	"\aaddress\x18\x02 \x01(\tR\aaddress\x12\x1a\n" +
-	"\bsuffrage\x18\x03 \x01(\tR\bsuffrage\"\x89\x02\n" +
-	"\x17ReportTaskHealthRequest\x12\x17\n" +
-	"\atask_id\x18\x01 \x01(\tR\x06taskId\x12\x18\n" +
+	"\bsuffrage\x18\x03 \x01(\tR\bsuffrage\"\x98\x02\n" +
+	"\x1cReportContainerHealthRequest\x12!\n" +
+	"\fcontainer_id\x18\x01 \x01(\tR\vcontainerId\x12\x18\n" +
 	"\ahealthy\x18\x02 \x01(\bR\ahealthy\x12\x18\n" +
 	"\amessage\x18\x03 \x01(\tR\amessage\x129\n" +
 	"\n" +
 	"checked_at\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\tcheckedAt\x121\n" +
 	"\x14consecutive_failures\x18\x05 \x01(\x05R\x13consecutiveFailures\x123\n" +
-	"\x15consecutive_successes\x18\x06 \x01(\x05R\x14consecutiveSuccesses\"2\n" +
-	"\x18ReportTaskHealthResponse\x12\x16\n" +
+	"\x15consecutive_successes\x18\x06 \x01(\x05R\x14consecutiveSuccesses\"7\n" +
+	"\x1dReportContainerHealthResponse\x12\x16\n" +
 	"\x06status\x18\x01 \x01(\tR\x06status\"\xf8\x01\n" +
 	"\x05Event\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
@@ -6290,7 +6291,7 @@ const file_api_proto_warren_proto_rawDesc = "" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\"6\n" +
 	"\x1cDeleteTLSCertificateResponse\x12\x16\n" +
-	"\x06status\x18\x01 \x01(\tR\x06status2\x8c\x18\n" +
+	"\x06status\x18\x01 \x01(\tR\x06status2\xd7\x18\n" +
 	"\tWarrenAPI\x12O\n" +
 	"\fRegisterNode\x12\x1e.warren.v1.RegisterNodeRequest\x1a\x1f.warren.v1.RegisterNodeResponse\x12F\n" +
 	"\tHeartbeat\x12\x1b.warren.v1.HeartbeatRequest\x1a\x1c.warren.v1.HeartbeatResponse\x12F\n" +
@@ -6303,13 +6304,12 @@ const file_api_proto_warren_proto_rawDesc = "" +
 	"\rDeleteService\x12\x1f.warren.v1.DeleteServiceRequest\x1a .warren.v1.DeleteServiceResponse\x12I\n" +
 	"\n" +
 	"GetService\x12\x1c.warren.v1.GetServiceRequest\x1a\x1d.warren.v1.GetServiceResponse\x12O\n" +
-	"\fListServices\x12\x1e.warren.v1.ListServicesRequest\x1a\x1f.warren.v1.ListServicesResponse\x12[\n" +
-	"\x10UpdateTaskStatus\x12\".warren.v1.UpdateTaskStatusRequest\x1a#.warren.v1.UpdateTaskStatusResponse\x12F\n" +
-	"\tListTasks\x12\x1b.warren.v1.ListTasksRequest\x1a\x1c.warren.v1.ListTasksResponse\x12@\n" +
-	"\aGetTask\x12\x19.warren.v1.GetTaskRequest\x1a\x1a.warren.v1.GetTaskResponse\x12B\n" +
-	"\n" +
-	"WatchTasks\x12\x1c.warren.v1.WatchTasksRequest\x1a\x14.warren.v1.TaskEvent0\x01\x12[\n" +
-	"\x10ReportTaskHealth\x12\".warren.v1.ReportTaskHealthRequest\x1a#.warren.v1.ReportTaskHealthResponse\x12O\n" +
+	"\fListServices\x12\x1e.warren.v1.ListServicesRequest\x1a\x1f.warren.v1.ListServicesResponse\x12j\n" +
+	"\x15UpdateContainerStatus\x12'.warren.v1.UpdateContainerStatusRequest\x1a(.warren.v1.UpdateContainerStatusResponse\x12U\n" +
+	"\x0eListContainers\x12 .warren.v1.ListContainersRequest\x1a!.warren.v1.ListContainersResponse\x12O\n" +
+	"\fGetContainer\x12\x1e.warren.v1.GetContainerRequest\x1a\x1f.warren.v1.GetContainerResponse\x12Q\n" +
+	"\x0fWatchContainers\x12!.warren.v1.WatchContainersRequest\x1a\x19.warren.v1.ContainerEvent0\x01\x12j\n" +
+	"\x15ReportContainerHealth\x12'.warren.v1.ReportContainerHealthRequest\x1a(.warren.v1.ReportContainerHealthResponse\x12O\n" +
 	"\fCreateSecret\x12\x1e.warren.v1.CreateSecretRequest\x1a\x1f.warren.v1.CreateSecretResponse\x12X\n" +
 	"\x0fGetSecretByName\x12!.warren.v1.GetSecretByNameRequest\x1a\".warren.v1.GetSecretByNameResponse\x12O\n" +
 	"\fDeleteSecret\x12\x1e.warren.v1.DeleteSecretRequest\x1a\x1f.warren.v1.DeleteSecretResponse\x12L\n" +
@@ -6349,123 +6349,123 @@ func file_api_proto_warren_proto_rawDescGZIP() []byte {
 var file_api_proto_warren_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
 var file_api_proto_warren_proto_msgTypes = make([]protoimpl.MessageInfo, 114)
 var file_api_proto_warren_proto_goTypes = []any{
-	(HealthCheck_Type)(0),                // 0: warren.v1.HealthCheck.Type
-	(PortMapping_PublishMode)(0),         // 1: warren.v1.PortMapping.PublishMode
-	(*Node)(nil),                         // 2: warren.v1.Node
-	(*NodeResources)(nil),                // 3: warren.v1.NodeResources
-	(*RegisterNodeRequest)(nil),          // 4: warren.v1.RegisterNodeRequest
-	(*RegisterNodeResponse)(nil),         // 5: warren.v1.RegisterNodeResponse
-	(*HeartbeatRequest)(nil),             // 6: warren.v1.HeartbeatRequest
-	(*HeartbeatResponse)(nil),            // 7: warren.v1.HeartbeatResponse
-	(*TaskStatus)(nil),                   // 8: warren.v1.TaskStatus
-	(*ListNodesRequest)(nil),             // 9: warren.v1.ListNodesRequest
-	(*ListNodesResponse)(nil),            // 10: warren.v1.ListNodesResponse
-	(*GetNodeRequest)(nil),               // 11: warren.v1.GetNodeRequest
-	(*GetNodeResponse)(nil),              // 12: warren.v1.GetNodeResponse
-	(*RemoveNodeRequest)(nil),            // 13: warren.v1.RemoveNodeRequest
-	(*RemoveNodeResponse)(nil),           // 14: warren.v1.RemoveNodeResponse
-	(*Service)(nil),                      // 15: warren.v1.Service
-	(*UpdateConfig)(nil),                 // 16: warren.v1.UpdateConfig
-	(*HealthCheck)(nil),                  // 17: warren.v1.HealthCheck
-	(*HTTPHealthCheck)(nil),              // 18: warren.v1.HTTPHealthCheck
-	(*Header)(nil),                       // 19: warren.v1.Header
-	(*TCPHealthCheck)(nil),               // 20: warren.v1.TCPHealthCheck
-	(*ExecHealthCheck)(nil),              // 21: warren.v1.ExecHealthCheck
-	(*RestartPolicy)(nil),                // 22: warren.v1.RestartPolicy
-	(*ResourceRequirements)(nil),         // 23: warren.v1.ResourceRequirements
-	(*VolumeMount)(nil),                  // 24: warren.v1.VolumeMount
-	(*PortMapping)(nil),                  // 25: warren.v1.PortMapping
-	(*CreateServiceRequest)(nil),         // 26: warren.v1.CreateServiceRequest
-	(*CreateServiceResponse)(nil),        // 27: warren.v1.CreateServiceResponse
-	(*UpdateServiceRequest)(nil),         // 28: warren.v1.UpdateServiceRequest
-	(*UpdateServiceResponse)(nil),        // 29: warren.v1.UpdateServiceResponse
-	(*DeleteServiceRequest)(nil),         // 30: warren.v1.DeleteServiceRequest
-	(*DeleteServiceResponse)(nil),        // 31: warren.v1.DeleteServiceResponse
-	(*GetServiceRequest)(nil),            // 32: warren.v1.GetServiceRequest
-	(*GetServiceResponse)(nil),           // 33: warren.v1.GetServiceResponse
-	(*ListServicesRequest)(nil),          // 34: warren.v1.ListServicesRequest
-	(*ListServicesResponse)(nil),         // 35: warren.v1.ListServicesResponse
-	(*Task)(nil),                         // 36: warren.v1.Task
-	(*UpdateTaskStatusRequest)(nil),      // 37: warren.v1.UpdateTaskStatusRequest
-	(*UpdateTaskStatusResponse)(nil),     // 38: warren.v1.UpdateTaskStatusResponse
-	(*ListTasksRequest)(nil),             // 39: warren.v1.ListTasksRequest
-	(*ListTasksResponse)(nil),            // 40: warren.v1.ListTasksResponse
-	(*GetTaskRequest)(nil),               // 41: warren.v1.GetTaskRequest
-	(*GetTaskResponse)(nil),              // 42: warren.v1.GetTaskResponse
-	(*WatchTasksRequest)(nil),            // 43: warren.v1.WatchTasksRequest
-	(*TaskEvent)(nil),                    // 44: warren.v1.TaskEvent
-	(*Secret)(nil),                       // 45: warren.v1.Secret
-	(*CreateSecretRequest)(nil),          // 46: warren.v1.CreateSecretRequest
-	(*CreateSecretResponse)(nil),         // 47: warren.v1.CreateSecretResponse
-	(*DeleteSecretRequest)(nil),          // 48: warren.v1.DeleteSecretRequest
-	(*DeleteSecretResponse)(nil),         // 49: warren.v1.DeleteSecretResponse
-	(*GetSecretByNameRequest)(nil),       // 50: warren.v1.GetSecretByNameRequest
-	(*GetSecretByNameResponse)(nil),      // 51: warren.v1.GetSecretByNameResponse
-	(*ListSecretsRequest)(nil),           // 52: warren.v1.ListSecretsRequest
-	(*ListSecretsResponse)(nil),          // 53: warren.v1.ListSecretsResponse
-	(*Volume)(nil),                       // 54: warren.v1.Volume
-	(*CreateVolumeRequest)(nil),          // 55: warren.v1.CreateVolumeRequest
-	(*CreateVolumeResponse)(nil),         // 56: warren.v1.CreateVolumeResponse
-	(*DeleteVolumeRequest)(nil),          // 57: warren.v1.DeleteVolumeRequest
-	(*DeleteVolumeResponse)(nil),         // 58: warren.v1.DeleteVolumeResponse
-	(*GetVolumeByNameRequest)(nil),       // 59: warren.v1.GetVolumeByNameRequest
-	(*GetVolumeByNameResponse)(nil),      // 60: warren.v1.GetVolumeByNameResponse
-	(*ListVolumesRequest)(nil),           // 61: warren.v1.ListVolumesRequest
-	(*ListVolumesResponse)(nil),          // 62: warren.v1.ListVolumesResponse
-	(*GenerateJoinTokenRequest)(nil),     // 63: warren.v1.GenerateJoinTokenRequest
-	(*GenerateJoinTokenResponse)(nil),    // 64: warren.v1.GenerateJoinTokenResponse
-	(*JoinClusterRequest)(nil),           // 65: warren.v1.JoinClusterRequest
-	(*JoinClusterResponse)(nil),          // 66: warren.v1.JoinClusterResponse
-	(*GetClusterInfoRequest)(nil),        // 67: warren.v1.GetClusterInfoRequest
-	(*GetClusterInfoResponse)(nil),       // 68: warren.v1.GetClusterInfoResponse
-	(*ClusterServer)(nil),                // 69: warren.v1.ClusterServer
-	(*ReportTaskHealthRequest)(nil),      // 70: warren.v1.ReportTaskHealthRequest
-	(*ReportTaskHealthResponse)(nil),     // 71: warren.v1.ReportTaskHealthResponse
-	(*Event)(nil),                        // 72: warren.v1.Event
-	(*StreamEventsRequest)(nil),          // 73: warren.v1.StreamEventsRequest
-	(*RequestCertificateRequest)(nil),    // 74: warren.v1.RequestCertificateRequest
-	(*RequestCertificateResponse)(nil),   // 75: warren.v1.RequestCertificateResponse
-	(*Ingress)(nil),                      // 76: warren.v1.Ingress
-	(*IngressRule)(nil),                  // 77: warren.v1.IngressRule
-	(*IngressPath)(nil),                  // 78: warren.v1.IngressPath
-	(*IngressBackend)(nil),               // 79: warren.v1.IngressBackend
-	(*IngressTLS)(nil),                   // 80: warren.v1.IngressTLS
-	(*CreateIngressRequest)(nil),         // 81: warren.v1.CreateIngressRequest
-	(*CreateIngressResponse)(nil),        // 82: warren.v1.CreateIngressResponse
-	(*UpdateIngressRequest)(nil),         // 83: warren.v1.UpdateIngressRequest
-	(*UpdateIngressResponse)(nil),        // 84: warren.v1.UpdateIngressResponse
-	(*DeleteIngressRequest)(nil),         // 85: warren.v1.DeleteIngressRequest
-	(*DeleteIngressResponse)(nil),        // 86: warren.v1.DeleteIngressResponse
-	(*GetIngressRequest)(nil),            // 87: warren.v1.GetIngressRequest
-	(*GetIngressResponse)(nil),           // 88: warren.v1.GetIngressResponse
-	(*ListIngressesRequest)(nil),         // 89: warren.v1.ListIngressesRequest
-	(*ListIngressesResponse)(nil),        // 90: warren.v1.ListIngressesResponse
-	(*TLSCertificate)(nil),               // 91: warren.v1.TLSCertificate
-	(*CreateTLSCertificateRequest)(nil),  // 92: warren.v1.CreateTLSCertificateRequest
-	(*CreateTLSCertificateResponse)(nil), // 93: warren.v1.CreateTLSCertificateResponse
-	(*GetTLSCertificateRequest)(nil),     // 94: warren.v1.GetTLSCertificateRequest
-	(*GetTLSCertificateResponse)(nil),    // 95: warren.v1.GetTLSCertificateResponse
-	(*ListTLSCertificatesRequest)(nil),   // 96: warren.v1.ListTLSCertificatesRequest
-	(*ListTLSCertificatesResponse)(nil),  // 97: warren.v1.ListTLSCertificatesResponse
-	(*DeleteTLSCertificateRequest)(nil),  // 98: warren.v1.DeleteTLSCertificateRequest
-	(*DeleteTLSCertificateResponse)(nil), // 99: warren.v1.DeleteTLSCertificateResponse
-	nil,                                  // 100: warren.v1.Node.LabelsEntry
-	nil,                                  // 101: warren.v1.RegisterNodeRequest.LabelsEntry
-	nil,                                  // 102: warren.v1.Service.EnvEntry
-	nil,                                  // 103: warren.v1.CreateServiceRequest.EnvEntry
-	nil,                                  // 104: warren.v1.UpdateServiceRequest.EnvEntry
-	nil,                                  // 105: warren.v1.Task.EnvEntry
-	nil,                                  // 106: warren.v1.Volume.DriverOptsEntry
-	nil,                                  // 107: warren.v1.Volume.LabelsEntry
-	nil,                                  // 108: warren.v1.CreateVolumeRequest.DriverOptsEntry
-	nil,                                  // 109: warren.v1.CreateVolumeRequest.LabelsEntry
-	nil,                                  // 110: warren.v1.Event.MetadataEntry
-	nil,                                  // 111: warren.v1.Ingress.LabelsEntry
-	nil,                                  // 112: warren.v1.CreateIngressRequest.LabelsEntry
-	nil,                                  // 113: warren.v1.UpdateIngressRequest.LabelsEntry
-	nil,                                  // 114: warren.v1.TLSCertificate.LabelsEntry
-	nil,                                  // 115: warren.v1.CreateTLSCertificateRequest.LabelsEntry
-	(*timestamppb.Timestamp)(nil),        // 116: google.protobuf.Timestamp
+	(HealthCheck_Type)(0),                 // 0: warren.v1.HealthCheck.Type
+	(PortMapping_PublishMode)(0),          // 1: warren.v1.PortMapping.PublishMode
+	(*Node)(nil),                          // 2: warren.v1.Node
+	(*NodeResources)(nil),                 // 3: warren.v1.NodeResources
+	(*RegisterNodeRequest)(nil),           // 4: warren.v1.RegisterNodeRequest
+	(*RegisterNodeResponse)(nil),          // 5: warren.v1.RegisterNodeResponse
+	(*HeartbeatRequest)(nil),              // 6: warren.v1.HeartbeatRequest
+	(*HeartbeatResponse)(nil),             // 7: warren.v1.HeartbeatResponse
+	(*ContainerStatus)(nil),               // 8: warren.v1.ContainerStatus
+	(*ListNodesRequest)(nil),              // 9: warren.v1.ListNodesRequest
+	(*ListNodesResponse)(nil),             // 10: warren.v1.ListNodesResponse
+	(*GetNodeRequest)(nil),                // 11: warren.v1.GetNodeRequest
+	(*GetNodeResponse)(nil),               // 12: warren.v1.GetNodeResponse
+	(*RemoveNodeRequest)(nil),             // 13: warren.v1.RemoveNodeRequest
+	(*RemoveNodeResponse)(nil),            // 14: warren.v1.RemoveNodeResponse
+	(*Service)(nil),                       // 15: warren.v1.Service
+	(*UpdateConfig)(nil),                  // 16: warren.v1.UpdateConfig
+	(*HealthCheck)(nil),                   // 17: warren.v1.HealthCheck
+	(*HTTPHealthCheck)(nil),               // 18: warren.v1.HTTPHealthCheck
+	(*Header)(nil),                        // 19: warren.v1.Header
+	(*TCPHealthCheck)(nil),                // 20: warren.v1.TCPHealthCheck
+	(*ExecHealthCheck)(nil),               // 21: warren.v1.ExecHealthCheck
+	(*RestartPolicy)(nil),                 // 22: warren.v1.RestartPolicy
+	(*ResourceRequirements)(nil),          // 23: warren.v1.ResourceRequirements
+	(*VolumeMount)(nil),                   // 24: warren.v1.VolumeMount
+	(*PortMapping)(nil),                   // 25: warren.v1.PortMapping
+	(*CreateServiceRequest)(nil),          // 26: warren.v1.CreateServiceRequest
+	(*CreateServiceResponse)(nil),         // 27: warren.v1.CreateServiceResponse
+	(*UpdateServiceRequest)(nil),          // 28: warren.v1.UpdateServiceRequest
+	(*UpdateServiceResponse)(nil),         // 29: warren.v1.UpdateServiceResponse
+	(*DeleteServiceRequest)(nil),          // 30: warren.v1.DeleteServiceRequest
+	(*DeleteServiceResponse)(nil),         // 31: warren.v1.DeleteServiceResponse
+	(*GetServiceRequest)(nil),             // 32: warren.v1.GetServiceRequest
+	(*GetServiceResponse)(nil),            // 33: warren.v1.GetServiceResponse
+	(*ListServicesRequest)(nil),           // 34: warren.v1.ListServicesRequest
+	(*ListServicesResponse)(nil),          // 35: warren.v1.ListServicesResponse
+	(*Container)(nil),                     // 36: warren.v1.Container
+	(*UpdateContainerStatusRequest)(nil),  // 37: warren.v1.UpdateContainerStatusRequest
+	(*UpdateContainerStatusResponse)(nil), // 38: warren.v1.UpdateContainerStatusResponse
+	(*ListContainersRequest)(nil),         // 39: warren.v1.ListContainersRequest
+	(*ListContainersResponse)(nil),        // 40: warren.v1.ListContainersResponse
+	(*GetContainerRequest)(nil),           // 41: warren.v1.GetContainerRequest
+	(*GetContainerResponse)(nil),          // 42: warren.v1.GetContainerResponse
+	(*WatchContainersRequest)(nil),        // 43: warren.v1.WatchContainersRequest
+	(*ContainerEvent)(nil),                // 44: warren.v1.ContainerEvent
+	(*Secret)(nil),                        // 45: warren.v1.Secret
+	(*CreateSecretRequest)(nil),           // 46: warren.v1.CreateSecretRequest
+	(*CreateSecretResponse)(nil),          // 47: warren.v1.CreateSecretResponse
+	(*DeleteSecretRequest)(nil),           // 48: warren.v1.DeleteSecretRequest
+	(*DeleteSecretResponse)(nil),          // 49: warren.v1.DeleteSecretResponse
+	(*GetSecretByNameRequest)(nil),        // 50: warren.v1.GetSecretByNameRequest
+	(*GetSecretByNameResponse)(nil),       // 51: warren.v1.GetSecretByNameResponse
+	(*ListSecretsRequest)(nil),            // 52: warren.v1.ListSecretsRequest
+	(*ListSecretsResponse)(nil),           // 53: warren.v1.ListSecretsResponse
+	(*Volume)(nil),                        // 54: warren.v1.Volume
+	(*CreateVolumeRequest)(nil),           // 55: warren.v1.CreateVolumeRequest
+	(*CreateVolumeResponse)(nil),          // 56: warren.v1.CreateVolumeResponse
+	(*DeleteVolumeRequest)(nil),           // 57: warren.v1.DeleteVolumeRequest
+	(*DeleteVolumeResponse)(nil),          // 58: warren.v1.DeleteVolumeResponse
+	(*GetVolumeByNameRequest)(nil),        // 59: warren.v1.GetVolumeByNameRequest
+	(*GetVolumeByNameResponse)(nil),       // 60: warren.v1.GetVolumeByNameResponse
+	(*ListVolumesRequest)(nil),            // 61: warren.v1.ListVolumesRequest
+	(*ListVolumesResponse)(nil),           // 62: warren.v1.ListVolumesResponse
+	(*GenerateJoinTokenRequest)(nil),      // 63: warren.v1.GenerateJoinTokenRequest
+	(*GenerateJoinTokenResponse)(nil),     // 64: warren.v1.GenerateJoinTokenResponse
+	(*JoinClusterRequest)(nil),            // 65: warren.v1.JoinClusterRequest
+	(*JoinClusterResponse)(nil),           // 66: warren.v1.JoinClusterResponse
+	(*GetClusterInfoRequest)(nil),         // 67: warren.v1.GetClusterInfoRequest
+	(*GetClusterInfoResponse)(nil),        // 68: warren.v1.GetClusterInfoResponse
+	(*ClusterServer)(nil),                 // 69: warren.v1.ClusterServer
+	(*ReportContainerHealthRequest)(nil),  // 70: warren.v1.ReportContainerHealthRequest
+	(*ReportContainerHealthResponse)(nil), // 71: warren.v1.ReportContainerHealthResponse
+	(*Event)(nil),                         // 72: warren.v1.Event
+	(*StreamEventsRequest)(nil),           // 73: warren.v1.StreamEventsRequest
+	(*RequestCertificateRequest)(nil),     // 74: warren.v1.RequestCertificateRequest
+	(*RequestCertificateResponse)(nil),    // 75: warren.v1.RequestCertificateResponse
+	(*Ingress)(nil),                       // 76: warren.v1.Ingress
+	(*IngressRule)(nil),                   // 77: warren.v1.IngressRule
+	(*IngressPath)(nil),                   // 78: warren.v1.IngressPath
+	(*IngressBackend)(nil),                // 79: warren.v1.IngressBackend
+	(*IngressTLS)(nil),                    // 80: warren.v1.IngressTLS
+	(*CreateIngressRequest)(nil),          // 81: warren.v1.CreateIngressRequest
+	(*CreateIngressResponse)(nil),         // 82: warren.v1.CreateIngressResponse
+	(*UpdateIngressRequest)(nil),          // 83: warren.v1.UpdateIngressRequest
+	(*UpdateIngressResponse)(nil),         // 84: warren.v1.UpdateIngressResponse
+	(*DeleteIngressRequest)(nil),          // 85: warren.v1.DeleteIngressRequest
+	(*DeleteIngressResponse)(nil),         // 86: warren.v1.DeleteIngressResponse
+	(*GetIngressRequest)(nil),             // 87: warren.v1.GetIngressRequest
+	(*GetIngressResponse)(nil),            // 88: warren.v1.GetIngressResponse
+	(*ListIngressesRequest)(nil),          // 89: warren.v1.ListIngressesRequest
+	(*ListIngressesResponse)(nil),         // 90: warren.v1.ListIngressesResponse
+	(*TLSCertificate)(nil),                // 91: warren.v1.TLSCertificate
+	(*CreateTLSCertificateRequest)(nil),   // 92: warren.v1.CreateTLSCertificateRequest
+	(*CreateTLSCertificateResponse)(nil),  // 93: warren.v1.CreateTLSCertificateResponse
+	(*GetTLSCertificateRequest)(nil),      // 94: warren.v1.GetTLSCertificateRequest
+	(*GetTLSCertificateResponse)(nil),     // 95: warren.v1.GetTLSCertificateResponse
+	(*ListTLSCertificatesRequest)(nil),    // 96: warren.v1.ListTLSCertificatesRequest
+	(*ListTLSCertificatesResponse)(nil),   // 97: warren.v1.ListTLSCertificatesResponse
+	(*DeleteTLSCertificateRequest)(nil),   // 98: warren.v1.DeleteTLSCertificateRequest
+	(*DeleteTLSCertificateResponse)(nil),  // 99: warren.v1.DeleteTLSCertificateResponse
+	nil,                                   // 100: warren.v1.Node.LabelsEntry
+	nil,                                   // 101: warren.v1.RegisterNodeRequest.LabelsEntry
+	nil,                                   // 102: warren.v1.Service.EnvEntry
+	nil,                                   // 103: warren.v1.CreateServiceRequest.EnvEntry
+	nil,                                   // 104: warren.v1.UpdateServiceRequest.EnvEntry
+	nil,                                   // 105: warren.v1.Container.EnvEntry
+	nil,                                   // 106: warren.v1.Volume.DriverOptsEntry
+	nil,                                   // 107: warren.v1.Volume.LabelsEntry
+	nil,                                   // 108: warren.v1.CreateVolumeRequest.DriverOptsEntry
+	nil,                                   // 109: warren.v1.CreateVolumeRequest.LabelsEntry
+	nil,                                   // 110: warren.v1.Event.MetadataEntry
+	nil,                                   // 111: warren.v1.Ingress.LabelsEntry
+	nil,                                   // 112: warren.v1.CreateIngressRequest.LabelsEntry
+	nil,                                   // 113: warren.v1.UpdateIngressRequest.LabelsEntry
+	nil,                                   // 114: warren.v1.TLSCertificate.LabelsEntry
+	nil,                                   // 115: warren.v1.CreateTLSCertificateRequest.LabelsEntry
+	(*timestamppb.Timestamp)(nil),         // 116: google.protobuf.Timestamp
 }
 var file_api_proto_warren_proto_depIdxs = []int32{
 	3,   // 0: warren.v1.Node.resources:type_name -> warren.v1.NodeResources
@@ -6476,7 +6476,7 @@ var file_api_proto_warren_proto_depIdxs = []int32{
 	101, // 5: warren.v1.RegisterNodeRequest.labels:type_name -> warren.v1.RegisterNodeRequest.LabelsEntry
 	2,   // 6: warren.v1.RegisterNodeResponse.node:type_name -> warren.v1.Node
 	3,   // 7: warren.v1.HeartbeatRequest.available_resources:type_name -> warren.v1.NodeResources
-	8,   // 8: warren.v1.HeartbeatRequest.task_statuses:type_name -> warren.v1.TaskStatus
+	8,   // 8: warren.v1.HeartbeatRequest.container_statuses:type_name -> warren.v1.ContainerStatus
 	2,   // 9: warren.v1.ListNodesResponse.nodes:type_name -> warren.v1.Node
 	2,   // 10: warren.v1.GetNodeResponse.node:type_name -> warren.v1.Node
 	16,  // 11: warren.v1.Service.update_config:type_name -> warren.v1.UpdateConfig
@@ -6506,16 +6506,16 @@ var file_api_proto_warren_proto_depIdxs = []int32{
 	15,  // 35: warren.v1.UpdateServiceResponse.service:type_name -> warren.v1.Service
 	15,  // 36: warren.v1.GetServiceResponse.service:type_name -> warren.v1.Service
 	15,  // 37: warren.v1.ListServicesResponse.services:type_name -> warren.v1.Service
-	105, // 38: warren.v1.Task.env:type_name -> warren.v1.Task.EnvEntry
-	23,  // 39: warren.v1.Task.resources:type_name -> warren.v1.ResourceRequirements
-	24,  // 40: warren.v1.Task.volumes:type_name -> warren.v1.VolumeMount
-	17,  // 41: warren.v1.Task.health_check:type_name -> warren.v1.HealthCheck
-	22,  // 42: warren.v1.Task.restart_policy:type_name -> warren.v1.RestartPolicy
-	116, // 43: warren.v1.Task.created_at:type_name -> google.protobuf.Timestamp
-	116, // 44: warren.v1.Task.updated_at:type_name -> google.protobuf.Timestamp
-	36,  // 45: warren.v1.ListTasksResponse.tasks:type_name -> warren.v1.Task
-	36,  // 46: warren.v1.GetTaskResponse.task:type_name -> warren.v1.Task
-	36,  // 47: warren.v1.TaskEvent.task:type_name -> warren.v1.Task
+	105, // 38: warren.v1.Container.env:type_name -> warren.v1.Container.EnvEntry
+	23,  // 39: warren.v1.Container.resources:type_name -> warren.v1.ResourceRequirements
+	24,  // 40: warren.v1.Container.volumes:type_name -> warren.v1.VolumeMount
+	17,  // 41: warren.v1.Container.health_check:type_name -> warren.v1.HealthCheck
+	22,  // 42: warren.v1.Container.restart_policy:type_name -> warren.v1.RestartPolicy
+	116, // 43: warren.v1.Container.created_at:type_name -> google.protobuf.Timestamp
+	116, // 44: warren.v1.Container.updated_at:type_name -> google.protobuf.Timestamp
+	36,  // 45: warren.v1.ListContainersResponse.containers:type_name -> warren.v1.Container
+	36,  // 46: warren.v1.GetContainerResponse.container:type_name -> warren.v1.Container
+	36,  // 47: warren.v1.ContainerEvent.container:type_name -> warren.v1.Container
 	116, // 48: warren.v1.Secret.created_at:type_name -> google.protobuf.Timestamp
 	45,  // 49: warren.v1.CreateSecretResponse.secret:type_name -> warren.v1.Secret
 	45,  // 50: warren.v1.GetSecretByNameResponse.secret:type_name -> warren.v1.Secret
@@ -6530,7 +6530,7 @@ var file_api_proto_warren_proto_depIdxs = []int32{
 	54,  // 59: warren.v1.ListVolumesResponse.volumes:type_name -> warren.v1.Volume
 	116, // 60: warren.v1.GenerateJoinTokenResponse.expires_at:type_name -> google.protobuf.Timestamp
 	69,  // 61: warren.v1.GetClusterInfoResponse.servers:type_name -> warren.v1.ClusterServer
-	116, // 62: warren.v1.ReportTaskHealthRequest.checked_at:type_name -> google.protobuf.Timestamp
+	116, // 62: warren.v1.ReportContainerHealthRequest.checked_at:type_name -> google.protobuf.Timestamp
 	116, // 63: warren.v1.Event.timestamp:type_name -> google.protobuf.Timestamp
 	110, // 64: warren.v1.Event.metadata:type_name -> warren.v1.Event.MetadataEntry
 	77,  // 65: warren.v1.Ingress.rules:type_name -> warren.v1.IngressRule
@@ -6569,11 +6569,11 @@ var file_api_proto_warren_proto_depIdxs = []int32{
 	30,  // 98: warren.v1.WarrenAPI.DeleteService:input_type -> warren.v1.DeleteServiceRequest
 	32,  // 99: warren.v1.WarrenAPI.GetService:input_type -> warren.v1.GetServiceRequest
 	34,  // 100: warren.v1.WarrenAPI.ListServices:input_type -> warren.v1.ListServicesRequest
-	37,  // 101: warren.v1.WarrenAPI.UpdateTaskStatus:input_type -> warren.v1.UpdateTaskStatusRequest
-	39,  // 102: warren.v1.WarrenAPI.ListTasks:input_type -> warren.v1.ListTasksRequest
-	41,  // 103: warren.v1.WarrenAPI.GetTask:input_type -> warren.v1.GetTaskRequest
-	43,  // 104: warren.v1.WarrenAPI.WatchTasks:input_type -> warren.v1.WatchTasksRequest
-	70,  // 105: warren.v1.WarrenAPI.ReportTaskHealth:input_type -> warren.v1.ReportTaskHealthRequest
+	37,  // 101: warren.v1.WarrenAPI.UpdateContainerStatus:input_type -> warren.v1.UpdateContainerStatusRequest
+	39,  // 102: warren.v1.WarrenAPI.ListContainers:input_type -> warren.v1.ListContainersRequest
+	41,  // 103: warren.v1.WarrenAPI.GetContainer:input_type -> warren.v1.GetContainerRequest
+	43,  // 104: warren.v1.WarrenAPI.WatchContainers:input_type -> warren.v1.WatchContainersRequest
+	70,  // 105: warren.v1.WarrenAPI.ReportContainerHealth:input_type -> warren.v1.ReportContainerHealthRequest
 	46,  // 106: warren.v1.WarrenAPI.CreateSecret:input_type -> warren.v1.CreateSecretRequest
 	50,  // 107: warren.v1.WarrenAPI.GetSecretByName:input_type -> warren.v1.GetSecretByNameRequest
 	48,  // 108: warren.v1.WarrenAPI.DeleteSecret:input_type -> warren.v1.DeleteSecretRequest
@@ -6606,11 +6606,11 @@ var file_api_proto_warren_proto_depIdxs = []int32{
 	31,  // 135: warren.v1.WarrenAPI.DeleteService:output_type -> warren.v1.DeleteServiceResponse
 	33,  // 136: warren.v1.WarrenAPI.GetService:output_type -> warren.v1.GetServiceResponse
 	35,  // 137: warren.v1.WarrenAPI.ListServices:output_type -> warren.v1.ListServicesResponse
-	38,  // 138: warren.v1.WarrenAPI.UpdateTaskStatus:output_type -> warren.v1.UpdateTaskStatusResponse
-	40,  // 139: warren.v1.WarrenAPI.ListTasks:output_type -> warren.v1.ListTasksResponse
-	42,  // 140: warren.v1.WarrenAPI.GetTask:output_type -> warren.v1.GetTaskResponse
-	44,  // 141: warren.v1.WarrenAPI.WatchTasks:output_type -> warren.v1.TaskEvent
-	71,  // 142: warren.v1.WarrenAPI.ReportTaskHealth:output_type -> warren.v1.ReportTaskHealthResponse
+	38,  // 138: warren.v1.WarrenAPI.UpdateContainerStatus:output_type -> warren.v1.UpdateContainerStatusResponse
+	40,  // 139: warren.v1.WarrenAPI.ListContainers:output_type -> warren.v1.ListContainersResponse
+	42,  // 140: warren.v1.WarrenAPI.GetContainer:output_type -> warren.v1.GetContainerResponse
+	44,  // 141: warren.v1.WarrenAPI.WatchContainers:output_type -> warren.v1.ContainerEvent
+	71,  // 142: warren.v1.WarrenAPI.ReportContainerHealth:output_type -> warren.v1.ReportContainerHealthResponse
 	47,  // 143: warren.v1.WarrenAPI.CreateSecret:output_type -> warren.v1.CreateSecretResponse
 	51,  // 144: warren.v1.WarrenAPI.GetSecretByName:output_type -> warren.v1.GetSecretByNameResponse
 	49,  // 145: warren.v1.WarrenAPI.DeleteSecret:output_type -> warren.v1.DeleteSecretResponse

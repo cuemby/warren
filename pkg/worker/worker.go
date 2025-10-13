@@ -35,8 +35,8 @@ type Worker struct {
 	dnsHandler     *DNSHandler
 	portPublisher  *network.HostPortPublisher
 
-	tasks  map[string]*types.Task
-	taskMu sync.RWMutex
+	containers   map[string]*types.Container
+	containersMu sync.RWMutex
 
 	stopCh chan struct{}
 }
@@ -65,7 +65,7 @@ func NewWorker(cfg *Config) (*Worker, error) {
 		managerAddr: cfg.ManagerAddr,
 		dataDir:     cfg.DataDir,
 		runtime:     rt,
-		tasks:       make(map[string]*types.Task),
+		containers:  make(map[string]*types.Container),
 		stopCh:      make(chan struct{}),
 	}
 
@@ -160,7 +160,7 @@ func (w *Worker) Start(resources *types.NodeResources, joinToken string) error {
 	go w.heartbeatLoop()
 
 	// Start task executor loop
-	go w.taskExecutorLoop()
+	go w.containerExecutorLoop()
 
 	// Start health monitor
 	w.healthMonitor.Start()
@@ -205,41 +205,41 @@ func (w *Worker) heartbeatLoop() {
 	}
 }
 
-// sendHeartbeat sends a heartbeat with task status to manager
+// sendHeartbeat sends a heartbeat with container status to manager
 func (w *Worker) sendHeartbeat() error {
-	w.taskMu.RLock()
-	taskStatuses := make([]*proto.TaskStatus, 0, len(w.tasks))
-	for _, task := range w.tasks {
-		taskStatuses = append(taskStatuses, &proto.TaskStatus{
-			TaskId:      task.ID,
-			ActualState: string(task.ActualState),
-			ContainerId: task.ContainerID,
-			Error:       task.Error,
+	w.containersMu.RLock()
+	containerStatuses := make([]*proto.ContainerStatus, 0, len(w.containers))
+	for _, container := range w.containers {
+		containerStatuses = append(containerStatuses, &proto.ContainerStatus{
+			ContainerId:        container.ID,
+			ActualState:        string(container.ActualState),
+			RuntimeContainerId: container.ContainerID,
+			Error:              container.Error,
 		})
 	}
-	w.taskMu.RUnlock()
+	w.containersMu.RUnlock()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	_, err := w.client.Heartbeat(ctx, &proto.HeartbeatRequest{
-		NodeId:       w.nodeID,
-		TaskStatuses: taskStatuses,
+		NodeId:            w.nodeID,
+		ContainerStatuses: containerStatuses,
 	})
 
 	return err
 }
 
-// taskExecutorLoop polls for task assignments and executes them
-func (w *Worker) taskExecutorLoop() {
+// containerExecutorLoop polls for container assignments and executes them
+func (w *Worker) containerExecutorLoop() {
 	ticker := time.NewTicker(3 * time.Second)
 	defer ticker.Stop()
 
 	for {
 		select {
 		case <-ticker.C:
-			if err := w.syncTasks(); err != nil {
-				fmt.Printf("Task sync error: %v\n", err)
+			if err := w.syncContainers(); err != nil {
+				fmt.Printf("Container sync error: %v\n", err)
 			}
 		case <-w.stopCh:
 			return
@@ -247,32 +247,32 @@ func (w *Worker) taskExecutorLoop() {
 	}
 }
 
-// syncTasks fetches assigned tasks from manager and executes them
-func (w *Worker) syncTasks() error {
+// syncContainers fetches assigned containers from manager and executes them
+func (w *Worker) syncContainers() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	// Get all tasks assigned to this node
-	resp, err := w.client.ListTasks(ctx, &proto.ListTasksRequest{
+	// Get all containers assigned to this node
+	resp, err := w.client.ListContainers(ctx, &proto.ListContainersRequest{
 		NodeId: w.nodeID,
 	})
 	if err != nil {
-		return fmt.Errorf("failed to list tasks: %w", err)
+		return fmt.Errorf("failed to list containers: %w", err)
 	}
 
-	// Process each task
-	for _, protoTask := range resp.Tasks {
-		taskID := protoTask.Id
+	// Process each container
+	for _, protoContainer := range resp.Containers {
+		containerID := protoContainer.Id
 
-		w.taskMu.Lock()
-		existingTask, exists := w.tasks[taskID]
-		w.taskMu.Unlock()
+		w.containersMu.Lock()
+		existingContainer, exists := w.containers[containerID]
+		w.containersMu.Unlock()
 
-		// New task - start it
-		if !exists && protoTask.DesiredState == "running" {
+		// New container - start it
+		if !exists && protoContainer.DesiredState == "running" {
 			// Convert proto volume mounts to types.VolumeMount
 			var mounts []*types.VolumeMount
-			for _, pv := range protoTask.Volumes {
+			for _, pv := range protoContainer.Volumes {
 				mounts = append(mounts, &types.VolumeMount{
 					Source:   pv.Source,
 					Target:   pv.Target,
@@ -280,46 +280,46 @@ func (w *Worker) syncTasks() error {
 				})
 			}
 
-			task := &types.Task{
-				ID:           protoTask.Id,
-				ServiceID:    protoTask.ServiceId,
-				ServiceName:  protoTask.ServiceName,
-				NodeID:       protoTask.NodeId,
-				DesiredState: types.TaskState(protoTask.DesiredState),
-				ActualState:  types.TaskStatePending,
-				Image:        protoTask.Image,
-				Secrets:      protoTask.Secrets,
+			container := &types.Container{
+				ID:           protoContainer.Id,
+				ServiceID:    protoContainer.ServiceId,
+				ServiceName:  protoContainer.ServiceName,
+				NodeID:       protoContainer.NodeId,
+				DesiredState: types.ContainerState(protoContainer.DesiredState),
+				ActualState:  types.ContainerStatePending,
+				Image:        protoContainer.Image,
+				Secrets:      protoContainer.Secrets,
 				Mounts:       mounts,
 			}
 
-			w.taskMu.Lock()
-			w.tasks[taskID] = task
-			w.taskMu.Unlock()
+			w.containersMu.Lock()
+			w.containers[containerID] = container
+			w.containersMu.Unlock()
 
-			go w.executeTask(task)
+			go w.executeContainer(container)
 		}
 
-		// Existing task - handle shutdown
-		if exists && protoTask.DesiredState == "shutdown" {
-			go w.stopTask(existingTask)
+		// Existing container - handle shutdown
+		if exists && protoContainer.DesiredState == "shutdown" {
+			go w.stopContainer(existingContainer)
 		}
 	}
 
 	return nil
 }
 
-// executeTask executes a single task using containerd
-func (w *Worker) executeTask(task *types.Task) {
+// executeContainer executes a single task using containerd
+func (w *Worker) executeContainer(task *types.Container) {
 	ctx := context.Background()
 	fmt.Printf("Starting task %s (service: %s, image: %s)\n", task.ID, task.ServiceName, task.Image)
 
 	// Pull the image first
 	fmt.Printf("Pulling image %s...\n", task.Image)
 	if err := w.runtime.PullImage(ctx, task.Image); err != nil {
-		w.taskMu.Lock()
-		task.ActualState = types.TaskStateFailed
+		w.containersMu.Lock()
+		task.ActualState = types.ContainerStateFailed
 		task.Error = fmt.Sprintf("failed to pull image: %v", err)
-		w.taskMu.Unlock()
+		w.containersMu.Unlock()
 		fmt.Printf("Task %s failed to pull image: %v\n", task.ID, err)
 		return
 	}
@@ -332,10 +332,10 @@ func (w *Worker) executeTask(task *types.Task) {
 		var err error
 		secretsPath, err = w.secretsHandler.MountSecretsForTask(task)
 		if err != nil {
-			w.taskMu.Lock()
-			task.ActualState = types.TaskStateFailed
+			w.containersMu.Lock()
+			task.ActualState = types.ContainerStateFailed
 			task.Error = fmt.Sprintf("failed to mount secrets: %v", err)
-			w.taskMu.Unlock()
+			w.containersMu.Unlock()
 			fmt.Printf("Task %s failed to mount secrets: %v\n", task.ID, err)
 			return
 		}
@@ -356,10 +356,10 @@ func (w *Worker) executeTask(task *types.Task) {
 		var err error
 		volumeMounts, err = w.volumesHandler.PrepareVolumesForTask(task)
 		if err != nil {
-			w.taskMu.Lock()
-			task.ActualState = types.TaskStateFailed
+			w.containersMu.Lock()
+			task.ActualState = types.ContainerStateFailed
 			task.Error = fmt.Sprintf("failed to prepare volumes: %v", err)
-			w.taskMu.Unlock()
+			w.containersMu.Unlock()
 			fmt.Printf("Task %s failed to prepare volumes: %v\n", task.ID, err)
 			return
 		}
@@ -395,10 +395,10 @@ func (w *Worker) executeTask(task *types.Task) {
 	}
 
 	if err != nil {
-		w.taskMu.Lock()
-		task.ActualState = types.TaskStateFailed
+		w.containersMu.Lock()
+		task.ActualState = types.ContainerStateFailed
 		task.Error = fmt.Sprintf("failed to create container: %v", err)
-		w.taskMu.Unlock()
+		w.containersMu.Unlock()
 		fmt.Printf("Task %s failed to create container: %v\n", task.ID, err)
 		return
 	}
@@ -406,20 +406,20 @@ func (w *Worker) executeTask(task *types.Task) {
 
 	// Start the container
 	if err := w.runtime.StartContainer(ctx, containerID); err != nil {
-		w.taskMu.Lock()
-		task.ActualState = types.TaskStateFailed
+		w.containersMu.Lock()
+		task.ActualState = types.ContainerStateFailed
 		task.Error = fmt.Sprintf("failed to start container: %v", err)
-		w.taskMu.Unlock()
+		w.containersMu.Unlock()
 		fmt.Printf("Task %s failed to start container: %v\n", task.ID, err)
 		return
 	}
 
 	// Update task state to running
-	w.taskMu.Lock()
-	task.ActualState = types.TaskStateRunning
+	w.containersMu.Lock()
+	task.ActualState = types.ContainerStateRunning
 	task.ContainerID = containerID
 	task.StartedAt = time.Now()
-	w.taskMu.Unlock()
+	w.containersMu.Unlock()
 	fmt.Printf("Task %s is running (container: %s)\n", task.ID, containerID)
 
 	// Publish ports if task has any
@@ -457,11 +457,11 @@ func (w *Worker) executeTask(task *types.Task) {
 		select {
 		case <-ticker.C:
 			// Check if task should be stopped
-			w.taskMu.RLock()
-			currentTask := w.tasks[task.ID]
-			w.taskMu.RUnlock()
+			w.containersMu.RLock()
+			currentTask := w.containers[task.ID]
+			w.containersMu.RUnlock()
 
-			if currentTask == nil || currentTask.DesiredState == types.TaskStateShutdown {
+			if currentTask == nil || currentTask.DesiredState == types.ContainerStateShutdown {
 				return
 			}
 
@@ -473,13 +473,13 @@ func (w *Worker) executeTask(task *types.Task) {
 			}
 
 			// Update task state if container failed
-			if status == types.TaskStateFailed || status == types.TaskStateComplete {
-				w.taskMu.Lock()
+			if status == types.ContainerStateFailed || status == types.ContainerStateComplete {
+				w.containersMu.Lock()
 				task.ActualState = status
-				if status == types.TaskStateFailed {
+				if status == types.ContainerStateFailed {
 					task.Error = "container exited unexpectedly"
 				}
-				w.taskMu.Unlock()
+				w.containersMu.Unlock()
 				fmt.Printf("Task %s container stopped (status: %s)\n", task.ID, status)
 				return
 			}
@@ -490,8 +490,8 @@ func (w *Worker) executeTask(task *types.Task) {
 	}
 }
 
-// stopTask stops a running task
-func (w *Worker) stopTask(task *types.Task) {
+// stopContainer stops a running task
+func (w *Worker) stopContainer(task *types.Container) {
 	ctx := context.Background()
 	fmt.Printf("Stopping task %s (container: %s)\n", task.ID, task.ContainerID)
 
@@ -532,16 +532,16 @@ func (w *Worker) stopTask(task *types.Task) {
 		}
 	}
 
-	w.taskMu.Lock()
-	task.ActualState = types.TaskStateComplete
+	w.containersMu.Lock()
+	task.ActualState = types.ContainerStateComplete
 	task.FinishedAt = time.Now()
-	w.taskMu.Unlock()
+	w.containersMu.Unlock()
 
 	// Remove from local task map after reporting
 	time.Sleep(2 * time.Second)
-	w.taskMu.Lock()
-	delete(w.tasks, task.ID)
-	w.taskMu.Unlock()
+	w.containersMu.Lock()
+	delete(w.containers, task.ID)
+	w.containersMu.Unlock()
 
 	fmt.Printf("Task %s stopped\n", task.ID)
 }
