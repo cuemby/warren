@@ -44,7 +44,7 @@ func (p *HostPortPublisher) PublishPorts(taskID, containerIP string, ports []typ
 	for _, port := range hostPorts {
 		if err := p.setupPortForwarding(containerIP, port); err != nil {
 			// Clean up any rules we already created
-			p.cleanupPorts(taskID, hostPorts)
+			_ = p.cleanupPorts(taskID, hostPorts) // Ignore cleanup errors during rollback
 			return fmt.Errorf("failed to setup port forwarding for %d:%d: %w",
 				port.HostPort, port.ContainerPort, err)
 		}
@@ -101,7 +101,7 @@ func (p *HostPortPublisher) setupPortForwarding(containerIP string, port types.P
 
 	if err := runIPTables(masqRule); err != nil {
 		// Clean up the DNAT rule we just created
-		p.removePortForwarding(containerIP, port)
+		_ = p.removePortForwarding(containerIP, port) // Ignore cleanup errors during rollback
 		return fmt.Errorf("failed to add MASQUERADE rule: %w", err)
 	}
 
@@ -117,7 +117,7 @@ func (p *HostPortPublisher) setupPortForwarding(containerIP string, port types.P
 
 	if err := runIPTables(forwardRule); err != nil {
 		// Clean up previously created rules
-		p.removePortForwarding(containerIP, port)
+		_ = p.removePortForwarding(containerIP, port) // Ignore cleanup errors during rollback
 		return fmt.Errorf("failed to add FORWARD rule: %w", err)
 	}
 
@@ -140,7 +140,7 @@ func (p *HostPortPublisher) removePortForwarding(containerIP string, port types.
 		"-j", "DNAT",
 		"--to-destination", fmt.Sprintf("%s:%d", containerIP, port.ContainerPort),
 	}
-	runIPTables(dnatRule) // Ignore errors on cleanup
+	_ = runIPTables(dnatRule) // Ignore errors on cleanup
 
 	// Remove MASQUERADE rule
 	masqRule := []string{
@@ -151,17 +151,17 @@ func (p *HostPortPublisher) removePortForwarding(containerIP string, port types.
 		"--dport", fmt.Sprintf("%d", port.ContainerPort),
 		"-j", "MASQUERADE",
 	}
-	runIPTables(masqRule) // Ignore errors on cleanup
+	_ = runIPTables(masqRule) // Ignore errors on cleanup
 
 	// Remove FORWARD rule
 	forwardRule := []string{
 		"-D", "FORWARD",
 		"-p", protocol,
-		"-d", containerIP,
+"-d", containerIP,
 		"--dport", fmt.Sprintf("%d", port.ContainerPort),
 		"-j", "ACCEPT",
 	}
-	runIPTables(forwardRule) // Ignore errors on cleanup
+	_ = runIPTables(forwardRule) // Ignore errors on cleanup
 
 	return nil
 }

@@ -68,12 +68,16 @@ func TestLocalDriver_Delete(t *testing.T) {
 	}
 
 	// Create volume first
-	driver.Create(volume)
+	if err := driver.Create(volume); err != nil {
+		t.Fatalf("Create() error = %v", err)
+	}
 	volumePath := driver.GetPath(volume)
 
 	// Create a file in the volume
 	testFile := filepath.Join(volumePath, "test.txt")
-	os.WriteFile(testFile, []byte("test"), 0644)
+	if err := os.WriteFile(testFile, []byte("test"), 0644); err != nil {
+		t.Fatalf("WriteFile() error = %v", err)
+	}
 
 	// Delete the volume
 	err := driver.Delete(volume)
@@ -115,7 +119,9 @@ func TestLocalDriver_Mount(t *testing.T) {
 	}
 
 	// Create volume first
-	driver.Create(volume)
+	if err := driver.Create(volume); err != nil {
+		t.Fatalf("Create() error = %v", err)
+	}
 
 	// Mount the volume
 	mountPath, err := driver.Mount(volume)
@@ -245,7 +251,9 @@ func TestVolumeManager_MountVolume(t *testing.T) {
 	}
 
 	// Create volume
-	vm.CreateVolume(volume)
+	if err := vm.CreateVolume(volume); err != nil {
+		t.Fatalf("CreateVolume() error = %v", err)
+	}
 
 	// Mount volume
 	mountPath, err := vm.MountVolume(volume)
