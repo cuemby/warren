@@ -161,9 +161,9 @@ func (r *Resolver) resolveInstance(name string) (*dns.A, error) {
 		return nil, fmt.Errorf("no running instances for service: %s", serviceName)
 	}
 
-	// Sort tasks by creation time (oldest first = instance 1)
+	// Sort containers by creation time (oldest first = instance 1)
 	// This gives us consistent instance numbering
-	sortTasksByCreationTime(serviceTasks)
+	sortContainersByCreationTime(serviceTasks)
 
 	// Check if instance number is valid (1-indexed)
 	if instanceNum < 1 || instanceNum > len(serviceTasks) {
@@ -238,13 +238,13 @@ func (r *Resolver) shuffleIPs(ips []net.IP) {
 	})
 }
 
-// sortTasksByCreationTime sorts tasks by creation time (oldest first)
-func sortTasksByCreationTime(tasks []*types.Container) {
+// sortContainersByCreationTime sorts containers by creation time (oldest first)
+func sortContainersByCreationTime(containers []*types.Container) {
 	// Simple bubble sort by creation time
-	for i := 0; i < len(tasks)-1; i++ {
-		for j := 0; j < len(tasks)-i-1; j++ {
-			if tasks[j].CreatedAt.After(tasks[j+1].CreatedAt) {
-				tasks[j], tasks[j+1] = tasks[j+1], tasks[j]
+	for i := 0; i < len(containers)-1; i++ {
+		for j := 0; j < len(containers)-i-1; j++ {
+			if containers[j].CreatedAt.After(containers[j+1].CreatedAt) {
+				containers[j], containers[j+1] = containers[j+1], containers[j]
 			}
 		}
 	}

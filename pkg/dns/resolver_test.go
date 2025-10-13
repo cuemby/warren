@@ -114,23 +114,23 @@ func TestGetTaskIP(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			task := &types.Task{ID: tt.taskID}
-			ip := r.getTaskIP(task)
+			container := &types.Container{ID: tt.taskID}
+			ip := r.getContainerIP(container)
 
 			if ip == nil {
-				t.Fatal("getTaskIP() returned nil")
+				t.Fatal("getContainerIP() returned nil")
 			}
 
 			// Verify IP is in 10.0.0.0/8 range (private IP space)
 			ipv4 := ip.To4()
 			if ipv4 == nil || ipv4[0] != 10 {
-				t.Errorf("getTaskIP() IP not in 10.0.0.0/8 range: %v", ip)
+				t.Errorf("getContainerIP() IP not in 10.0.0.0/8 range: %v", ip)
 			}
 
-			// Verify consistency - same task ID should give same IP
-			ip2 := r.getTaskIP(task)
+			// Verify consistency - same container ID should give same IP
+			ip2 := r.getContainerIP(container)
 			if !ip.Equal(ip2) {
-				t.Errorf("getTaskIP() not consistent: first=%v, second=%v", ip, ip2)
+				t.Errorf("getContainerIP() not consistent: first=%v, second=%v", ip, ip2)
 			}
 		})
 	}
@@ -234,102 +234,102 @@ func TestShuffleIPs(t *testing.T) {
 	}
 }
 
-// TestSortTasksByCreationTime tests task sorting
-func TestSortTasksByCreationTime(t *testing.T) {
+// TestSortContainersByCreationTime tests container sorting
+func TestSortContainersByCreationTime(t *testing.T) {
 	now := time.Now()
 
-	tasks := []*types.Task{
+	containers := []*types.Container{
 		{ID: "task3", CreatedAt: now.Add(3 * time.Second)},
 		{ID: "task1", CreatedAt: now.Add(1 * time.Second)},
 		{ID: "task4", CreatedAt: now.Add(4 * time.Second)},
 		{ID: "task2", CreatedAt: now.Add(2 * time.Second)},
 	}
 
-	sortTasksByCreationTime(tasks)
+	sortContainersByCreationTime(containers)
 
 	// Verify sorted order (oldest first)
 	expectedOrder := []string{"task1", "task2", "task3", "task4"}
-	for i, task := range tasks {
-		if task.ID != expectedOrder[i] {
-			t.Errorf("sortTasksByCreationTime() position %d = %s, want %s", i, task.ID, expectedOrder[i])
+	for i, container := range containers {
+		if container.ID != expectedOrder[i] {
+			t.Errorf("sortContainersByCreationTime() position %d = %s, want %s", i, container.ID, expectedOrder[i])
 		}
 	}
 
 	// Verify times are in ascending order
-	for i := 0; i < len(tasks)-1; i++ {
-		if tasks[i].CreatedAt.After(tasks[i+1].CreatedAt) {
-			t.Errorf("sortTasksByCreationTime() not sorted: tasks[%d].CreatedAt > tasks[%d].CreatedAt", i, i+1)
+	for i := 0; i < len(containers)-1; i++ {
+		if containers[i].CreatedAt.After(containers[i+1].CreatedAt) {
+			t.Errorf("sortContainersByCreationTime() not sorted: containers[%d].CreatedAt > containers[%d].CreatedAt", i, i+1)
 		}
 	}
 }
 
-// TestSortTasksByCreationTimeEdgeCases tests edge cases
-func TestSortTasksByCreationTimeEdgeCases(t *testing.T) {
+// TestSortContainersByCreationTimeEdgeCases tests edge cases
+func TestSortContainersByCreationTimeEdgeCases(t *testing.T) {
 	t.Run("empty slice", func(t *testing.T) {
-		tasks := []*types.Task{}
-		sortTasksByCreationTime(tasks) // Should not panic
-		if len(tasks) != 0 {
-			t.Error("sortTasksByCreationTime() modified empty slice")
+		containers := []*types.Container{}
+		sortContainersByCreationTime(containers) // Should not panic
+		if len(containers) != 0 {
+			t.Error("sortContainersByCreationTime() modified empty slice")
 		}
 	})
 
-	t.Run("single task", func(t *testing.T) {
+	t.Run("single container", func(t *testing.T) {
 		now := time.Now()
-		tasks := []*types.Task{
+		containers := []*types.Container{
 			{ID: "task1", CreatedAt: now},
 		}
-		sortTasksByCreationTime(tasks)
-		if tasks[0].ID != "task1" {
-			t.Error("sortTasksByCreationTime() modified single task")
+		sortContainersByCreationTime(containers)
+		if containers[0].ID != "task1" {
+			t.Error("sortContainersByCreationTime() modified single container")
 		}
 	})
 
 	t.Run("already sorted", func(t *testing.T) {
 		now := time.Now()
-		tasks := []*types.Task{
+		containers := []*types.Container{
 			{ID: "task1", CreatedAt: now.Add(1 * time.Second)},
 			{ID: "task2", CreatedAt: now.Add(2 * time.Second)},
 			{ID: "task3", CreatedAt: now.Add(3 * time.Second)},
 		}
-		sortTasksByCreationTime(tasks)
+		sortContainersByCreationTime(containers)
 
 		expectedOrder := []string{"task1", "task2", "task3"}
-		for i, task := range tasks {
-			if task.ID != expectedOrder[i] {
-				t.Errorf("sortTasksByCreationTime() changed order: position %d = %s, want %s", i, task.ID, expectedOrder[i])
+		for i, container := range containers {
+			if container.ID != expectedOrder[i] {
+				t.Errorf("sortContainersByCreationTime() changed order: position %d = %s, want %s", i, container.ID, expectedOrder[i])
 			}
 		}
 	})
 
 	t.Run("reverse sorted", func(t *testing.T) {
 		now := time.Now()
-		tasks := []*types.Task{
+		containers := []*types.Container{
 			{ID: "task3", CreatedAt: now.Add(3 * time.Second)},
 			{ID: "task2", CreatedAt: now.Add(2 * time.Second)},
 			{ID: "task1", CreatedAt: now.Add(1 * time.Second)},
 		}
-		sortTasksByCreationTime(tasks)
+		sortContainersByCreationTime(containers)
 
 		expectedOrder := []string{"task1", "task2", "task3"}
-		for i, task := range tasks {
-			if task.ID != expectedOrder[i] {
-				t.Errorf("sortTasksByCreationTime() position %d = %s, want %s", i, task.ID, expectedOrder[i])
+		for i, container := range containers {
+			if container.ID != expectedOrder[i] {
+				t.Errorf("sortContainersByCreationTime() position %d = %s, want %s", i, container.ID, expectedOrder[i])
 			}
 		}
 	})
 
 	t.Run("duplicate timestamps", func(t *testing.T) {
 		now := time.Now()
-		tasks := []*types.Task{
+		containers := []*types.Container{
 			{ID: "task1", CreatedAt: now},
 			{ID: "task2", CreatedAt: now},
 			{ID: "task3", CreatedAt: now},
 		}
-		sortTasksByCreationTime(tasks)
+		sortContainersByCreationTime(containers)
 
-		// Should not panic, order may vary but all tasks present
-		if len(tasks) != 3 {
-			t.Error("sortTasksByCreationTime() lost tasks with duplicate timestamps")
+		// Should not panic, order may vary but all containers present
+		if len(containers) != 3 {
+			t.Error("sortContainersByCreationTime() lost containers with duplicate timestamps")
 		}
 	})
 }
