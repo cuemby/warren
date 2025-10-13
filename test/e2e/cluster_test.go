@@ -124,7 +124,11 @@ func TestBasicCluster(t *testing.T) {
 		}
 
 		// Scale to 2 replicas
-		if err := leader.Client.UpdateService(service.Name, 2, service.Image); err != nil {
+		svc, err := leader.Client.GetService(service.Name)
+		if err != nil {
+			t.Fatalf("Failed to get service: %v", err)
+		}
+		if _, err := leader.Client.UpdateService(svc.Id, 2); err != nil {
 			t.Fatalf("Failed to scale service: %v", err)
 		}
 

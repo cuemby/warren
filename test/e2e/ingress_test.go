@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"strings"
 	"testing"
 	"time"
 
@@ -357,7 +356,7 @@ func TestIngressHTTPS(t *testing.T) {
 	t.Run("CreateTLSSecret", func(t *testing.T) {
 		// Create TLS secret with self-signed cert
 		// In real test, we'd generate or use test certificates
-		secretName := "tls-secret"
+		// secretName := "tls-secret"
 
 		// For now, skip actual TLS secret creation
 		// This would require certificate generation

@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 	"time"
-
-	"github.com/cuemby/warren/pkg/client"
 )
 
 // Waiter provides utilities for waiting on conditions with timeouts
@@ -53,14 +51,14 @@ func (w *Waiter) WaitFor(ctx context.Context, condition func() bool, description
 }
 
 // WaitForServiceRunning waits for a service to have at least one running task
-func (w *Waiter) WaitForServiceRunning(ctx context.Context, client *client.Client, name string) error {
+func (w *Waiter) WaitForServiceRunning(ctx context.Context, client *Client, name string) error {
 	return w.WaitFor(ctx, func() bool {
-		svc, err := client.GetService(name)
+		svc, err := client.Client.GetService(name)
 		if err != nil {
 			return false
 		}
 
-		tasks, err := client.ListTasks(svc.Id, "")
+		tasks, err := client.Client.ListTasks(svc.Id, "")
 		if err != nil {
 			return false
 		}
@@ -75,22 +73,22 @@ func (w *Waiter) WaitForServiceRunning(ctx context.Context, client *client.Clien
 }
 
 // WaitForServiceDeleted waits for a service to be deleted
-func (w *Waiter) WaitForServiceDeleted(ctx context.Context, client *client.Client, name string) error {
+func (w *Waiter) WaitForServiceDeleted(ctx context.Context, client *Client, name string) error {
 	return w.WaitFor(ctx, func() bool {
-		_, err := client.GetService(name)
+		_, err := client.Client.GetService(name)
 		return err != nil // Service not found means it's deleted
 	}, fmt.Sprintf("service %s to be deleted", name))
 }
 
 // WaitForReplicas waits for a service to have a specific number of running replicas
-func (w *Waiter) WaitForReplicas(ctx context.Context, client *client.Client, serviceName string, count int) error {
+func (w *Waiter) WaitForReplicas(ctx context.Context, client *Client, serviceName string, count int) error {
 	return w.WaitFor(ctx, func() bool {
-		svc, err := client.GetService(serviceName)
+		svc, err := client.Client.GetService(serviceName)
 		if err != nil {
 			return false
 		}
 
-		tasks, err := client.ListTasks(svc.Id, "")
+		tasks, err := client.Client.ListTasks(svc.Id, "")
 		if err != nil {
 			return false
 		}
@@ -107,9 +105,9 @@ func (w *Waiter) WaitForReplicas(ctx context.Context, client *client.Client, ser
 }
 
 // WaitForTask waits for a specific task to reach a status
-func (w *Waiter) WaitForTask(ctx context.Context, client *client.Client, taskID string, status string) error {
+func (w *Waiter) WaitForTask(ctx context.Context, client *Client, taskID string, status string) error {
 	return w.WaitFor(ctx, func() bool {
-		tasks, err := client.ListTasks("", "")
+		tasks, err := client.Client.ListTasks("", "")
 		if err != nil {
 			return false
 		}
@@ -125,15 +123,15 @@ func (w *Waiter) WaitForTask(ctx context.Context, client *client.Client, taskID 
 }
 
 // WaitForTaskRunning waits for a task to be running
-func (w *Waiter) WaitForTaskRunning(ctx context.Context, client *client.Client, taskID string) error {
+func (w *Waiter) WaitForTaskRunning(ctx context.Context, client *Client, taskID string) error {
 	return w.WaitForTask(ctx, client, taskID, "running")
 }
 
 // WaitForTaskHealthy waits for a task to become healthy
 // TODO: Use actual health_status field when added to proto
-func (w *Waiter) WaitForTaskHealthy(ctx context.Context, client *client.Client, taskID string) error {
+func (w *Waiter) WaitForTaskHealthy(ctx context.Context, client *Client, taskID string) error {
 	return w.WaitFor(ctx, func() bool {
-		tasks, err := client.ListTasks("", "")
+		tasks, err := client.Client.ListTasks("", "")
 		if err != nil {
 			return false
 		}
@@ -166,9 +164,9 @@ func (w *Waiter) WaitForQuorum(ctx context.Context, cluster *Cluster) error {
 }
 
 // WaitForNodeCount waits for a specific number of nodes to join the cluster
-func (w *Waiter) WaitForNodeCount(ctx context.Context, client *client.Client, count int) error {
+func (w *Waiter) WaitForNodeCount(ctx context.Context, client *Client, count int) error {
 	return w.WaitFor(ctx, func() bool {
-		nodes, err := client.ListNodes()
+		nodes, err := client.Client.ListNodes()
 		if err != nil {
 			return false
 		}
@@ -177,9 +175,9 @@ func (w *Waiter) WaitForNodeCount(ctx context.Context, client *client.Client, co
 }
 
 // WaitForWorkerNodes waits for a specific number of worker nodes
-func (w *Waiter) WaitForWorkerNodes(ctx context.Context, client *client.Client, count int) error {
+func (w *Waiter) WaitForWorkerNodes(ctx context.Context, client *Client, count int) error {
 	return w.WaitFor(ctx, func() bool {
-		nodes, err := client.ListNodes()
+		nodes, err := client.Client.ListNodes()
 		if err != nil {
 			return false
 		}
@@ -196,9 +194,9 @@ func (w *Waiter) WaitForWorkerNodes(ctx context.Context, client *client.Client, 
 }
 
 // WaitForManagerNodes waits for a specific number of manager nodes
-func (w *Waiter) WaitForManagerNodes(ctx context.Context, client *client.Client, count int) error {
+func (w *Waiter) WaitForManagerNodes(ctx context.Context, client *Client, count int) error {
 	return w.WaitFor(ctx, func() bool {
-		nodes, err := client.ListNodes()
+		nodes, err := client.Client.ListNodes()
 		if err != nil {
 			return false
 		}
@@ -215,9 +213,9 @@ func (w *Waiter) WaitForManagerNodes(ctx context.Context, client *client.Client,
 }
 
 // WaitForClusterHealthy waits for all nodes in the cluster to be healthy
-func (w *Waiter) WaitForClusterHealthy(ctx context.Context, client *client.Client) error {
+func (w *Waiter) WaitForClusterHealthy(ctx context.Context, client *Client) error {
 	return w.WaitFor(ctx, func() bool {
-		nodes, err := client.ListNodes()
+		nodes, err := client.Client.ListNodes()
 		if err != nil {
 			return false
 		}
@@ -233,33 +231,33 @@ func (w *Waiter) WaitForClusterHealthy(ctx context.Context, client *client.Clien
 }
 
 // WaitForSecret waits for a secret to exist
-func (w *Waiter) WaitForSecret(ctx context.Context, client *client.Client, name string) error {
+func (w *Waiter) WaitForSecret(ctx context.Context, client *Client, name string) error {
 	return w.WaitFor(ctx, func() bool {
-		_, err := client.GetSecretByName(name)
+		_, err := client.Client.GetSecretByName(name)
 		return err == nil
 	}, fmt.Sprintf("secret %s to exist", name))
 }
 
 // WaitForSecretDeleted waits for a secret to be deleted
-func (w *Waiter) WaitForSecretDeleted(ctx context.Context, client *client.Client, name string) error {
+func (w *Waiter) WaitForSecretDeleted(ctx context.Context, client *Client, name string) error {
 	return w.WaitFor(ctx, func() bool {
-		_, err := client.GetSecretByName(name)
+		_, err := client.Client.GetSecretByName(name)
 		return err != nil
 	}, fmt.Sprintf("secret %s to be deleted", name))
 }
 
 // WaitForVolume waits for a volume to exist
-func (w *Waiter) WaitForVolume(ctx context.Context, client *client.Client, name string) error {
+func (w *Waiter) WaitForVolume(ctx context.Context, client *Client, name string) error {
 	return w.WaitFor(ctx, func() bool {
-		_, err := client.GetVolumeByName(name)
+		_, err := client.Client.GetVolumeByName(name)
 		return err == nil
 	}, fmt.Sprintf("volume %s to exist", name))
 }
 
 // WaitForVolumeDeleted waits for a volume to be deleted
-func (w *Waiter) WaitForVolumeDeleted(ctx context.Context, client *client.Client, name string) error {
+func (w *Waiter) WaitForVolumeDeleted(ctx context.Context, client *Client, name string) error {
 	return w.WaitFor(ctx, func() bool {
-		_, err := client.GetVolumeByName(name)
+		_, err := client.Client.GetVolumeByName(name)
 		return err != nil
 	}, fmt.Sprintf("volume %s to be deleted", name))
 }

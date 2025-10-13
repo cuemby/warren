@@ -4,8 +4,6 @@ import (
 	"context"
 	"strings"
 	"time"
-
-	"github.com/cuemby/warren/pkg/client"
 )
 
 // Assertions provides test assertion helpers
@@ -19,10 +17,10 @@ func NewAssertions(t TestingT) *Assertions {
 }
 
 // ServiceExists asserts that a service exists
-func (a *Assertions) ServiceExists(name string, client *client.Client) {
+func (a *Assertions) ServiceExists(name string, client *Client) {
 	a.t.Helper()
 
-	svc, err := client.GetService(name)
+	svc, err := client.Client.GetService(name)
 	if err != nil {
 		a.t.Fatalf("Service %s does not exist: %v", name, err)
 	}
@@ -33,16 +31,16 @@ func (a *Assertions) ServiceExists(name string, client *client.Client) {
 }
 
 // ServiceRunning asserts that a service has at least one running task
-func (a *Assertions) ServiceRunning(name string, client *client.Client) {
+func (a *Assertions) ServiceRunning(name string, client *Client) {
 	a.t.Helper()
 
-	svc, err := client.GetService(name)
+	svc, err := client.Client.GetService(name)
 	if err != nil {
 		a.t.Fatalf("Failed to get service %s: %v", name, err)
 	}
 
 	// Check via tasks (Service proto has no status field)
-	tasks, err := client.ListTasks(svc.Id, "")
+	tasks, err := client.Client.ListTasks(svc.Id, "")
 	if err != nil {
 		a.t.Fatalf("Failed to list tasks for service %s: %v", name, err)
 	}
@@ -57,15 +55,15 @@ func (a *Assertions) ServiceRunning(name string, client *client.Client) {
 }
 
 // ServiceReplicas asserts that a service has the expected number of running replicas
-func (a *Assertions) ServiceReplicas(name string, expected int, client *client.Client) {
+func (a *Assertions) ServiceReplicas(name string, expected int, client *Client) {
 	a.t.Helper()
 
-	svc, err := client.GetService(name)
+	svc, err := client.Client.GetService(name)
 	if err != nil {
 		a.t.Fatalf("Failed to get service %s: %v", name, err)
 	}
 
-	tasks, err := client.ListTasks(svc.Id, "")
+	tasks, err := client.Client.ListTasks(svc.Id, "")
 	if err != nil {
 		a.t.Fatalf("Failed to list tasks for service %s: %v", name, err)
 	}
@@ -83,10 +81,10 @@ func (a *Assertions) ServiceReplicas(name string, expected int, client *client.C
 }
 
 // ServiceDeleted asserts that a service no longer exists
-func (a *Assertions) ServiceDeleted(name string, client *client.Client) {
+func (a *Assertions) ServiceDeleted(name string, client *Client) {
 	a.t.Helper()
 
-	_, err := client.GetService(name)
+	_, err := client.Client.GetService(name)
 	if err == nil {
 		a.t.Fatalf("Service %s still exists, expected it to be deleted", name)
 	}
@@ -98,10 +96,10 @@ func (a *Assertions) ServiceDeleted(name string, client *client.Client) {
 }
 
 // TaskRunning asserts that a task is running
-func (a *Assertions) TaskRunning(taskID string, client *client.Client) {
+func (a *Assertions) TaskRunning(taskID string, client *Client) {
 	a.t.Helper()
 
-	tasks, err := client.ListTasks("", "")
+	tasks, err := client.Client.ListTasks("", "")
 	if err != nil {
 		a.t.Fatalf("Failed to list tasks: %v", err)
 	}
@@ -120,10 +118,10 @@ func (a *Assertions) TaskRunning(taskID string, client *client.Client) {
 
 // TaskHealthy asserts that a task is healthy
 // TODO: Task proto doesn't have health_status field yet - using actual_state as proxy
-func (a *Assertions) TaskHealthy(taskID string, client *client.Client) {
+func (a *Assertions) TaskHealthy(taskID string, client *Client) {
 	a.t.Helper()
 
-	tasks, err := client.ListTasks("", "")
+	tasks, err := client.Client.ListTasks("", "")
 	if err != nil {
 		a.t.Fatalf("Failed to list tasks: %v", err)
 	}
@@ -167,10 +165,10 @@ func (a *Assertions) QuorumSize(expected int, cluster *Cluster) {
 }
 
 // NodeCount asserts that the cluster has the expected number of nodes
-func (a *Assertions) NodeCount(expected int, client *client.Client) {
+func (a *Assertions) NodeCount(expected int, client *Client) {
 	a.t.Helper()
 
-	nodes, err := client.ListNodes()
+	nodes, err := client.Client.ListNodes()
 	if err != nil {
 		a.t.Fatalf("Failed to list nodes: %v", err)
 	}
@@ -181,10 +179,10 @@ func (a *Assertions) NodeCount(expected int, client *client.Client) {
 }
 
 // NodeRole asserts that a node has a specific role
-func (a *Assertions) NodeRole(nodeID, expectedRole string, client *client.Client) {
+func (a *Assertions) NodeRole(nodeID, expectedRole string, client *Client) {
 	a.t.Helper()
 
-	node, err := client.GetNode(nodeID)
+	node, err := client.Client.GetNode(nodeID)
 	if err != nil {
 		a.t.Fatalf("Failed to get node %s: %v", nodeID, err)
 	}
