@@ -39,9 +39,13 @@ Warren's ingress controller consists of five main components working together:
  2. TLS termination (if HTTPS)
  3. Router matches host + path → IngressPath
  4. Middleware applies access control, rate limiting
- 5. LoadBalancer selects healthy backend instance
+ 5. LoadBalancer selects healthy backend task
  6. Proxy forwards request to backend
  7. Response returned to client
+
+Note: Warren uses "task" to refer to running containers internally. DNS uses
+"instance" for compatibility (e.g., nginx-1.nginx.warren), but the ingress
+controller routes to "tasks".
 
 # Core Components
 
@@ -76,21 +80,21 @@ Example routing rules:
 
 ## LoadBalancer
 
-The LoadBalancer selects backend instances using round-robin:
+The LoadBalancer selects backend tasks using round-robin:
 
-	Service: api (3 replicas)
-	├── Instance 1: 192.168.1.10:8080 (healthy)
-	├── Instance 2: 192.168.1.11:8080 (healthy)
-	└── Instance 3: 192.168.1.12:8080 (unhealthy - excluded)
+	Service: api (3 replicas/tasks)
+	├── Task 1: 192.168.1.10:8080 (healthy)
+	├── Task 2: 192.168.1.11:8080 (healthy)
+	└── Task 3: 192.168.1.12:8080 (unhealthy - excluded)
 
 	Request 1 → 192.168.1.10:8080
 	Request 2 → 192.168.1.11:8080
 	Request 3 → 192.168.1.10:8080 (wraps around)
 
 Health-aware selection:
-  - Only routes to healthy instances
+  - Only routes to healthy tasks
   - Automatically excludes failed health checks
-  - Updates as instances come and go
+  - Updates as tasks come and go
 
 ## Middleware
 
@@ -404,11 +408,11 @@ The proxy loads configuration from the manager:
 
 ## Service Discovery Integration
 
-The load balancer discovers service instances:
+The load balancer discovers service tasks:
 
   - ListTasksByService(serviceName) - Get all replicas
-  - Filter by health status (only healthy instances)
-  - Round-robin across available instances
+  - Filter by health status (only healthy tasks)
+  - Round-robin across available tasks
 
 ## DNS Integration
 
@@ -416,7 +420,7 @@ Ingress works with Warren's DNS server:
 
  1. DNS resolves service.warren → manager IP
  2. Client connects to manager:8000 or :8443
- 3. Ingress proxies to actual service instances
+ 3. Ingress proxies to actual service tasks
 
 ## Storage Integration
 
@@ -549,7 +553,7 @@ If backend is unreachable:
 
 2. Check load balancer:
   - Verify service name matches
-  - Check healthy instances available
+  - Check healthy tasks available
   - Look for "No healthy tasks" in logs
 
 3. Check network connectivity:
@@ -646,7 +650,7 @@ Key ingress metrics:
 5. Load Balancing
   - Enable health checks on services
   - Monitor backend health
-  - Plan for instance failures
+  - Plan for task failures
   - Test failover scenarios
 
 # See Also
