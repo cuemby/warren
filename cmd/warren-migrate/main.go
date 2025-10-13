@@ -86,10 +86,12 @@ func migrateTasksToContainers(db *bolt.DB, dryRun bool) error {
 		}
 
 		// Count tasks
-		tasksBucket.ForEach(func(k, v []byte) error {
+		if err := tasksBucket.ForEach(func(k, v []byte) error {
 			taskCount++
 			return nil
-		})
+		}); err != nil {
+			return fmt.Errorf("failed to count tasks: %w", err)
+		}
 
 		log.Printf("Found %d tasks to migrate", taskCount)
 		return nil
