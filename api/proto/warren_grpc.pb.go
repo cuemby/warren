@@ -19,43 +19,43 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	WarrenAPI_RegisterNode_FullMethodName         = "/warren.v1.WarrenAPI/RegisterNode"
-	WarrenAPI_Heartbeat_FullMethodName            = "/warren.v1.WarrenAPI/Heartbeat"
-	WarrenAPI_ListNodes_FullMethodName            = "/warren.v1.WarrenAPI/ListNodes"
-	WarrenAPI_GetNode_FullMethodName              = "/warren.v1.WarrenAPI/GetNode"
-	WarrenAPI_RemoveNode_FullMethodName           = "/warren.v1.WarrenAPI/RemoveNode"
-	WarrenAPI_CreateService_FullMethodName        = "/warren.v1.WarrenAPI/CreateService"
-	WarrenAPI_UpdateService_FullMethodName        = "/warren.v1.WarrenAPI/UpdateService"
-	WarrenAPI_DeleteService_FullMethodName        = "/warren.v1.WarrenAPI/DeleteService"
-	WarrenAPI_GetService_FullMethodName           = "/warren.v1.WarrenAPI/GetService"
-	WarrenAPI_ListServices_FullMethodName         = "/warren.v1.WarrenAPI/ListServices"
-	WarrenAPI_UpdateTaskStatus_FullMethodName     = "/warren.v1.WarrenAPI/UpdateTaskStatus"
-	WarrenAPI_ListTasks_FullMethodName            = "/warren.v1.WarrenAPI/ListTasks"
-	WarrenAPI_GetTask_FullMethodName              = "/warren.v1.WarrenAPI/GetTask"
-	WarrenAPI_WatchTasks_FullMethodName           = "/warren.v1.WarrenAPI/WatchTasks"
-	WarrenAPI_ReportTaskHealth_FullMethodName     = "/warren.v1.WarrenAPI/ReportTaskHealth"
-	WarrenAPI_CreateSecret_FullMethodName         = "/warren.v1.WarrenAPI/CreateSecret"
-	WarrenAPI_GetSecretByName_FullMethodName      = "/warren.v1.WarrenAPI/GetSecretByName"
-	WarrenAPI_DeleteSecret_FullMethodName         = "/warren.v1.WarrenAPI/DeleteSecret"
-	WarrenAPI_ListSecrets_FullMethodName          = "/warren.v1.WarrenAPI/ListSecrets"
-	WarrenAPI_CreateVolume_FullMethodName         = "/warren.v1.WarrenAPI/CreateVolume"
-	WarrenAPI_GetVolumeByName_FullMethodName      = "/warren.v1.WarrenAPI/GetVolumeByName"
-	WarrenAPI_DeleteVolume_FullMethodName         = "/warren.v1.WarrenAPI/DeleteVolume"
-	WarrenAPI_ListVolumes_FullMethodName          = "/warren.v1.WarrenAPI/ListVolumes"
-	WarrenAPI_GenerateJoinToken_FullMethodName    = "/warren.v1.WarrenAPI/GenerateJoinToken"
-	WarrenAPI_JoinCluster_FullMethodName          = "/warren.v1.WarrenAPI/JoinCluster"
-	WarrenAPI_GetClusterInfo_FullMethodName       = "/warren.v1.WarrenAPI/GetClusterInfo"
-	WarrenAPI_RequestCertificate_FullMethodName   = "/warren.v1.WarrenAPI/RequestCertificate"
-	WarrenAPI_CreateIngress_FullMethodName        = "/warren.v1.WarrenAPI/CreateIngress"
-	WarrenAPI_UpdateIngress_FullMethodName        = "/warren.v1.WarrenAPI/UpdateIngress"
-	WarrenAPI_DeleteIngress_FullMethodName        = "/warren.v1.WarrenAPI/DeleteIngress"
-	WarrenAPI_GetIngress_FullMethodName           = "/warren.v1.WarrenAPI/GetIngress"
-	WarrenAPI_ListIngresses_FullMethodName        = "/warren.v1.WarrenAPI/ListIngresses"
-	WarrenAPI_CreateTLSCertificate_FullMethodName = "/warren.v1.WarrenAPI/CreateTLSCertificate"
-	WarrenAPI_GetTLSCertificate_FullMethodName    = "/warren.v1.WarrenAPI/GetTLSCertificate"
-	WarrenAPI_ListTLSCertificates_FullMethodName  = "/warren.v1.WarrenAPI/ListTLSCertificates"
-	WarrenAPI_DeleteTLSCertificate_FullMethodName = "/warren.v1.WarrenAPI/DeleteTLSCertificate"
-	WarrenAPI_StreamEvents_FullMethodName         = "/warren.v1.WarrenAPI/StreamEvents"
+	WarrenAPI_RegisterNode_FullMethodName          = "/warren.v1.WarrenAPI/RegisterNode"
+	WarrenAPI_Heartbeat_FullMethodName             = "/warren.v1.WarrenAPI/Heartbeat"
+	WarrenAPI_ListNodes_FullMethodName             = "/warren.v1.WarrenAPI/ListNodes"
+	WarrenAPI_GetNode_FullMethodName               = "/warren.v1.WarrenAPI/GetNode"
+	WarrenAPI_RemoveNode_FullMethodName            = "/warren.v1.WarrenAPI/RemoveNode"
+	WarrenAPI_CreateService_FullMethodName         = "/warren.v1.WarrenAPI/CreateService"
+	WarrenAPI_UpdateService_FullMethodName         = "/warren.v1.WarrenAPI/UpdateService"
+	WarrenAPI_DeleteService_FullMethodName         = "/warren.v1.WarrenAPI/DeleteService"
+	WarrenAPI_GetService_FullMethodName            = "/warren.v1.WarrenAPI/GetService"
+	WarrenAPI_ListServices_FullMethodName          = "/warren.v1.WarrenAPI/ListServices"
+	WarrenAPI_UpdateContainerStatus_FullMethodName = "/warren.v1.WarrenAPI/UpdateContainerStatus"
+	WarrenAPI_ListContainers_FullMethodName        = "/warren.v1.WarrenAPI/ListContainers"
+	WarrenAPI_GetContainer_FullMethodName          = "/warren.v1.WarrenAPI/GetContainer"
+	WarrenAPI_WatchContainers_FullMethodName       = "/warren.v1.WarrenAPI/WatchContainers"
+	WarrenAPI_ReportContainerHealth_FullMethodName = "/warren.v1.WarrenAPI/ReportContainerHealth"
+	WarrenAPI_CreateSecret_FullMethodName          = "/warren.v1.WarrenAPI/CreateSecret"
+	WarrenAPI_GetSecretByName_FullMethodName       = "/warren.v1.WarrenAPI/GetSecretByName"
+	WarrenAPI_DeleteSecret_FullMethodName          = "/warren.v1.WarrenAPI/DeleteSecret"
+	WarrenAPI_ListSecrets_FullMethodName           = "/warren.v1.WarrenAPI/ListSecrets"
+	WarrenAPI_CreateVolume_FullMethodName          = "/warren.v1.WarrenAPI/CreateVolume"
+	WarrenAPI_GetVolumeByName_FullMethodName       = "/warren.v1.WarrenAPI/GetVolumeByName"
+	WarrenAPI_DeleteVolume_FullMethodName          = "/warren.v1.WarrenAPI/DeleteVolume"
+	WarrenAPI_ListVolumes_FullMethodName           = "/warren.v1.WarrenAPI/ListVolumes"
+	WarrenAPI_GenerateJoinToken_FullMethodName     = "/warren.v1.WarrenAPI/GenerateJoinToken"
+	WarrenAPI_JoinCluster_FullMethodName           = "/warren.v1.WarrenAPI/JoinCluster"
+	WarrenAPI_GetClusterInfo_FullMethodName        = "/warren.v1.WarrenAPI/GetClusterInfo"
+	WarrenAPI_RequestCertificate_FullMethodName    = "/warren.v1.WarrenAPI/RequestCertificate"
+	WarrenAPI_CreateIngress_FullMethodName         = "/warren.v1.WarrenAPI/CreateIngress"
+	WarrenAPI_UpdateIngress_FullMethodName         = "/warren.v1.WarrenAPI/UpdateIngress"
+	WarrenAPI_DeleteIngress_FullMethodName         = "/warren.v1.WarrenAPI/DeleteIngress"
+	WarrenAPI_GetIngress_FullMethodName            = "/warren.v1.WarrenAPI/GetIngress"
+	WarrenAPI_ListIngresses_FullMethodName         = "/warren.v1.WarrenAPI/ListIngresses"
+	WarrenAPI_CreateTLSCertificate_FullMethodName  = "/warren.v1.WarrenAPI/CreateTLSCertificate"
+	WarrenAPI_GetTLSCertificate_FullMethodName     = "/warren.v1.WarrenAPI/GetTLSCertificate"
+	WarrenAPI_ListTLSCertificates_FullMethodName   = "/warren.v1.WarrenAPI/ListTLSCertificates"
+	WarrenAPI_DeleteTLSCertificate_FullMethodName  = "/warren.v1.WarrenAPI/DeleteTLSCertificate"
+	WarrenAPI_StreamEvents_FullMethodName          = "/warren.v1.WarrenAPI/StreamEvents"
 )
 
 // WarrenAPIClient is the client API for WarrenAPI service.
@@ -76,14 +76,14 @@ type WarrenAPIClient interface {
 	DeleteService(ctx context.Context, in *DeleteServiceRequest, opts ...grpc.CallOption) (*DeleteServiceResponse, error)
 	GetService(ctx context.Context, in *GetServiceRequest, opts ...grpc.CallOption) (*GetServiceResponse, error)
 	ListServices(ctx context.Context, in *ListServicesRequest, opts ...grpc.CallOption) (*ListServicesResponse, error)
-	// Task operations
-	UpdateTaskStatus(ctx context.Context, in *UpdateTaskStatusRequest, opts ...grpc.CallOption) (*UpdateTaskStatusResponse, error)
-	ListTasks(ctx context.Context, in *ListTasksRequest, opts ...grpc.CallOption) (*ListTasksResponse, error)
-	GetTask(ctx context.Context, in *GetTaskRequest, opts ...grpc.CallOption) (*GetTaskResponse, error)
-	// Task assignment stream (worker watches for assigned tasks)
-	WatchTasks(ctx context.Context, in *WatchTasksRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[TaskEvent], error)
+	// Container operations
+	UpdateContainerStatus(ctx context.Context, in *UpdateContainerStatusRequest, opts ...grpc.CallOption) (*UpdateContainerStatusResponse, error)
+	ListContainers(ctx context.Context, in *ListContainersRequest, opts ...grpc.CallOption) (*ListContainersResponse, error)
+	GetContainer(ctx context.Context, in *GetContainerRequest, opts ...grpc.CallOption) (*GetContainerResponse, error)
+	// Container assignment stream (worker watches for assigned containers)
+	WatchContainers(ctx context.Context, in *WatchContainersRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[ContainerEvent], error)
 	// Health check operations
-	ReportTaskHealth(ctx context.Context, in *ReportTaskHealthRequest, opts ...grpc.CallOption) (*ReportTaskHealthResponse, error)
+	ReportContainerHealth(ctx context.Context, in *ReportContainerHealthRequest, opts ...grpc.CallOption) (*ReportContainerHealthResponse, error)
 	// Secret operations
 	CreateSecret(ctx context.Context, in *CreateSecretRequest, opts ...grpc.CallOption) (*CreateSecretResponse, error)
 	GetSecretByName(ctx context.Context, in *GetSecretByNameRequest, opts ...grpc.CallOption) (*GetSecretByNameResponse, error)
@@ -223,43 +223,43 @@ func (c *warrenAPIClient) ListServices(ctx context.Context, in *ListServicesRequ
 	return out, nil
 }
 
-func (c *warrenAPIClient) UpdateTaskStatus(ctx context.Context, in *UpdateTaskStatusRequest, opts ...grpc.CallOption) (*UpdateTaskStatusResponse, error) {
+func (c *warrenAPIClient) UpdateContainerStatus(ctx context.Context, in *UpdateContainerStatusRequest, opts ...grpc.CallOption) (*UpdateContainerStatusResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(UpdateTaskStatusResponse)
-	err := c.cc.Invoke(ctx, WarrenAPI_UpdateTaskStatus_FullMethodName, in, out, cOpts...)
+	out := new(UpdateContainerStatusResponse)
+	err := c.cc.Invoke(ctx, WarrenAPI_UpdateContainerStatus_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *warrenAPIClient) ListTasks(ctx context.Context, in *ListTasksRequest, opts ...grpc.CallOption) (*ListTasksResponse, error) {
+func (c *warrenAPIClient) ListContainers(ctx context.Context, in *ListContainersRequest, opts ...grpc.CallOption) (*ListContainersResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(ListTasksResponse)
-	err := c.cc.Invoke(ctx, WarrenAPI_ListTasks_FullMethodName, in, out, cOpts...)
+	out := new(ListContainersResponse)
+	err := c.cc.Invoke(ctx, WarrenAPI_ListContainers_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *warrenAPIClient) GetTask(ctx context.Context, in *GetTaskRequest, opts ...grpc.CallOption) (*GetTaskResponse, error) {
+func (c *warrenAPIClient) GetContainer(ctx context.Context, in *GetContainerRequest, opts ...grpc.CallOption) (*GetContainerResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(GetTaskResponse)
-	err := c.cc.Invoke(ctx, WarrenAPI_GetTask_FullMethodName, in, out, cOpts...)
+	out := new(GetContainerResponse)
+	err := c.cc.Invoke(ctx, WarrenAPI_GetContainer_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *warrenAPIClient) WatchTasks(ctx context.Context, in *WatchTasksRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[TaskEvent], error) {
+func (c *warrenAPIClient) WatchContainers(ctx context.Context, in *WatchContainersRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[ContainerEvent], error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	stream, err := c.cc.NewStream(ctx, &WarrenAPI_ServiceDesc.Streams[0], WarrenAPI_WatchTasks_FullMethodName, cOpts...)
+	stream, err := c.cc.NewStream(ctx, &WarrenAPI_ServiceDesc.Streams[0], WarrenAPI_WatchContainers_FullMethodName, cOpts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &grpc.GenericClientStream[WatchTasksRequest, TaskEvent]{ClientStream: stream}
+	x := &grpc.GenericClientStream[WatchContainersRequest, ContainerEvent]{ClientStream: stream}
 	if err := x.ClientStream.SendMsg(in); err != nil {
 		return nil, err
 	}
@@ -270,12 +270,12 @@ func (c *warrenAPIClient) WatchTasks(ctx context.Context, in *WatchTasksRequest,
 }
 
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
-type WarrenAPI_WatchTasksClient = grpc.ServerStreamingClient[TaskEvent]
+type WarrenAPI_WatchContainersClient = grpc.ServerStreamingClient[ContainerEvent]
 
-func (c *warrenAPIClient) ReportTaskHealth(ctx context.Context, in *ReportTaskHealthRequest, opts ...grpc.CallOption) (*ReportTaskHealthResponse, error) {
+func (c *warrenAPIClient) ReportContainerHealth(ctx context.Context, in *ReportContainerHealthRequest, opts ...grpc.CallOption) (*ReportContainerHealthResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(ReportTaskHealthResponse)
-	err := c.cc.Invoke(ctx, WarrenAPI_ReportTaskHealth_FullMethodName, in, out, cOpts...)
+	out := new(ReportContainerHealthResponse)
+	err := c.cc.Invoke(ctx, WarrenAPI_ReportContainerHealth_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -529,14 +529,14 @@ type WarrenAPIServer interface {
 	DeleteService(context.Context, *DeleteServiceRequest) (*DeleteServiceResponse, error)
 	GetService(context.Context, *GetServiceRequest) (*GetServiceResponse, error)
 	ListServices(context.Context, *ListServicesRequest) (*ListServicesResponse, error)
-	// Task operations
-	UpdateTaskStatus(context.Context, *UpdateTaskStatusRequest) (*UpdateTaskStatusResponse, error)
-	ListTasks(context.Context, *ListTasksRequest) (*ListTasksResponse, error)
-	GetTask(context.Context, *GetTaskRequest) (*GetTaskResponse, error)
-	// Task assignment stream (worker watches for assigned tasks)
-	WatchTasks(*WatchTasksRequest, grpc.ServerStreamingServer[TaskEvent]) error
+	// Container operations
+	UpdateContainerStatus(context.Context, *UpdateContainerStatusRequest) (*UpdateContainerStatusResponse, error)
+	ListContainers(context.Context, *ListContainersRequest) (*ListContainersResponse, error)
+	GetContainer(context.Context, *GetContainerRequest) (*GetContainerResponse, error)
+	// Container assignment stream (worker watches for assigned containers)
+	WatchContainers(*WatchContainersRequest, grpc.ServerStreamingServer[ContainerEvent]) error
 	// Health check operations
-	ReportTaskHealth(context.Context, *ReportTaskHealthRequest) (*ReportTaskHealthResponse, error)
+	ReportContainerHealth(context.Context, *ReportContainerHealthRequest) (*ReportContainerHealthResponse, error)
 	// Secret operations
 	CreateSecret(context.Context, *CreateSecretRequest) (*CreateSecretResponse, error)
 	GetSecretByName(context.Context, *GetSecretByNameRequest) (*GetSecretByNameResponse, error)
@@ -606,20 +606,20 @@ func (UnimplementedWarrenAPIServer) GetService(context.Context, *GetServiceReque
 func (UnimplementedWarrenAPIServer) ListServices(context.Context, *ListServicesRequest) (*ListServicesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListServices not implemented")
 }
-func (UnimplementedWarrenAPIServer) UpdateTaskStatus(context.Context, *UpdateTaskStatusRequest) (*UpdateTaskStatusResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method UpdateTaskStatus not implemented")
+func (UnimplementedWarrenAPIServer) UpdateContainerStatus(context.Context, *UpdateContainerStatusRequest) (*UpdateContainerStatusResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateContainerStatus not implemented")
 }
-func (UnimplementedWarrenAPIServer) ListTasks(context.Context, *ListTasksRequest) (*ListTasksResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ListTasks not implemented")
+func (UnimplementedWarrenAPIServer) ListContainers(context.Context, *ListContainersRequest) (*ListContainersResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListContainers not implemented")
 }
-func (UnimplementedWarrenAPIServer) GetTask(context.Context, *GetTaskRequest) (*GetTaskResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetTask not implemented")
+func (UnimplementedWarrenAPIServer) GetContainer(context.Context, *GetContainerRequest) (*GetContainerResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetContainer not implemented")
 }
-func (UnimplementedWarrenAPIServer) WatchTasks(*WatchTasksRequest, grpc.ServerStreamingServer[TaskEvent]) error {
-	return status.Errorf(codes.Unimplemented, "method WatchTasks not implemented")
+func (UnimplementedWarrenAPIServer) WatchContainers(*WatchContainersRequest, grpc.ServerStreamingServer[ContainerEvent]) error {
+	return status.Errorf(codes.Unimplemented, "method WatchContainers not implemented")
 }
-func (UnimplementedWarrenAPIServer) ReportTaskHealth(context.Context, *ReportTaskHealthRequest) (*ReportTaskHealthResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ReportTaskHealth not implemented")
+func (UnimplementedWarrenAPIServer) ReportContainerHealth(context.Context, *ReportContainerHealthRequest) (*ReportContainerHealthResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ReportContainerHealth not implemented")
 }
 func (UnimplementedWarrenAPIServer) CreateSecret(context.Context, *CreateSecretRequest) (*CreateSecretResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateSecret not implemented")
@@ -888,85 +888,85 @@ func _WarrenAPI_ListServices_Handler(srv interface{}, ctx context.Context, dec f
 	return interceptor(ctx, in, info, handler)
 }
 
-func _WarrenAPI_UpdateTaskStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(UpdateTaskStatusRequest)
+func _WarrenAPI_UpdateContainerStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateContainerStatusRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(WarrenAPIServer).UpdateTaskStatus(ctx, in)
+		return srv.(WarrenAPIServer).UpdateContainerStatus(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: WarrenAPI_UpdateTaskStatus_FullMethodName,
+		FullMethod: WarrenAPI_UpdateContainerStatus_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(WarrenAPIServer).UpdateTaskStatus(ctx, req.(*UpdateTaskStatusRequest))
+		return srv.(WarrenAPIServer).UpdateContainerStatus(ctx, req.(*UpdateContainerStatusRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _WarrenAPI_ListTasks_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ListTasksRequest)
+func _WarrenAPI_ListContainers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListContainersRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(WarrenAPIServer).ListTasks(ctx, in)
+		return srv.(WarrenAPIServer).ListContainers(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: WarrenAPI_ListTasks_FullMethodName,
+		FullMethod: WarrenAPI_ListContainers_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(WarrenAPIServer).ListTasks(ctx, req.(*ListTasksRequest))
+		return srv.(WarrenAPIServer).ListContainers(ctx, req.(*ListContainersRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _WarrenAPI_GetTask_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetTaskRequest)
+func _WarrenAPI_GetContainer_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetContainerRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(WarrenAPIServer).GetTask(ctx, in)
+		return srv.(WarrenAPIServer).GetContainer(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: WarrenAPI_GetTask_FullMethodName,
+		FullMethod: WarrenAPI_GetContainer_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(WarrenAPIServer).GetTask(ctx, req.(*GetTaskRequest))
+		return srv.(WarrenAPIServer).GetContainer(ctx, req.(*GetContainerRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _WarrenAPI_WatchTasks_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(WatchTasksRequest)
+func _WarrenAPI_WatchContainers_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(WatchContainersRequest)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
 	}
-	return srv.(WarrenAPIServer).WatchTasks(m, &grpc.GenericServerStream[WatchTasksRequest, TaskEvent]{ServerStream: stream})
+	return srv.(WarrenAPIServer).WatchContainers(m, &grpc.GenericServerStream[WatchContainersRequest, ContainerEvent]{ServerStream: stream})
 }
 
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
-type WarrenAPI_WatchTasksServer = grpc.ServerStreamingServer[TaskEvent]
+type WarrenAPI_WatchContainersServer = grpc.ServerStreamingServer[ContainerEvent]
 
-func _WarrenAPI_ReportTaskHealth_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ReportTaskHealthRequest)
+func _WarrenAPI_ReportContainerHealth_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReportContainerHealthRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(WarrenAPIServer).ReportTaskHealth(ctx, in)
+		return srv.(WarrenAPIServer).ReportContainerHealth(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: WarrenAPI_ReportTaskHealth_FullMethodName,
+		FullMethod: WarrenAPI_ReportContainerHealth_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(WarrenAPIServer).ReportTaskHealth(ctx, req.(*ReportTaskHealthRequest))
+		return srv.(WarrenAPIServer).ReportContainerHealth(ctx, req.(*ReportContainerHealthRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1408,20 +1408,20 @@ var WarrenAPI_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _WarrenAPI_ListServices_Handler,
 		},
 		{
-			MethodName: "UpdateTaskStatus",
-			Handler:    _WarrenAPI_UpdateTaskStatus_Handler,
+			MethodName: "UpdateContainerStatus",
+			Handler:    _WarrenAPI_UpdateContainerStatus_Handler,
 		},
 		{
-			MethodName: "ListTasks",
-			Handler:    _WarrenAPI_ListTasks_Handler,
+			MethodName: "ListContainers",
+			Handler:    _WarrenAPI_ListContainers_Handler,
 		},
 		{
-			MethodName: "GetTask",
-			Handler:    _WarrenAPI_GetTask_Handler,
+			MethodName: "GetContainer",
+			Handler:    _WarrenAPI_GetContainer_Handler,
 		},
 		{
-			MethodName: "ReportTaskHealth",
-			Handler:    _WarrenAPI_ReportTaskHealth_Handler,
+			MethodName: "ReportContainerHealth",
+			Handler:    _WarrenAPI_ReportContainerHealth_Handler,
 		},
 		{
 			MethodName: "CreateSecret",
@@ -1510,8 +1510,8 @@ var WarrenAPI_ServiceDesc = grpc.ServiceDesc{
 	},
 	Streams: []grpc.StreamDesc{
 		{
-			StreamName:    "WatchTasks",
-			Handler:       _WarrenAPI_WatchTasks_Handler,
+			StreamName:    "WatchContainers",
+			Handler:       _WarrenAPI_WatchContainers_Handler,
 			ServerStreams: true,
 		},
 		{

@@ -70,90 +70,90 @@ func (r *ContainerdRuntime) PullImage(ctx context.Context, imageRef string) erro
 	return nil
 }
 
-// CreateContainer creates a container from a task specification
-func (r *ContainerdRuntime) CreateContainer(ctx context.Context, task *types.Task) (string, error) {
+// CreateContainer creates a container from a container specification
+func (r *ContainerdRuntime) CreateContainer(ctx context.Context, container *types.Container) (string, error) {
 	ctx = namespaces.WithNamespace(ctx, r.namespace)
 
 	// Get the image
-	image, err := r.client.GetImage(ctx, task.Image)
+	image, err := r.client.GetImage(ctx, container.Image)
 	if err != nil {
-		return "", fmt.Errorf("failed to get image %s: %w", task.Image, err)
+		return "", fmt.Errorf("failed to get image %s: %w", container.Image, err)
 	}
 
 	// Create container spec with environment variables
 	opts := []oci.SpecOpts{
 		oci.WithImageConfig(image),
-		oci.WithEnv(task.Env),
+		oci.WithEnv(container.Env),
 	}
 
 	// Apply resource limits if specified
-	if task.Resources != nil {
-		if task.Resources.CPULimit > 0 {
+	if container.Resources != nil {
+		if container.Resources.CPULimit > 0 {
 			// Convert CPULimit (cores) to CPU shares and quota
 			// CPU shares: relative weight (1024 = 1 core)
 			// CPU quota: period=100000 (100ms), quota=CPULimit*100000
-			shares := uint64(task.Resources.CPULimit * 1024)
-			quota := int64(task.Resources.CPULimit * 100000)
+			shares := uint64(container.Resources.CPULimit * 1024)
+			quota := int64(container.Resources.CPULimit * 100000)
 			period := uint64(100000)
 
 			opts = append(opts, oci.WithCPUShares(shares))
 			opts = append(opts, oci.WithCPUCFS(quota, period))
 		}
 
-		if task.Resources.MemoryLimit > 0 {
+		if container.Resources.MemoryLimit > 0 {
 			// Apply memory limit in bytes
-			opts = append(opts, oci.WithMemoryLimit(uint64(task.Resources.MemoryLimit)))
+			opts = append(opts, oci.WithMemoryLimit(uint64(container.Resources.MemoryLimit)))
 		}
 	}
 
 	// Create the container
-	container, err := r.client.NewContainer(
+	ctrdContainer, err := r.client.NewContainer(
 		ctx,
-		task.ID,
+		container.ID,
 		containerd.WithImage(image),
-		containerd.WithNewSnapshot(task.ID+"-snapshot", image),
+		containerd.WithNewSnapshot(container.ID+"-snapshot", image),
 		containerd.WithNewSpec(opts...),
 	)
 	if err != nil {
 		return "", fmt.Errorf("failed to create container: %w", err)
 	}
 
-	return container.ID(), nil
+	return ctrdContainer.ID(), nil
 }
 
 // CreateContainerWithMounts creates a container with secret and volume mounts
-func (r *ContainerdRuntime) CreateContainerWithMounts(ctx context.Context, task *types.Task, secretsPath string, volumeMounts []specs.Mount, resolvConfPath string) (string, error) {
+func (r *ContainerdRuntime) CreateContainerWithMounts(ctx context.Context, container *types.Container, secretsPath string, volumeMounts []specs.Mount, resolvConfPath string) (string, error) {
 	ctx = namespaces.WithNamespace(ctx, r.namespace)
 
 	// Get the image
-	image, err := r.client.GetImage(ctx, task.Image)
+	image, err := r.client.GetImage(ctx, container.Image)
 	if err != nil {
-		return "", fmt.Errorf("failed to get image %s: %w", task.Image, err)
+		return "", fmt.Errorf("failed to get image %s: %w", container.Image, err)
 	}
 
 	// Create container spec with environment variables
 	opts := []oci.SpecOpts{
 		oci.WithImageConfig(image),
-		oci.WithEnv(task.Env),
+		oci.WithEnv(container.Env),
 	}
 
 	// Apply resource limits if specified
-	if task.Resources != nil {
-		if task.Resources.CPULimit > 0 {
+	if container.Resources != nil {
+		if container.Resources.CPULimit > 0 {
 			// Convert CPULimit (cores) to CPU shares and quota
 			// CPU shares: relative weight (1024 = 1 core)
 			// CPU quota: period=100000 (100ms), quota=CPULimit*100000
-			shares := uint64(task.Resources.CPULimit * 1024)
-			quota := int64(task.Resources.CPULimit * 100000)
+			shares := uint64(container.Resources.CPULimit * 1024)
+			quota := int64(container.Resources.CPULimit * 100000)
 			period := uint64(100000)
 
 			opts = append(opts, oci.WithCPUShares(shares))
 			opts = append(opts, oci.WithCPUCFS(quota, period))
 		}
 
-		if task.Resources.MemoryLimit > 0 {
+		if container.Resources.MemoryLimit > 0 {
 			// Apply memory limit in bytes
-			opts = append(opts, oci.WithMemoryLimit(uint64(task.Resources.MemoryLimit)))
+			opts = append(opts, oci.WithMemoryLimit(uint64(container.Resources.MemoryLimit)))
 		}
 	}
 
@@ -189,23 +189,23 @@ func (r *ContainerdRuntime) CreateContainerWithMounts(ctx context.Context, task 
 	}
 
 	// Create the container
-	container, err := r.client.NewContainer(
+	ctrdContainer, err := r.client.NewContainer(
 		ctx,
-		task.ID,
+		container.ID,
 		containerd.WithImage(image),
-		containerd.WithNewSnapshot(task.ID+"-snapshot", image),
+		containerd.WithNewSnapshot(container.ID+"-snapshot", image),
 		containerd.WithNewSpec(opts...),
 	)
 	if err != nil {
 		return "", fmt.Errorf("failed to create container: %w", err)
 	}
 
-	return container.ID(), nil
+	return ctrdContainer.ID(), nil
 }
 
 // CreateContainerWithSecrets creates a container with secret tmpfs mounts (deprecated, use CreateContainerWithMounts)
-func (r *ContainerdRuntime) CreateContainerWithSecrets(ctx context.Context, task *types.Task, secretsPath string) (string, error) {
-	return r.CreateContainerWithMounts(ctx, task, secretsPath, nil, "")
+func (r *ContainerdRuntime) CreateContainerWithSecrets(ctx context.Context, container *types.Container, secretsPath string) (string, error) {
+	return r.CreateContainerWithMounts(ctx, container, secretsPath, nil, "")
 }
 
 // StartContainer starts a container and returns its runtime ID
@@ -309,42 +309,42 @@ func (r *ContainerdRuntime) DeleteContainer(ctx context.Context, containerID str
 }
 
 // GetContainerStatus returns the status of a container
-func (r *ContainerdRuntime) GetContainerStatus(ctx context.Context, containerID string) (types.TaskState, error) {
+func (r *ContainerdRuntime) GetContainerStatus(ctx context.Context, containerID string) (types.ContainerState, error) {
 	ctx = namespaces.WithNamespace(ctx, r.namespace)
 
 	// Get the container
 	container, err := r.client.LoadContainer(ctx, containerID)
 	if err != nil {
-		return types.TaskStateFailed, fmt.Errorf("failed to load container %s: %w", containerID, err)
+		return types.ContainerStateFailed, fmt.Errorf("failed to load container %s: %w", containerID, err)
 	}
 
 	// Get the task
 	task, err := container.Task(ctx, nil)
 	if err != nil {
 		// No task means container is not running
-		return types.TaskStatePending, nil
+		return types.ContainerStatePending, nil
 	}
 
 	// Get task status
 	status, err := task.Status(ctx)
 	if err != nil {
-		return types.TaskStateFailed, fmt.Errorf("failed to get task status: %w", err)
+		return types.ContainerStateFailed, fmt.Errorf("failed to get task status: %w", err)
 	}
 
 	// Map containerd status to Warren status
 	switch status.Status {
 	case containerd.Running:
-		return types.TaskStateRunning, nil
+		return types.ContainerStateRunning, nil
 	case containerd.Stopped:
 		// Check exit code
 		if status.ExitStatus == 0 {
-			return types.TaskStateComplete, nil
+			return types.ContainerStateComplete, nil
 		}
-		return types.TaskStateFailed, nil
+		return types.ContainerStateFailed, nil
 	case containerd.Paused:
-		return types.TaskStateRunning, nil
+		return types.ContainerStateRunning, nil
 	default:
-		return types.TaskStatePending, nil
+		return types.ContainerStatePending, nil
 	}
 }
 
@@ -377,7 +377,7 @@ func (r *ContainerdRuntime) IsRunning(ctx context.Context, containerID string) b
 	if err != nil {
 		return false
 	}
-	return status == types.TaskStateRunning
+	return status == types.ContainerStateRunning
 }
 
 // ListContainers returns all containers in the Warren namespace

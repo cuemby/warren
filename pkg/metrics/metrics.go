@@ -25,10 +25,10 @@ var (
 		},
 	)
 
-	TasksTotal = prometheus.NewGaugeVec(
+	ContainersTotal = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
-			Name: "warren_tasks_total",
-			Help: "Total number of tasks by state",
+			Name: "warren_containers_total",
+			Help: "Total number of containers by state",
 		},
 		[]string{"state"},
 	)
@@ -98,22 +98,22 @@ var (
 	SchedulingLatency = prometheus.NewHistogram(
 		prometheus.HistogramOpts{
 			Name:    "warren_scheduling_latency_seconds",
-			Help:    "Time taken to schedule tasks in seconds",
+			Help:    "Time taken to schedule containers in seconds",
 			Buckets: prometheus.DefBuckets,
 		},
 	)
 
-	TasksScheduled = prometheus.NewCounter(
+	ContainersScheduled = prometheus.NewCounter(
 		prometheus.CounterOpts{
-			Name: "warren_tasks_scheduled_total",
-			Help: "Total number of tasks scheduled",
+			Name: "warren_containers_scheduled_total",
+			Help: "Total number of containers scheduled",
 		},
 	)
 
-	TasksFailed = prometheus.NewCounter(
+	ContainersFailed = prometheus.NewCounter(
 		prometheus.CounterOpts{
-			Name: "warren_tasks_failed_total",
-			Help: "Total number of failed tasks",
+			Name: "warren_containers_failed_total",
+			Help: "Total number of failed containers",
 		},
 	)
 
@@ -142,27 +142,27 @@ var (
 		},
 	)
 
-	// Task operation metrics
-	TaskCreateDuration = prometheus.NewHistogram(
+	// Container operation metrics
+	ContainerCreateDuration = prometheus.NewHistogram(
 		prometheus.HistogramOpts{
-			Name:    "warren_task_create_duration_seconds",
-			Help:    "Time taken to create a task in seconds",
+			Name:    "warren_container_create_duration_seconds",
+			Help:    "Time taken to create a container in seconds",
 			Buckets: prometheus.DefBuckets,
 		},
 	)
 
-	TaskStartDuration = prometheus.NewHistogram(
+	ContainerStartDuration = prometheus.NewHistogram(
 		prometheus.HistogramOpts{
-			Name:    "warren_task_start_duration_seconds",
-			Help:    "Time taken to start a task container in seconds",
+			Name:    "warren_container_start_duration_seconds",
+			Help:    "Time taken to start a container in seconds",
 			Buckets: prometheus.DefBuckets,
 		},
 	)
 
-	TaskStopDuration = prometheus.NewHistogram(
+	ContainerStopDuration = prometheus.NewHistogram(
 		prometheus.HistogramOpts{
-			Name:    "warren_task_stop_duration_seconds",
-			Help:    "Time taken to stop a task container in seconds",
+			Name:    "warren_container_stop_duration_seconds",
+			Help:    "Time taken to stop a container in seconds",
 			Buckets: prometheus.DefBuckets,
 		},
 	)
@@ -239,7 +239,7 @@ func init() {
 	// Register all metrics
 	prometheus.MustRegister(NodesTotal)
 	prometheus.MustRegister(ServicesTotal)
-	prometheus.MustRegister(TasksTotal)
+	prometheus.MustRegister(ContainersTotal)
 	prometheus.MustRegister(SecretsTotal)
 	prometheus.MustRegister(VolumesTotal)
 	prometheus.MustRegister(RaftLeader)
@@ -249,16 +249,16 @@ func init() {
 	prometheus.MustRegister(APIRequestsTotal)
 	prometheus.MustRegister(APIRequestDuration)
 	prometheus.MustRegister(SchedulingLatency)
-	prometheus.MustRegister(TasksScheduled)
-	prometheus.MustRegister(TasksFailed)
+	prometheus.MustRegister(ContainersScheduled)
+	prometheus.MustRegister(ContainersFailed)
 
 	// Register operation latency metrics
 	prometheus.MustRegister(ServiceCreateDuration)
 	prometheus.MustRegister(ServiceUpdateDuration)
 	prometheus.MustRegister(ServiceDeleteDuration)
-	prometheus.MustRegister(TaskCreateDuration)
-	prometheus.MustRegister(TaskStartDuration)
-	prometheus.MustRegister(TaskStopDuration)
+	prometheus.MustRegister(ContainerCreateDuration)
+	prometheus.MustRegister(ContainerStartDuration)
+	prometheus.MustRegister(ContainerStopDuration)
 	prometheus.MustRegister(RaftApplyDuration)
 	prometheus.MustRegister(RaftCommitDuration)
 	prometheus.MustRegister(ReconciliationDuration)

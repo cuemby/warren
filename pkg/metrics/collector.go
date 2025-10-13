@@ -53,7 +53,7 @@ func (c *Collector) collect() {
 	c.collectServiceMetrics()
 
 	// Collect task metrics
-	c.collectTaskMetrics()
+	c.collectContainerMetrics()
 
 	// Collect secret metrics
 	c.collectSecretMetrics()
@@ -101,28 +101,28 @@ func (c *Collector) collectServiceMetrics() {
 	ServicesTotal.Set(float64(len(services)))
 }
 
-func (c *Collector) collectTaskMetrics() {
+func (c *Collector) collectContainerMetrics() {
 	services, err := c.manager.ListServices()
 	if err != nil {
 		return
 	}
 
-	taskCounts := make(map[types.TaskState]int)
+	containerCounts := make(map[types.ContainerState]int)
 
 	for _, service := range services {
-		tasks, err := c.manager.ListTasksByService(service.ID)
+		containers, err := c.manager.ListContainersByService(service.ID)
 		if err != nil {
 			continue
 		}
 
-		for _, task := range tasks {
-			taskCounts[task.ActualState]++
+		for _, container := range containers {
+			containerCounts[container.ActualState]++
 		}
 	}
 
 	// Update metrics
-	for state, count := range taskCounts {
-		TasksTotal.WithLabelValues(string(state)).Set(float64(count))
+	for state, count := range containerCounts {
+		ContainersTotal.WithLabelValues(string(state)).Set(float64(count))
 	}
 }
 

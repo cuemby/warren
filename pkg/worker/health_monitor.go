@@ -21,10 +21,10 @@ type HealthMonitor struct {
 
 // containerHealthMonitor tracks health check state for a single task
 type containerHealthMonitor struct {
-	task    *types.Container
-	checker health.Checker
-	status  *health.Status
-	config  health.Config
+	container *types.Container
+	checker   health.Checker
+	status    *health.Status
+	config    health.Config
 }
 
 // NewHealthMonitor creates a new health monitor
@@ -186,8 +186,8 @@ func (hm *HealthMonitor) reportHealth(monitor *containerHealthMonitor) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	_, err := hm.worker.client.ReportTaskHealth(ctx, &proto.ReportContainerHealthRequest{
-		TaskId:               monitor.task.ID,
+	_, err := hm.worker.client.ReportContainerHealth(ctx, &proto.ReportContainerHealthRequest{
+		ContainerId:          monitor.container.ID,
 		Healthy:              monitor.status.Healthy,
 		Message:              monitor.status.LastResult.Message,
 		CheckedAt:            timestamppb.New(monitor.status.LastCheck),

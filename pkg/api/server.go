@@ -165,17 +165,17 @@ func (s *Server) Heartbeat(ctx context.Context, req *proto.HeartbeatRequest) (*p
 		return nil, fmt.Errorf("failed to update node: %w", err)
 	}
 
-	// Process task status updates
-	for _, ts := range req.TaskStatuses {
-		task, err := s.manager.GetTask(ts.TaskId)
+	// Process container status updates
+	for _, cs := range req.ContainerStatuses {
+		container, err := s.manager.GetContainer(cs.ContainerId)
 		if err != nil {
-			continue // Skip tasks that don't exist
+			continue // Skip containers that don't exist
 		}
 
-		task.ActualState = types.TaskState(ts.ActualState)
-		task.ContainerID = ts.ContainerId
+		container.ActualState = types.ContainerState(cs.ActualState)
+		container.ContainerID = cs.RuntimeContainerId
 
-		if err := s.manager.UpdateTask(task); err != nil {
+		if err := s.manager.UpdateContainer(container); err != nil {
 			// Log error but don't fail heartbeat
 			continue
 		}
@@ -430,96 +430,96 @@ func (s *Server) ListServices(ctx context.Context, req *proto.ListServicesReques
 }
 
 // UpdateTaskStatus updates the status of a task
-func (s *Server) UpdateTaskStatus(ctx context.Context, req *proto.UpdateTaskStatusRequest) (*proto.UpdateTaskStatusResponse, error) {
-	task, err := s.manager.GetTask(req.TaskId)
+func (s *Server) UpdateContainerStatus(ctx context.Context, req *proto.UpdateContainerStatusRequest) (*proto.UpdateContainerStatusResponse, error) {
+	container, err := s.manager.GetContainer(req.ContainerId)
 	if err != nil {
-		return nil, fmt.Errorf("task not found: %w", err)
+		return nil, fmt.Errorf("container not found: %w", err)
 	}
 
-	task.ActualState = types.TaskState(req.ActualState)
-	task.ContainerID = req.ContainerId
+	container.ActualState = types.ContainerState(req.ActualState)
+	container.ContainerID = req.RuntimeContainerId
 
-	if err := s.manager.UpdateTask(task); err != nil {
-		return nil, fmt.Errorf("failed to update task: %w", err)
+	if err := s.manager.UpdateContainer(container); err != nil {
+		return nil, fmt.Errorf("failed to update container: %w", err)
 	}
 
-	return &proto.UpdateTaskStatusResponse{
+	return &proto.UpdateContainerStatusResponse{
 		Status: "ok",
 	}, nil
 }
 
-// ReportTaskHealth reports the health status of a task
-func (s *Server) ReportTaskHealth(ctx context.Context, req *proto.ReportTaskHealthRequest) (*proto.ReportTaskHealthResponse, error) {
-	task, err := s.manager.GetTask(req.TaskId)
+// ReportContainerHealth reports the health status of a container
+func (s *Server) ReportContainerHealth(ctx context.Context, req *proto.ReportContainerHealthRequest) (*proto.ReportContainerHealthResponse, error) {
+	container, err := s.manager.GetContainer(req.ContainerId)
 	if err != nil {
-		return nil, fmt.Errorf("task not found: %w", err)
+		return nil, fmt.Errorf("container not found: %w", err)
 	}
 
-	// Update task health status
-	if task.HealthStatus == nil {
-		task.HealthStatus = &types.HealthStatus{}
+	// Update container health status
+	if container.HealthStatus == nil {
+		container.HealthStatus = &types.HealthStatus{}
 	}
 
-	task.HealthStatus.Healthy = req.Healthy
-	task.HealthStatus.Message = req.Message
-	task.HealthStatus.CheckedAt = req.CheckedAt.AsTime()
-	task.HealthStatus.ConsecutiveFailures = int(req.ConsecutiveFailures)
-	task.HealthStatus.ConsecutiveSuccesses = int(req.ConsecutiveSuccesses)
+	container.HealthStatus.Healthy = req.Healthy
+	container.HealthStatus.Message = req.Message
+	container.HealthStatus.CheckedAt = req.CheckedAt.AsTime()
+	container.HealthStatus.ConsecutiveFailures = int(req.ConsecutiveFailures)
+	container.HealthStatus.ConsecutiveSuccesses = int(req.ConsecutiveSuccesses)
 
-	// Update task in storage
-	if err := s.manager.UpdateTask(task); err != nil {
-		return nil, fmt.Errorf("failed to update task health: %w", err)
+	// Update container in storage
+	if err := s.manager.UpdateContainer(container); err != nil {
+		return nil, fmt.Errorf("failed to update container health: %w", err)
 	}
 
-	return &proto.ReportTaskHealthResponse{
+	return &proto.ReportContainerHealthResponse{
 		Status: "ok",
 	}, nil
 }
 
-// ListTasks returns tasks, optionally filtered by service or node
-func (s *Server) ListTasks(ctx context.Context, req *proto.ListTasksRequest) (*proto.ListTasksResponse, error) {
-	var tasks []*types.Task
+// ListContainers returns containers, optionally filtered by service or node
+func (s *Server) ListContainers(ctx context.Context, req *proto.ListContainersRequest) (*proto.ListContainersResponse, error) {
+	var containers []*types.Container
 	var err error
 
 	if req.ServiceId != "" {
-		tasks, err = s.manager.ListTasksByService(req.ServiceId)
+		containers, err = s.manager.ListContainersByService(req.ServiceId)
 	} else if req.NodeId != "" {
-		tasks, err = s.manager.ListTasksByNode(req.NodeId)
+		containers, err = s.manager.ListContainersByNode(req.NodeId)
 	} else {
-		tasks, err = s.manager.ListTasks()
+		containers, err = s.manager.ListContainers()
 	}
 
 	if err != nil {
-		return nil, fmt.Errorf("failed to list tasks: %w", err)
+		return nil, fmt.Errorf("failed to list containers: %w", err)
 	}
 
-	protoTasks := make([]*proto.Task, len(tasks))
-	for i, task := range tasks {
-		protoTasks[i] = taskToProto(task)
+	protoContainers := make([]*proto.Container, len(containers))
+	for i, container := range containers {
+		protoContainers[i] = containerToProto(container)
 	}
 
-	return &proto.ListTasksResponse{
-		Tasks: protoTasks,
+	return &proto.ListContainersResponse{
+		Containers: protoContainers,
 	}, nil
 }
 
-// GetTask returns a specific task
-func (s *Server) GetTask(ctx context.Context, req *proto.GetTaskRequest) (*proto.GetTaskResponse, error) {
-	task, err := s.manager.GetTask(req.Id)
+// GetContainer returns a specific container
+func (s *Server) GetContainer(ctx context.Context, req *proto.GetContainerRequest) (*proto.GetContainerResponse, error) {
+	container, err := s.manager.GetContainer(req.Id)
 	if err != nil {
-		return nil, fmt.Errorf("task not found: %w", err)
+		return nil, fmt.Errorf("container not found: %w", err)
 	}
 
-	return &proto.GetTaskResponse{
-		Task: taskToProto(task),
+	return &proto.GetContainerResponse{
+		Container: containerToProto(container),
 	}, nil
 }
 
-// WatchTasks streams task events to a worker node
-func (s *Server) WatchTasks(req *proto.WatchTasksRequest, stream proto.WarrenAPI_WatchTasksServer) error {
-	// TODO: Implement task watch stream
+// WatchContainers streams container events to a worker node
+func (s *Server) WatchContainers(req *proto.WatchContainersRequest, stream proto.WarrenAPI_WatchContainersServer) error {
+	// TODO: Implement container watch stream
 	// For now, return unimplemented
-	return fmt.Errorf("WatchTasks not yet implemented")
+	return fmt.Errorf("WatchContainers not yet implemented")
 }
 
 // CreateSecret creates a new secret
@@ -846,7 +846,7 @@ func serviceToProto(s *types.Service) *proto.Service {
 	return ps
 }
 
-func taskToProto(t *types.Task) *proto.Task {
+func containerToProto(t *types.Container) *proto.Container {
 	// Convert env slice to map
 	envMap := make(map[string]string)
 	for _, e := range t.Env {
@@ -856,18 +856,18 @@ func taskToProto(t *types.Task) *proto.Task {
 		}
 	}
 
-	pt := &proto.Task{
-		Id:           t.ID,
-		ServiceId:    t.ServiceID,
-		ServiceName:  t.ServiceName,
-		NodeId:       t.NodeID,
-		ContainerId:  t.ContainerID,
-		DesiredState: string(t.DesiredState),
-		ActualState:  string(t.ActualState),
-		Image:        t.Image,
-		Env:          envMap,
-		CreatedAt:    timestamppb.New(t.CreatedAt),
-		Error:        t.Error,
+	pt := &proto.Container{
+		Id:                 t.ID,
+		ServiceId:          t.ServiceID,
+		ServiceName:        t.ServiceName,
+		NodeId:             t.NodeID,
+		RuntimeContainerId: t.ContainerID,
+		DesiredState:       string(t.DesiredState),
+		ActualState:        string(t.ActualState),
+		Image:              t.Image,
+		Env:                envMap,
+		CreatedAt:          timestamppb.New(t.CreatedAt),
+		Error:              t.Error,
 	}
 
 	// Use StartedAt for UpdatedAt if available, otherwise CreatedAt

@@ -34,22 +34,22 @@ func (d *Deployer) UpdateService(serviceID string, newImage string) error {
 
 // rollingUpdate performs a rolling update of the service
 func (d *Deployer) rollingUpdate(service *types.Service, newImage string) error {
-	// Get all tasks for the service
-	tasks, err := d.manager.ListTasksByService(service.ID)
+	// Get all containers for the service
+	containers, err := d.manager.ListContainersByService(service.ID)
 	if err != nil {
-		return fmt.Errorf("failed to list tasks: %w", err)
+		return fmt.Errorf("failed to list containers: %w", err)
 	}
 
-	// Filter running tasks
-	var runningTasks []*types.Task
-	for _, task := range tasks {
-		if task.DesiredState == types.TaskStateRunning {
-			runningTasks = append(runningTasks, task)
+	// Filter running containers
+	var runningContainers []*types.Container
+	for _, container := range containers {
+		if container.DesiredState == types.ContainerStateRunning {
+			runningContainers = append(runningContainers, container)
 		}
 	}
 
-	if len(runningTasks) == 0 {
-		return fmt.Errorf("no running tasks to update")
+	if len(runningContainers) == 0 {
+		return fmt.Errorf("no running containers to update")
 	}
 
 	// Determine update parallelism
@@ -67,7 +67,7 @@ func (d *Deployer) rollingUpdate(service *types.Service, newImage string) error 
 	fmt.Printf("Starting rolling update for service %s:\n", service.Name)
 	fmt.Printf("  Current image: %s\n", service.Image)
 	fmt.Printf("  New image: %s\n", newImage)
-	fmt.Printf("  Tasks to update: %d\n", len(runningTasks))
+	fmt.Printf("  Containers to update: %d\n", len(runningContainers))
 	fmt.Printf("  Parallelism: %d\n", parallelism)
 	fmt.Printf("  Delay: %v\n", delay)
 
@@ -78,32 +78,32 @@ func (d *Deployer) rollingUpdate(service *types.Service, newImage string) error 
 		return fmt.Errorf("failed to update service: %w", err)
 	}
 
-	// Update tasks in batches
-	for i := 0; i < len(runningTasks); i += parallelism {
+	// Update containers in batches
+	for i := 0; i < len(runningContainers); i += parallelism {
 		end := i + parallelism
-		if end > len(runningTasks) {
-			end = len(runningTasks)
+		if end > len(runningContainers) {
+			end = len(runningContainers)
 		}
 
-		batch := runningTasks[i:end]
-		fmt.Printf("\nUpdating batch %d/%d (%d tasks)...\n",
+		batch := runningContainers[i:end]
+		fmt.Printf("\nUpdating batch %d/%d (%d containers)...\n",
 			(i/parallelism)+1,
-			(len(runningTasks)+parallelism-1)/parallelism,
+			(len(runningContainers)+parallelism-1)/parallelism,
 			len(batch))
 
-		// Shutdown old tasks
-		for _, task := range batch {
-			task.DesiredState = types.TaskStateShutdown
-			if err := d.manager.UpdateTask(task); err != nil {
-				fmt.Printf("  Warning: failed to shutdown task %s: %v\n", task.ID, err)
+		// Shutdown old containers
+		for _, container := range batch {
+			container.DesiredState = types.ContainerStateShutdown
+			if err := d.manager.UpdateContainer(container); err != nil {
+				fmt.Printf("  Warning: failed to shutdown container %s: %v\n", container.ID, err)
 				continue
 			}
-			fmt.Printf("  Shutting down task %s on node %s\n", task.ID[:8], task.NodeID)
+			fmt.Printf("  Shutting down container %s on node %s\n", container.ID[:8], container.NodeID)
 		}
 
-		// The scheduler will automatically create new tasks with the updated image
+		// The scheduler will automatically create new containers with the updated image
 		// Wait for the delay before processing next batch
-		if delay > 0 && end < len(runningTasks) {
+		if delay > 0 && end < len(runningContainers) {
 			fmt.Printf("  Waiting %v before next batch...\n", delay)
 			time.Sleep(delay)
 		}
@@ -120,7 +120,7 @@ func (d *Deployer) GetDeploymentStatus(serviceID string) (*DeploymentStatus, err
 		return nil, err
 	}
 
-	tasks, err := d.manager.ListTasksByService(serviceID)
+	containers, err := d.manager.ListContainersByService(serviceID)
 	if err != nil {
 		return nil, err
 	}
@@ -130,30 +130,30 @@ func (d *Deployer) GetDeploymentStatus(serviceID string) (*DeploymentStatus, err
 		ServiceName: service.Name,
 		Image:       service.Image,
 		Strategy:    string(service.DeployStrategy),
-		Tasks:       make(map[string]int),
+		Containers:  make(map[string]int),
 	}
 
-	for _, task := range tasks {
-		status.Tasks[string(task.ActualState)]++
-		if task.ActualState == types.TaskStateRunning {
-			status.ReadyTasks++
+	for _, container := range containers {
+		status.Containers[string(container.ActualState)]++
+		if container.ActualState == types.ContainerStateRunning {
+			status.ReadyContainers++
 		}
 	}
 
-	status.TotalTasks = len(tasks)
-	status.DesiredTasks = service.Replicas
+	status.TotalContainers = len(containers)
+	status.DesiredContainers = service.Replicas
 
 	return status, nil
 }
 
 // DeploymentStatus represents the current status of a deployment
 type DeploymentStatus struct {
-	ServiceID    string
-	ServiceName  string
-	Image        string
-	Strategy     string
-	TotalTasks   int
-	DesiredTasks int
-	ReadyTasks   int
-	Tasks        map[string]int // State -> Count
+	ServiceID         string
+	ServiceName       string
+	Image             string
+	Strategy          string
+	TotalContainers   int
+	DesiredContainers int
+	ReadyContainers   int
+	Containers        map[string]int // State -> Count
 }

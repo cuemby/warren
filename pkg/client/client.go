@@ -203,12 +203,12 @@ func (c *Client) GetNode(id string) (*proto.Node, error) {
 	return resp.Node, nil
 }
 
-// ListTasks lists all tasks (optionally filtered)
-func (c *Client) ListTasks(serviceID, nodeID string) ([]*proto.Task, error) {
+// ListContainers lists all containers (optionally filtered)
+func (c *Client) ListContainers(serviceID, nodeID string) ([]*proto.Container, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	resp, err := c.client.ListTasks(ctx, &proto.ListTasksRequest{
+	resp, err := c.client.ListContainers(ctx, &proto.ListContainersRequest{
 		ServiceId: serviceID,
 		NodeId:    nodeID,
 	})
@@ -216,7 +216,7 @@ func (c *Client) ListTasks(serviceID, nodeID string) ([]*proto.Task, error) {
 		return nil, err
 	}
 
-	return resp.Tasks, nil
+	return resp.Containers, nil
 }
 
 // CreateSecret creates a new secret
