@@ -11,17 +11,17 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-// HealthMonitor manages health checks for tasks
+// HealthMonitor manages health checks for containers
 type HealthMonitor struct {
 	worker     *Worker
-	monitors   map[string]*taskHealthMonitor
+	monitors   map[string]*containerHealthMonitor
 	cancelFns  map[string]context.CancelFunc
 	stopCh     chan struct{}
 }
 
-// taskHealthMonitor tracks health check state for a single task
-type taskHealthMonitor struct {
-	task    *types.Task
+// containerHealthMonitor tracks health check state for a single task
+type containerHealthMonitor struct {
+	task    *types.Container
 	checker health.Checker
 	status  *health.Status
 	config  health.Config
@@ -31,7 +31,7 @@ type taskHealthMonitor struct {
 func NewHealthMonitor(w *Worker) *HealthMonitor {
 	return &HealthMonitor{
 		worker:    w,
-		monitors:  make(map[string]*taskHealthMonitor),
+		monitors:  make(map[string]*containerHealthMonitor),
 		cancelFns: make(map[string]context.CancelFunc),
 		stopCh:    make(chan struct{}),
 	}
@@ -68,12 +68,12 @@ func (hm *HealthMonitor) monitorLoop() {
 
 // syncHealthChecks syncs health checks with current tasks
 func (hm *HealthMonitor) syncHealthChecks() {
-	hm.worker.taskMu.RLock()
-	currentTasks := make(map[string]*types.Task)
-	for id, task := range hm.worker.tasks {
+	hm.worker.containersMu.RLock()
+	currentTasks := make(map[string]*types.Container)
+	for id, task := range hm.worker.containers {
 		currentTasks[id] = task
 	}
-	hm.worker.taskMu.RUnlock()
+	hm.worker.containersMu.RUnlock()
 
 	// Stop health checks for tasks that no longer exist
 	for taskID, cancel := range hm.cancelFns {
@@ -94,7 +94,7 @@ func (hm *HealthMonitor) syncHealthChecks() {
 			continue // No health check configured
 		}
 
-		if task.ActualState != types.TaskStateRunning {
+		if task.ActualState != types.ContainerStateRunning {
 			continue // Only monitor running tasks
 		}
 
@@ -106,7 +106,7 @@ func (hm *HealthMonitor) syncHealthChecks() {
 }
 
 // startHealthCheck starts a health check goroutine for a task
-func (hm *HealthMonitor) startHealthCheck(task *types.Task) error {
+func (hm *HealthMonitor) startHealthCheck(task *types.Container) error {
 	// Create health checker based on type
 	checker, err := hm.createChecker(task)
 	if err != nil {
@@ -122,7 +122,7 @@ func (hm *HealthMonitor) startHealthCheck(task *types.Task) error {
 	}
 
 	// Create monitor
-	monitor := &taskHealthMonitor{
+	monitor := &containerHealthMonitor{
 		task:    task,
 		checker: checker,
 		status: &health.Status{
@@ -144,7 +144,7 @@ func (hm *HealthMonitor) startHealthCheck(task *types.Task) error {
 }
 
 // healthCheckLoop runs health checks for a task
-func (hm *HealthMonitor) healthCheckLoop(ctx context.Context, monitor *taskHealthMonitor) {
+func (hm *HealthMonitor) healthCheckLoop(ctx context.Context, monitor *containerHealthMonitor) {
 	ticker := time.NewTicker(monitor.config.Interval)
 	defer ticker.Stop()
 
@@ -164,7 +164,7 @@ func (hm *HealthMonitor) healthCheckLoop(ctx context.Context, monitor *taskHealt
 }
 
 // runHealthCheck performs a single health check and reports the result
-func (hm *HealthMonitor) runHealthCheck(ctx context.Context, monitor *taskHealthMonitor) {
+func (hm *HealthMonitor) runHealthCheck(ctx context.Context, monitor *containerHealthMonitor) {
 	// Create context with timeout
 	checkCtx, cancel := context.WithTimeout(ctx, monitor.config.Timeout)
 	defer cancel()
@@ -182,11 +182,11 @@ func (hm *HealthMonitor) runHealthCheck(ctx context.Context, monitor *taskHealth
 }
 
 // reportHealth reports health status to the manager
-func (hm *HealthMonitor) reportHealth(monitor *taskHealthMonitor) error {
+func (hm *HealthMonitor) reportHealth(monitor *containerHealthMonitor) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	_, err := hm.worker.client.ReportTaskHealth(ctx, &proto.ReportTaskHealthRequest{
+	_, err := hm.worker.client.ReportTaskHealth(ctx, &proto.ReportContainerHealthRequest{
 		TaskId:               monitor.task.ID,
 		Healthy:              monitor.status.Healthy,
 		Message:              monitor.status.LastResult.Message,
@@ -199,7 +199,7 @@ func (hm *HealthMonitor) reportHealth(monitor *taskHealthMonitor) error {
 }
 
 // createChecker creates the appropriate health checker for a task
-func (hm *HealthMonitor) createChecker(task *types.Task) (health.Checker, error) {
+func (hm *HealthMonitor) createChecker(task *types.Container) (health.Checker, error) {
 	switch task.HealthCheck.Type {
 	case types.HealthCheckHTTP:
 		// Parse endpoint to get URL

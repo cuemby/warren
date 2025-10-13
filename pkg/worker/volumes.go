@@ -32,7 +32,7 @@ func NewVolumesHandler(worker *Worker) (*VolumesHandler, error) {
 }
 
 // PrepareVolumesForTask prepares all volumes for a task and returns mount specs
-func (vh *VolumesHandler) PrepareVolumesForTask(task *types.Task) ([]specs.Mount, error) {
+func (vh *VolumesHandler) PrepareVolumesForTask(task *types.Container) ([]specs.Mount, error) {
 	if len(task.Mounts) == 0 {
 		return nil, nil
 	}
@@ -118,7 +118,7 @@ func (vh *VolumesHandler) ensureVolumeExists(vol *types.Volume) error {
 }
 
 // CleanupVolumesForTask unmounts volumes for a task (no-op for local driver)
-func (vh *VolumesHandler) CleanupVolumesForTask(task *types.Task) error {
+func (vh *VolumesHandler) CleanupVolumesForTask(task *types.Container) error {
 	if len(task.Mounts) == 0 {
 		return nil
 	}
