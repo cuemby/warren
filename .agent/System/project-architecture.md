@@ -6,8 +6,9 @@
 **Type**: Container Orchestration Platform
 **Purpose**: Simple yet feature-rich container orchestrator for edge computing, combining Docker Swarm's simplicity with Kubernetes-level features in a single binary with zero external dependencies.
 
-**Last Updated**: 2025-10-12
-**Implementation Status**: Milestones 0-6 Complete ✅, M7 (Ingress) Complete ✅
+**Last Updated**: 2025-10-13
+**Version**: v1.1.1
+**Implementation Status**: Milestones 0-7 Complete ✅
 
 ---
 
@@ -35,7 +36,7 @@ Warren is a **production-ready container orchestration system** for edge computi
 - ✅ Secrets management (AES-256-GCM, tmpfs mounting)
 - ✅ Volume orchestration (local driver, node affinity)
 - ✅ Prometheus metrics and structured logging
-- ✅ gRPC API with 30+ methods
+- ✅ gRPC API with 37 RPC methods
 - ✅ Complete CLI with YAML apply
 - ✅ Multi-platform builds (Linux/macOS, AMD64/ARM64)
 - ✅ **Platform Support**:
@@ -83,7 +84,7 @@ warren/
 │
 ├── pkg/
 │   ├── api/
-│   │   └── server.go                  # ✅ gRPC server with 30+ methods
+│   │   └── server.go                  # ✅ gRPC server with 37 RPC methods
 │   │
 │   ├── manager/
 │   │   ├── manager.go                 # ✅ Manager with Raft consensus & multi-manager support
@@ -166,11 +167,11 @@ warren/
 │   │   └── client.go                  # ✅ gRPC client for CLI
 │   │
 │   └── types/
-│       └── types.go                   # ✅ Core data types (Cluster, Node, Service, Task, Secret, Volume)
+│       └── types.go                   # ✅ Core data types (Cluster, Node, Service, Container, Secret, Volume)
 │
 ├── api/
 │   └── proto/
-│       └── warren.proto               # ✅ Protocol buffers definitions (30+ methods, M6 updated)
+│       └── warren.proto               # ✅ Protocol buffers definitions (37 RPC methods, M7 complete)
 │
 ├── test/
 │   ├── integration/
@@ -211,11 +212,24 @@ warren/
 │   ├── tab-completion.md              # ✅ Shell completion guide (M4)
 │   ├── health-checks.md               # ✅ Health check configuration (M6)
 │   ├── resource-limits.md             # ✅ CPU and memory limits (M6)
-│   └── graceful-shutdown.md           # ✅ Graceful shutdown patterns (M6)
+│   ├── graceful-shutdown.md           # ✅ Graceful shutdown patterns (M6)
+│   ├── port-publishing.md             # ✅ Published ports documentation (M6)
+│   ├── logging.md                     # ✅ Structured logging guide (M4)
+│   ├── ingress.md                     # ✅ Built-in ingress controller guide (M7)
+│   ├── e2e-validation.md              # ✅ End-to-end validation procedures (M7)
+│   └── performance-benchmarking.md    # ✅ Performance benchmarking guide (M7)
 │
 ├── examples/
-│   ├── nginx-service.yaml             # ✅ Example service YAML (M4)
-│   └── complete-app.yaml              # ✅ Complete app with secrets/volumes (M4)
+│   ├── nginx-service.yaml             # ✅ Simple web service (M4)
+│   ├── complete-app.yaml              # ✅ Complete app with secrets/volumes (M4)
+│   ├── ingress-basic.yaml             # ✅ HTTP ingress with load balancing (M7)
+│   ├── ingress-https.yaml             # ✅ HTTPS with Let's Encrypt (M7)
+│   ├── health-checks.yaml             # ✅ HTTP/TCP/Exec probes (M6)
+│   ├── resource-limits.yaml           # ✅ CPU/memory management (M6)
+│   ├── secrets-volumes.yaml           # ✅ Secrets and persistent storage (M3)
+│   ├── multi-service-app.yaml         # ✅ Full 3-tier application (M4)
+│   ├── ha-cluster.yaml                # ✅ Production HA setup guide (M2)
+│   └── advanced-routing.yaml          # ✅ Advanced ingress features (M7)
 │
 ├── packaging/
 │   ├── homebrew/                      # ✅ Homebrew formula and guide (M5)
@@ -256,17 +270,25 @@ warren/
 └── SECURITY.md                        # ✅ Security policy (M5)
 ```
 
+**Project Stats** (v1.1.1):
+- **20 packages** in `pkg/` directory
+- **77 Go files** total (45 source, 20 doc.go, 12 tests)
+- **37 gRPC methods** in Protocol Buffers API
+- **10 YAML examples** covering all major features
+- **33 documentation files** (user guides, concepts, migrations)
+- **181 commits** since October 2025
+
 **Legend**:
-- ✅ Implemented (M0-M6 in progress)
-- (M0-M6) indicates milestone where feature was added
-- (M6) indicates current milestone production hardening features
+- ✅ Implemented (M0-M7 complete)
+- (M0-M7) indicates milestone where feature was added
+- (M6) = Production Hardening, (M7) = Built-in Ingress
 
 ---
 
 ## Technology Stack
 
 ### Core Language & Runtime
-- **Language**: Go 1.22+ (cross-platform, performance, cloud-native ecosystem)
+- **Language**: Go 1.24+ (cross-platform, performance, cloud-native ecosystem)
 - **Build**: CGO_ENABLED=0 (static binary), cross-compilation for multi-platform
 
 ### Distributed Systems
