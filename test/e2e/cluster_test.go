@@ -30,13 +30,13 @@ func TestBasicCluster(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create cluster: %v", err)
 	}
-	defer cluster.Cleanup()
+	defer func() { _ = cluster.Cleanup() }()
 
 	// Start the cluster
 	if err := cluster.Start(); err != nil {
 		t.Fatalf("Failed to start cluster: %v", err)
 	}
-	defer cluster.Stop()
+	defer func() { _ = cluster.Stop() }()
 
 	// Get test utilities
 	assert := framework.NewAssertions(t)
@@ -80,7 +80,7 @@ func TestBasicCluster(t *testing.T) {
 		if err := leader.Client.CreateService(service.Name, service.Image, service.Replicas); err != nil {
 			t.Fatalf("Failed to create service: %v", err)
 		}
-		defer leader.Client.DeleteService(service.Name)
+		defer func() { _ = leader.Client.DeleteService(service.Name) }()
 
 		// Wait for service to have running tasks
 		if err := waiter.WaitForServiceRunning(ctx, leader.Client, service.Name); err != nil {
@@ -116,7 +116,7 @@ func TestBasicCluster(t *testing.T) {
 		if err := leader.Client.CreateService(service.Name, service.Image, service.Replicas); err != nil {
 			t.Fatalf("Failed to create service: %v", err)
 		}
-		defer leader.Client.DeleteService(service.Name)
+		defer func() { _ = leader.Client.DeleteService(service.Name) }()
 
 		// Wait for initial replica
 		if err := waiter.WaitForReplicas(ctx, leader.Client, service.Name, 1); err != nil {
@@ -196,12 +196,12 @@ func TestMultiManagerCluster(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create cluster: %v", err)
 	}
-	defer cluster.Cleanup()
+	defer func() { _ = cluster.Cleanup() }()
 
 	if err := cluster.Start(); err != nil {
 		t.Fatalf("Failed to start cluster: %v", err)
 	}
-	defer cluster.Stop()
+	defer func() { _ = cluster.Stop() }()
 
 	assert := framework.NewAssertions(t)
 	waiter := framework.DefaultWaiter()
@@ -278,7 +278,7 @@ func TestMultiManagerCluster(t *testing.T) {
 		if err := newLeader.Client.CreateService(service.Name, service.Image, service.Replicas); err != nil {
 			t.Fatalf("Failed to create service after failover: %v", err)
 		}
-		defer newLeader.Client.DeleteService(service.Name)
+		defer func() { _ = newLeader.Client.DeleteService(service.Name) }()
 
 		if err := waiter.WaitForServiceRunning(ctx, newLeader.Client, service.Name); err != nil {
 			t.Fatalf("Service failed to start after failover: %v", err)

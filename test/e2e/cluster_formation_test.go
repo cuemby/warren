@@ -36,13 +36,13 @@ func TestClusterFormation(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create cluster: %v", err)
 	}
-	defer cluster.Cleanup()
+	defer func() { _ = cluster.Cleanup() }()
 
 	// Start the cluster (bootstraps manager-1, joins manager-2 & manager-3, starts workers)
 	if err := cluster.Start(); err != nil {
 		t.Fatalf("Failed to start cluster: %v", err)
 	}
-	defer cluster.Stop()
+	defer func() { _ = cluster.Stop() }()
 
 	assert := framework.NewAssertions(t)
 	waiter := framework.DefaultWaiter()
@@ -137,7 +137,7 @@ func TestClusterFormation(t *testing.T) {
 		if err := leader.Client.CreateService(serviceName, serviceImage, replicas); err != nil {
 			t.Fatalf("Failed to create service: %v", err)
 		}
-		defer leader.Client.DeleteService(serviceName)
+		defer func() { _ = leader.Client.DeleteService(serviceName) }()
 
 		// Wait for service to have running tasks
 		t.Log("Waiting for service tasks to be running...")
@@ -225,12 +225,12 @@ func TestClusterFormationSingleManager(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create cluster: %v", err)
 	}
-	defer cluster.Cleanup()
+	defer func() { _ = cluster.Cleanup() }()
 
 	if err := cluster.Start(); err != nil {
 		t.Fatalf("Failed to start cluster: %v", err)
 	}
-	defer cluster.Stop()
+	defer func() { _ = cluster.Stop() }()
 
 	assert := framework.NewAssertions(t)
 	waiter := framework.DefaultWaiter()
@@ -270,7 +270,7 @@ func TestClusterFormationSingleManager(t *testing.T) {
 		if err := leader.Client.CreateService(serviceName, "nginx:alpine", 1); err != nil {
 			t.Fatalf("Failed to create service: %v", err)
 		}
-		defer leader.Client.DeleteService(serviceName)
+		defer func() { _ = leader.Client.DeleteService(serviceName) }()
 
 		// Wait for service to be running
 		if err := waiter.WaitForServiceRunning(ctx, leader.Client, serviceName); err != nil {
@@ -303,12 +303,12 @@ func TestClusterFormationManagerOnly(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create cluster: %v", err)
 	}
-	defer cluster.Cleanup()
+	defer func() { _ = cluster.Cleanup() }()
 
 	if err := cluster.Start(); err != nil {
 		t.Fatalf("Failed to start cluster: %v", err)
 	}
-	defer cluster.Stop()
+	defer func() { _ = cluster.Stop() }()
 
 	assert := framework.NewAssertions(t)
 	waiter := framework.DefaultWaiter()
@@ -364,7 +364,7 @@ func TestClusterFormationManagerOnly(t *testing.T) {
 		if err := leader.Client.CreateService(serviceName, "nginx:alpine", 1); err != nil {
 			t.Fatalf("Failed to create service: %v", err)
 		}
-		defer leader.Client.DeleteService(serviceName)
+		defer func() { _ = leader.Client.DeleteService(serviceName) }()
 
 		// Service should be created but tasks will be pending
 		time.Sleep(3 * time.Second) // Give scheduler time to run

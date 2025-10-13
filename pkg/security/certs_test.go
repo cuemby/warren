@@ -153,9 +153,9 @@ func TestCertExists(t *testing.T) {
 	keyPath := filepath.Join(tmpDir, "node.key")
 	caPath := filepath.Join(tmpDir, "ca.crt")
 
-	os.WriteFile(certPath, []byte("cert"), 0600)
-	os.WriteFile(keyPath, []byte("key"), 0600)
-	os.WriteFile(caPath, []byte("ca"), 0600)
+	_ = os.WriteFile(certPath, []byte("cert"), 0600)
+	_ = os.WriteFile(keyPath, []byte("key"), 0600)
+	_ = os.WriteFile(caPath, []byte("ca"), 0600)
 
 	// Now should exist
 	if !CertExists(tmpDir) {
@@ -403,8 +403,8 @@ func TestRemoveCerts(t *testing.T) {
 	}
 
 	// Create some files
-	os.WriteFile(filepath.Join(tmpDir, "node.crt"), []byte("cert"), 0600)
-	os.WriteFile(filepath.Join(tmpDir, "node.key"), []byte("key"), 0600)
+	_ = os.WriteFile(filepath.Join(tmpDir, "node.crt"), []byte("cert"), 0600)
+	_ = os.WriteFile(filepath.Join(tmpDir, "node.key"), []byte("key"), 0600)
 
 	// Remove certificates
 	if err := RemoveCerts(tmpDir); err != nil {

@@ -17,7 +17,7 @@ func TestGlobalServiceScheduling(t *testing.T) {
 		DataDir:  t.TempDir(),
 	})
 	assert.NoError(t, err)
-	defer mgr.Shutdown()
+	defer func() { _ = mgr.Shutdown() }()
 
 	// Bootstrap cluster
 	err = mgr.Bootstrap()
@@ -172,7 +172,7 @@ func TestReplicatedServiceScheduling(t *testing.T) {
 		DataDir:  t.TempDir(),
 	})
 	assert.NoError(t, err)
-	defer mgr.Shutdown()
+	defer func() { _ = mgr.Shutdown() }()
 
 	// Bootstrap cluster
 	err = mgr.Bootstrap()

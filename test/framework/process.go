@@ -235,11 +235,11 @@ func (p *Process) writeLogsToFile() {
 		select {
 		case <-p.Ctx.Done():
 			// Write final logs and exit
-			file.WriteString(p.logs.String())
+			_, _ = file.WriteString(p.logs.String())
 			return
 		case <-ticker.C:
-			file.WriteString(p.logs.String())
-			file.Sync()
+			_, _ = file.WriteString(p.logs.String())
+			_ = file.Sync()
 		}
 	}
 }

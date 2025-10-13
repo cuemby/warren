@@ -12,7 +12,7 @@ func TestHTTPChecker_HealthyEndpoint(t *testing.T) {
 	// Create test HTTP server that returns 200 OK
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("healthy"))
+		_, _ = w.Write([]byte("healthy"))
 	}))
 	defer server.Close()
 
@@ -37,7 +37,7 @@ func TestHTTPChecker_UnhealthyEndpoint(t *testing.T) {
 	// Create test HTTP server that returns 500 Internal Server Error
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("error"))
+		_, _ = w.Write([]byte("error"))
 	}))
 	defer server.Close()
 

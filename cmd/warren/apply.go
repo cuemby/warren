@@ -26,7 +26,7 @@ Examples:
 func init() {
 	applyCmd.Flags().StringP("file", "f", "", "YAML file to apply (required)")
 	applyCmd.Flags().String("manager", "localhost:8080", "Manager address")
-	applyCmd.MarkFlagRequired("file")
+	_ = applyCmd.MarkFlagRequired("file")
 
 	rootCmd.AddCommand(applyCmd)
 }

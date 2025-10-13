@@ -99,12 +99,12 @@ func testLoad(t *testing.T, config LoadConfig) {
 	if err != nil {
 		t.Fatalf("Failed to create cluster: %v", err)
 	}
-	defer cluster.Cleanup()
+	defer func() { _ = cluster.Cleanup() }()
 
 	if err := cluster.Start(); err != nil {
 		t.Fatalf("Failed to start cluster: %v", err)
 	}
-	defer cluster.Stop()
+	defer func() { _ = cluster.Stop() }()
 
 	waiter := framework.DefaultWaiter()
 	ctx := context.Background()
@@ -409,12 +409,12 @@ func TestSchedulerPerformance(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create cluster: %v", err)
 	}
-	defer cluster.Cleanup()
+	defer func() { _ = cluster.Cleanup() }()
 
 	if err := cluster.Start(); err != nil {
 		t.Fatalf("Failed to start cluster: %v", err)
 	}
-	defer cluster.Stop()
+	defer func() { _ = cluster.Stop() }()
 
 	waiter := framework.DefaultWaiter()
 	ctx := context.Background()
@@ -442,7 +442,7 @@ func TestSchedulerPerformance(t *testing.T) {
 		if err := leader.Client.CreateService(serviceName, "nginx:alpine", numReplicas); err != nil {
 			t.Fatalf("Failed to create service: %v", err)
 		}
-		defer leader.Client.DeleteService(serviceName)
+		defer func() { _ = leader.Client.DeleteService(serviceName) }()
 
 		// Wait for tasks to be scheduled
 		t.Log("Waiting for scheduler to assign tasks...")

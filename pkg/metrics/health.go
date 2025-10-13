@@ -151,7 +151,7 @@ func HealthHandler() http.HandlerFunc {
 		}
 		w.WriteHeader(statusCode)
 
-		json.NewEncoder(w).Encode(health)
+		_ = json.NewEncoder(w).Encode(health)
 	}
 }
 
@@ -169,7 +169,7 @@ func ReadyHandler() http.HandlerFunc {
 		}
 		w.WriteHeader(statusCode)
 
-		json.NewEncoder(w).Encode(readiness)
+		_ = json.NewEncoder(w).Encode(readiness)
 	}
 }
 
@@ -178,7 +178,7 @@ func LivenessHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(map[string]string{
+		_ = json.NewEncoder(w).Encode(map[string]string{
 			"status": "alive",
 			"uptime": time.Since(healthChecker.startTime).String(),
 		})

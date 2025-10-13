@@ -104,7 +104,7 @@ func (cm *ContainerdManager) Start(ctx context.Context) error {
 
 	// Wait for containerd to be ready
 	if err := cm.waitForReady(ctx, 30*time.Second); err != nil {
-		cm.Stop()
+		_ = cm.Stop() // Ignore stop error during cleanup
 		return fmt.Errorf("containerd failed to become ready: %w", err)
 	}
 

@@ -330,7 +330,7 @@ func (s *WarrenSnapshot) Persist(sink raft.SnapshotSink) error {
 	}()
 
 	if err != nil {
-		sink.Cancel()
+		_ = sink.Cancel() // Ignore cancel error during cleanup
 	}
 
 	return err

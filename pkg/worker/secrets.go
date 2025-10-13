@@ -53,7 +53,7 @@ func (sh *SecretsHandler) MountSecretsForTask(task *types.Task) (string, error) 
 	for _, secretName := range task.Secrets {
 		if err := sh.mountSecret(task.ID, secretName, taskSecretsPath); err != nil {
 			// Cleanup on error
-			sh.CleanupSecretsForTask(task.ID)
+			_ = sh.CleanupSecretsForTask(task.ID) // Ignore cleanup errors during rollback
 			return "", fmt.Errorf("failed to mount secret %s: %w", secretName, err)
 		}
 	}

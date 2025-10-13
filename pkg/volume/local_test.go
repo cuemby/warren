@@ -271,5 +271,5 @@ func TestVolumeManager_MountVolume(t *testing.T) {
 	}
 
 	// Cleanup
-	vm.DeleteVolume(volume)
+	_ = vm.DeleteVolume(volume)
 }

@@ -154,7 +154,7 @@ func (p *Proxy) handleRequest(w http.ResponseWriter, r *http.Request) {
 			log.Info(fmt.Sprintf("ACME: Serving challenge for %s, token %s", host, token))
 			w.Header().Set("Content-Type", "text/plain")
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte(keyAuth))
+			_, _ = w.Write([]byte(keyAuth))
 			return
 		}
 		log.Warn(fmt.Sprintf("ACME: No challenge found for %s, token %s", host, token))

@@ -39,12 +39,12 @@ func TestIngressBasicHTTP(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create cluster: %v", err)
 	}
-	defer cluster.Cleanup()
+	defer func() { _ = cluster.Cleanup() }()
 
 	if err := cluster.Start(); err != nil {
 		t.Fatalf("Failed to start cluster: %v", err)
 	}
-	defer cluster.Stop()
+	defer func() { _ = cluster.Stop() }()
 
 	waiter := framework.DefaultWaiter()
 	ctx := context.Background()
@@ -65,7 +65,7 @@ func TestIngressBasicHTTP(t *testing.T) {
 		if err := leader.Client.CreateService(serviceName, "nginx:alpine", 1); err != nil {
 			t.Fatalf("Failed to create backend service: %v", err)
 		}
-		defer leader.Client.DeleteService(serviceName)
+		defer func() { _ = leader.Client.DeleteService(serviceName) }()
 
 		// Wait for service to be running
 		if err := waiter.WaitForServiceRunning(ctx, leader.Client, serviceName); err != nil {
@@ -91,7 +91,7 @@ func TestIngressBasicHTTP(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Failed to create ingress: %v", err)
 		}
-		defer leader.Client.DeleteIngress(ingressName)
+		defer func() { _ = leader.Client.DeleteIngress(ingressName) }()
 
 		t.Log("✓ Ingress rule created")
 
@@ -191,12 +191,12 @@ func TestIngressPathBased(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create cluster: %v", err)
 	}
-	defer cluster.Cleanup()
+	defer func() { _ = cluster.Cleanup() }()
 
 	if err := cluster.Start(); err != nil {
 		t.Fatalf("Failed to start cluster: %v", err)
 	}
-	defer cluster.Stop()
+	defer func() { _ = cluster.Stop() }()
 
 	waiter := framework.DefaultWaiter()
 	ctx := context.Background()
@@ -217,7 +217,7 @@ func TestIngressPathBased(t *testing.T) {
 			if err := leader.Client.CreateService(svc, "nginx:alpine", 1); err != nil {
 				t.Fatalf("Failed to create service %s: %v", svc, err)
 			}
-			defer leader.Client.DeleteService(svc)
+			defer func() { _ = leader.Client.DeleteService(svc) }()
 
 			if err := waiter.WaitForServiceRunning(ctx, leader.Client, svc); err != nil {
 				t.Fatalf("Service %s failed to start: %v", svc, err)
@@ -241,7 +241,7 @@ func TestIngressPathBased(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Failed to create v1 ingress: %v", err)
 		}
-		defer leader.Client.DeleteIngress("path-v1")
+		defer func() { _ = leader.Client.DeleteIngress("path-v1") }()
 
 		// Create ingress for /v2/* -> app-v2
 		err = leader.Client.CreateIngress("path-v2", &framework.IngressSpec{
@@ -256,7 +256,7 @@ func TestIngressPathBased(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Failed to create v2 ingress: %v", err)
 		}
-		defer leader.Client.DeleteIngress("path-v2")
+		defer func() { _ = leader.Client.DeleteIngress("path-v2") }()
 
 		t.Log("✓ Path-based routes created")
 
@@ -334,12 +334,12 @@ func TestIngressHTTPS(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create cluster: %v", err)
 	}
-	defer cluster.Cleanup()
+	defer func() { _ = cluster.Cleanup() }()
 
 	if err := cluster.Start(); err != nil {
 		t.Fatalf("Failed to start cluster: %v", err)
 	}
-	defer cluster.Stop()
+	defer func() { _ = cluster.Stop() }()
 
 	waiter := framework.DefaultWaiter()
 	ctx := context.Background()
@@ -374,7 +374,7 @@ func TestIngressHTTPS(t *testing.T) {
 		if err := leader.Client.CreateService("https-backend", "nginx:alpine", 1); err != nil {
 			t.Fatalf("Failed to create backend: %v", err)
 		}
-		defer leader.Client.DeleteService("https-backend")
+		defer func() { _ = leader.Client.DeleteService("https-backend") }()
 
 		// Create HTTPS ingress
 		err := leader.Client.CreateIngress("https-ingress", &framework.IngressSpec{
@@ -395,7 +395,7 @@ func TestIngressHTTPS(t *testing.T) {
 			t.Logf("HTTPS ingress creation: %v (expected if TLS not fully implemented)", err)
 			t.Skip("HTTPS ingress not fully implemented yet")
 		}
-		defer leader.Client.DeleteIngress("https-ingress")
+		defer func() { _ = leader.Client.DeleteIngress("https-ingress") }()
 	})
 
 	t.Run("TestHTTPSAccess", func(t *testing.T) {
@@ -457,12 +457,12 @@ func TestIngressAdvancedRouting(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create cluster: %v", err)
 	}
-	defer cluster.Cleanup()
+	defer func() { _ = cluster.Cleanup() }()
 
 	if err := cluster.Start(); err != nil {
 		t.Fatalf("Failed to start cluster: %v", err)
 	}
-	defer cluster.Stop()
+	defer func() { _ = cluster.Stop() }()
 
 	waiter := framework.DefaultWaiter()
 	ctx := context.Background()
@@ -490,7 +490,7 @@ func TestIngressAdvancedRouting(t *testing.T) {
 			if err := leader.Client.CreateService(svc.name, "nginx:alpine", svc.replicas); err != nil {
 				t.Fatalf("Failed to create %s: %v", svc.name, err)
 			}
-			defer leader.Client.DeleteService(svc.name)
+			defer func() { _ = leader.Client.DeleteService(svc.name) }()
 
 			if err := waiter.WaitForReplicas(ctx, leader.Client, svc.name, svc.replicas); err != nil {
 				t.Fatalf("%s failed to start: %v", svc.name, err)
@@ -526,7 +526,7 @@ func TestIngressAdvancedRouting(t *testing.T) {
 			if err != nil {
 				t.Fatalf("Failed to create ingress %s: %v", rule.name, err)
 			}
-			defer leader.Client.DeleteIngress(rule.name)
+			defer func() { _ = leader.Client.DeleteIngress(rule.name) }()
 		}
 
 		t.Log("✓ Complex routing rules created")
@@ -598,7 +598,7 @@ func TestIngressAdvancedRouting(t *testing.T) {
 			if err != nil {
 				t.Fatalf("Failed to create host-based ingress %s: %v", h.name, err)
 			}
-			defer leader.Client.DeleteIngress(h.name)
+			defer func() { _ = leader.Client.DeleteIngress(h.name) }()
 		}
 
 		time.Sleep(2 * time.Second)

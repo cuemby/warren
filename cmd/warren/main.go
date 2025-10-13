@@ -127,7 +127,7 @@ automatically form a Raft quorum once additional managers join.`,
 		if err != nil {
 			return fmt.Errorf("failed to start containerd: %v", err)
 		}
-		defer containerdMgr.Stop()
+		defer func() { _ = containerdMgr.Stop() }()
 
 		if !useExternal {
 			socketPath := containerdMgr.GetSocketPath()
@@ -476,7 +476,7 @@ var workerStartCmd = &cobra.Command{
 		if err != nil {
 			return fmt.Errorf("failed to start containerd: %v", err)
 		}
-		defer containerdMgr.Stop()
+		defer func() { _ = containerdMgr.Stop() }()
 
 		if !useExternal {
 			socketPath := containerdMgr.GetSocketPath()
@@ -752,8 +752,8 @@ func init() {
 	managerJoinCmd.Flags().String("leader", "", "Leader manager address")
 	managerJoinCmd.Flags().String("token", "", "Join token from leader")
 	managerJoinCmd.Flags().Bool("enable-pprof", false, "Enable pprof profiling endpoints on metrics server")
-	managerJoinCmd.MarkFlagRequired("token")
-	managerJoinCmd.MarkFlagRequired("leader")
+	_ = managerJoinCmd.MarkFlagRequired("token")
+	_ = managerJoinCmd.MarkFlagRequired("leader")
 }
 
 // Service commands
@@ -1062,10 +1062,10 @@ func init() {
 	// Graceful shutdown flags
 	serviceCreateCmd.Flags().Int("stop-timeout", 10, "Seconds to wait before force-killing container (default: 10)")
 
-	serviceCreateCmd.MarkFlagRequired("image")
+	_ = serviceCreateCmd.MarkFlagRequired("image")
 
 	serviceScaleCmd.Flags().Int("replicas", 0, "Number of replicas")
-	serviceScaleCmd.MarkFlagRequired("replicas")
+	_ = serviceScaleCmd.MarkFlagRequired("replicas")
 }
 
 // Node commands
@@ -1523,9 +1523,9 @@ func buildHealthCheck(httpPath, tcpPort string, execCmd []string, interval, time
 		hc.Type = proto.HealthCheck_TCP
 		port := int32(80) // Default
 		if tcpPort != "" {
-			fmt.Sscanf(tcpPort, ":%d", &port)
+			_, _ = fmt.Sscanf(tcpPort, ":%d", &port)
 			if port == 80 { // If didn't match :port format, try just port
-				fmt.Sscanf(tcpPort, "%d", &port)
+				_, _ = fmt.Sscanf(tcpPort, "%d", &port)
 			}
 		}
 		hc.Tcp = &proto.TCPHealthCheck{
@@ -2108,8 +2108,8 @@ func init() {
 	ingressCreateCmd.Flags().Int("port", 0, "Backend service port (required)")
 	ingressCreateCmd.Flags().Bool("tls", false, "Enable TLS with Let's Encrypt")
 	ingressCreateCmd.Flags().String("tls-email", "", "Email for Let's Encrypt notifications (required with --tls)")
-	ingressCreateCmd.MarkFlagRequired("service")
-	ingressCreateCmd.MarkFlagRequired("port")
+	_ = ingressCreateCmd.MarkFlagRequired("service")
+	_ = ingressCreateCmd.MarkFlagRequired("port")
 
 	// Ingress list command
 	ingressListCmd.Flags().String("manager", "localhost:2377", "Manager address")
@@ -2131,9 +2131,9 @@ func init() {
 	certificateCreateCmd.Flags().String("cert", "", "Path to certificate file (PEM format) (required)")
 	certificateCreateCmd.Flags().String("key", "", "Path to private key file (PEM format) (required)")
 	certificateCreateCmd.Flags().StringSlice("hosts", []string{}, "Hostnames covered by this certificate (required)")
-	certificateCreateCmd.MarkFlagRequired("cert")
-	certificateCreateCmd.MarkFlagRequired("key")
-	certificateCreateCmd.MarkFlagRequired("hosts")
+	_ = certificateCreateCmd.MarkFlagRequired("cert")
+	_ = certificateCreateCmd.MarkFlagRequired("key")
+	_ = certificateCreateCmd.MarkFlagRequired("hosts")
 
 	// Certificate list command
 	certificateListCmd.Flags().String("manager", "localhost:2377", "Manager address")

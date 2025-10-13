@@ -36,12 +36,12 @@ func TestLeaderFailover(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create cluster: %v", err)
 	}
-	defer cluster.Cleanup()
+	defer func() { _ = cluster.Cleanup() }()
 
 	if err := cluster.Start(); err != nil {
 		t.Fatalf("Failed to start cluster: %v", err)
 	}
-	defer cluster.Stop()
+	defer func() { _ = cluster.Stop() }()
 
 	assert := framework.NewAssertions(t)
 	waiter := framework.DefaultWaiter()
@@ -177,7 +177,7 @@ func TestLeaderFailover(t *testing.T) {
 		if err := newLeader.Client.CreateService(postFailoverService, "nginx:alpine", 1); err != nil {
 			t.Fatalf("Failed to create service after failover: %v", err)
 		}
-		defer newLeader.Client.DeleteService(postFailoverService)
+		defer func() { _ = newLeader.Client.DeleteService(postFailoverService) }()
 		t.Log("✓ Created service after failover")
 
 		// Wait for new service to be running
@@ -286,12 +286,12 @@ func TestMultipleFailovers(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create cluster: %v", err)
 	}
-	defer cluster.Cleanup()
+	defer func() { _ = cluster.Cleanup() }()
 
 	if err := cluster.Start(); err != nil {
 		t.Fatalf("Failed to start cluster: %v", err)
 	}
-	defer cluster.Stop()
+	defer func() { _ = cluster.Stop() }()
 
 	waiter := framework.DefaultWaiter()
 	ctx := context.Background()
@@ -425,12 +425,12 @@ func TestLeaderFailoverWithActiveWorkload(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create cluster: %v", err)
 	}
-	defer cluster.Cleanup()
+	defer func() { _ = cluster.Cleanup() }()
 
 	if err := cluster.Start(); err != nil {
 		t.Fatalf("Failed to start cluster: %v", err)
 	}
-	defer cluster.Stop()
+	defer func() { _ = cluster.Stop() }()
 
 	waiter := framework.DefaultWaiter()
 	ctx := context.Background()
@@ -452,7 +452,7 @@ func TestLeaderFailoverWithActiveWorkload(t *testing.T) {
 		if err := leader.Client.CreateService(svcName, "nginx:alpine", 2); err != nil {
 			t.Fatalf("Failed to create service %s: %v", svcName, err)
 		}
-		defer leader.Client.DeleteService(svcName)
+		defer func() { _ = leader.Client.DeleteService(svcName) }()
 	}
 
 	// Wait for all services to be running
