@@ -494,15 +494,15 @@ func TestLeaderFailoverWithActiveWorkload(t *testing.T) {
 			continue
 		}
 
-		tasks, err := newLeader.Client.ListTasks(svc.Id, "")
+		containers, err := newLeader.Client.ListContainers(svc.Id, "")
 		if err != nil {
-			t.Errorf("Failed to list tasks for service %s: %v", svcName, err)
+			t.Errorf("Failed to list containers for service %s: %v", svcName, err)
 			continue
 		}
 
 		runningCount := 0
-		for _, task := range tasks {
-			if task.ActualState == "running" {
+		for _, container := range containers {
+			if container.ActualState == "running" {
 				runningCount++
 			}
 		}
