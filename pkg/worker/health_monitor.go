@@ -123,8 +123,8 @@ func (hm *HealthMonitor) startHealthCheck(task *types.Container) error {
 
 	// Create monitor
 	monitor := &containerHealthMonitor{
-		task:    task,
-		checker: checker,
+		container: task,
+		checker:   checker,
 		status: &health.Status{
 			StartedAt: time.Now(),
 			Healthy:   true, // Assume healthy initially
@@ -177,7 +177,7 @@ func (hm *HealthMonitor) runHealthCheck(ctx context.Context, monitor *containerH
 
 	// Report to manager
 	if err := hm.reportHealth(monitor); err != nil {
-		fmt.Printf("Failed to report health for task %s: %v\n", monitor.task.ID, err)
+		fmt.Printf("Failed to report health for container %s: %v\n", monitor.container.ID, err)
 	}
 }
 
