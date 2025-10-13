@@ -22,14 +22,14 @@ type Store interface {
 	UpdateService(service *types.Service) error
 	DeleteService(id string) error
 
-	// Tasks
-	CreateTask(task *types.Task) error
-	GetTask(id string) (*types.Task, error)
-	ListTasks() ([]*types.Task, error)
-	ListTasksByService(serviceID string) ([]*types.Task, error)
-	ListTasksByNode(nodeID string) ([]*types.Task, error)
-	UpdateTask(task *types.Task) error
-	DeleteTask(id string) error
+	// Containers
+	CreateContainer(container *types.Container) error
+	GetContainer(id string) (*types.Container, error)
+	ListContainers() ([]*types.Container, error)
+	ListContainersByService(serviceID string) ([]*types.Container, error)
+	ListContainersByNode(nodeID string) ([]*types.Container, error)
+	UpdateContainer(container *types.Container) error
+	DeleteContainer(id string) error
 
 	// Secrets
 	CreateSecret(secret *types.Secret) error
