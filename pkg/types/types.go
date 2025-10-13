@@ -53,7 +53,7 @@ type NodeResources struct {
 	MemoryBytes int64
 	DiskBytes   int64
 
-	// Currently allocated (reserved by tasks)
+	// Currently allocated (reserved by containers)
 	CPUAllocated    float64
 	MemoryAllocated int64
 	DiskAllocated   int64
@@ -77,7 +77,7 @@ type Service struct {
 	HealthCheck    *HealthCheck
 	RestartPolicy  *RestartPolicy
 	Resources      *ResourceRequirements
-	StopTimeout    int // Seconds to wait before force-killing tasks (default: 10)
+	StopTimeout    int // Seconds to wait before force-killing containers (default: 10)
 	CreatedAt      time.Time
 	UpdatedAt      time.Time
 }
@@ -101,7 +101,7 @@ const (
 
 // UpdateConfig controls how service updates are performed
 type UpdateConfig struct {
-	Parallelism   int           // How many tasks to update simultaneously
+	Parallelism   int           // How many containers to update simultaneously
 	Delay         time.Duration // Delay between batches
 	FailureAction string        // "pause", "rollback", "continue"
 	CanaryWeight  int           // 0-100 (for canary strategy)
@@ -120,7 +120,7 @@ type PortMapping struct {
 type PublishMode string
 
 const (
-	// PublishModeHost publishes port only on the node running the task
+	// PublishModeHost publishes port only on the node running the container
 	PublishModeHost PublishMode = "host"
 
 	// PublishModeIngress publishes port on all nodes with routing mesh
@@ -153,7 +153,7 @@ const (
 	HealthCheckExec HealthCheckType = "exec"
 )
 
-// HealthStatus tracks the current health state of a task
+// HealthStatus tracks the current health state of a container
 type HealthStatus struct {
 	Healthy              bool
 	Message              string
@@ -189,41 +189,41 @@ type ResourceRequirements struct {
 	MemoryReservation int64
 }
 
-// Task represents a single running instance of a service
-type Task struct {
-	ID            string
-	ServiceID     string
-	ServiceName   string
-	NodeID        string
-	ContainerID   string
-	DesiredState  TaskState
-	ActualState   TaskState
-	Image         string
-	Env           []string
-	Ports         []*PortMapping
-	Mounts        []*VolumeMount
-	Secrets       []string // Secret names to mount
-	HealthCheck   *HealthCheck
-	HealthStatus  *HealthStatus // Current health check status
-	RestartPolicy *RestartPolicy
-	Resources     *ResourceRequirements
-	StopTimeout   int // Seconds to wait before force-killing (default: 10)
-	CreatedAt     time.Time
-	StartedAt     time.Time
-	FinishedAt    time.Time
-	ExitCode      int
-	Error         string
+// Container represents a single running container instance of a service
+type Container struct {
+	ID               string
+	ServiceID        string
+	ServiceName      string
+	NodeID           string
+	ContainerID      string // Runtime container ID (containerd)
+	DesiredState     ContainerState
+	ActualState      ContainerState
+	Image            string
+	Env              []string
+	Ports            []*PortMapping
+	Mounts           []*VolumeMount
+	Secrets          []string // Secret names to mount
+	HealthCheck      *HealthCheck
+	HealthStatus     *HealthStatus // Current health check status
+	RestartPolicy    *RestartPolicy
+	Resources        *ResourceRequirements
+	StopTimeout      int // Seconds to wait before force-killing (default: 10)
+	CreatedAt        time.Time
+	StartedAt        time.Time
+	FinishedAt       time.Time
+	ExitCode         int
+	Error            string
 }
 
-// TaskState represents the state of a task
-type TaskState string
+// ContainerState represents the state of a container
+type ContainerState string
 
 const (
-	TaskStatePending  TaskState = "pending"
-	TaskStateRunning  TaskState = "running"
-	TaskStateFailed   TaskState = "failed"
-	TaskStateComplete TaskState = "complete"
-	TaskStateShutdown TaskState = "shutdown"
+	ContainerStatePending  ContainerState = "pending"
+	ContainerStateRunning  ContainerState = "running"
+	ContainerStateFailed   ContainerState = "failed"
+	ContainerStateComplete ContainerState = "complete"
+	ContainerStateShutdown ContainerState = "shutdown"
 )
 
 // Secret represents encrypted sensitive data
@@ -264,13 +264,13 @@ type NetworkConfig struct {
 
 // Event represents a cluster event (for streaming API)
 type Event struct {
-	Type      string
-	Timestamp time.Time
-	NodeID    string
-	ServiceID string
-	TaskID    string
-	Message   string
-	Data      map[string]string
+	Type        string
+	Timestamp   time.Time
+	NodeID      string
+	ServiceID   string
+	ContainerID string
+	Message     string
+	Data        map[string]string
 }
 
 // Ingress represents HTTP/HTTPS routing rules for external access
