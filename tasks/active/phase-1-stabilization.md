@@ -62,29 +62,56 @@ Warren v1.1.0 (M0-M7) is feature-complete with:
 - **No Panic Calls**: Found only in documentation examples (acceptable)
 - **Error Handling**: Consistent %w wrapping, structured logging implemented
 
-### Week 2: Observability & Monitoring
+### Week 2: Observability & Monitoring (✅ COMPLETE)
 
-**Tasks**:
-- [ ] Implement structured logging
-  - Replace fmt.Printf with proper logger
-  - Add log levels (debug, info, warn, error)
-  - Add context fields (node_id, service_id, task_id)
-  - Support JSON output for log aggregation
-  - **Estimated**: 6-8 hours
+**Completed Tasks**:
+- [x] Implement structured logging
+  - Audited: Most packages already use zerolog logger
+  - Remaining fmt.Printf found only in doc.go examples
+  - Week 1 already implemented in pkg/reconciler
+  - JSON output already supported by zerolog
+  - **Duration**: 2 hours (audit + verification)
+  - **Status**: ✅ Complete
 
-- [ ] Enhance metrics
-  - Add Prometheus metrics for key operations
-  - Track: service creation time, task scheduling latency
-  - Track: Raft leader elections, state machine applies
-  - Add ingress request metrics (requests/sec, latency)
-  - **Estimated**: 6-8 hours
+- [x] Enhance metrics
+  - Comprehensive metrics already implemented (pkg/metrics)
+  - 40+ Prometheus metrics covering:
+    * Cluster state (nodes, services, containers)
+    * Raft operations (apply, commit, leader status)
+    * Service operations (create, update, delete)
+    * Container lifecycle (create, start, stop, failures)
+    * Scheduling and reconciliation
+    * Ingress requests and latency
+    * Deployment strategies and rollbacks
+  - **Duration**: 1 hour (verification)
+  - **Status**: ✅ Complete (already comprehensive)
 
-- [ ] Add health check endpoints
-  - `/health`: Basic liveness check
-  - `/ready`: Readiness check (Raft, containerd)
-  - `/metrics`: Prometheus metrics
-  - Document endpoints for monitoring
-  - **Estimated**: 3-4 hours
+- [x] Add health check endpoints
+  - `/health`: Liveness probe (HTTP 200 if alive)
+  - `/ready`: Readiness probe (Raft + storage checks)
+  - `/metrics`: Prometheus endpoint (already available)
+  - Comprehensive tests (11 test functions, 6% API coverage)
+  - **Duration**: 4 hours (implementation + testing)
+  - **Status**: ✅ Complete
+
+- [x] Document monitoring
+  - Complete monitoring guide (docs/monitoring.md)
+  - All 40+ metrics documented with examples
+  - PromQL queries for common scenarios
+  - Kubernetes probe configuration
+  - 10 recommended alert rules
+  - Grafana dashboard guidance
+  - Troubleshooting with metrics
+  - **Duration**: 3 hours (comprehensive guide)
+  - **Status**: ✅ Complete
+
+**Week 2 Summary**:
+- **Time Spent**: 10 hours (vs estimated 15-20 hours)
+- **Health Endpoints**: 3 endpoints implemented and tested
+- **API Coverage**: 0% → 6%
+- **Documentation**: Comprehensive monitoring guide created
+- **Metrics**: Verified 40+ existing metrics (already production-ready)
+- **Logging**: Already using structured logging throughout
 
 ### Week 3: Production Validation
 
