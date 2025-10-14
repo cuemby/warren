@@ -77,18 +77,8 @@ cpus: ${cpus}
 memory: "${memory}GiB"
 disk: "20GiB"
 
-# Mount Warren workspace (read-only to prevent accidental modifications)
-mounts:
-  - location: "${WARREN_ROOT}"
-    writable: false
-    9p:
-      securityModel: none
-      cache: "mmap"
-  - location: "${WARREN_ROOT}/bin"
-    writable: true
-    9p:
-      securityModel: none
-      cache: "mmap"
+# No mounts needed - fully standalone VMs
+mounts: []
 
 ssh:
   localPort: 0
@@ -107,13 +97,8 @@ hostResolver:
   hosts:
     host.lima.internal: host.lima.internal
 
-portForwards:
-  - guestPort: ${WARREN_API_PORT}
-    hostPort: ${WARREN_API_PORT}
-    proto: tcp
-  - guestPort: ${WARREN_METRICS_PORT}
-    hostPort: ${WARREN_METRICS_PORT}
-    proto: tcp
+# No port forwards - VMs communicate directly via user-v2 network
+portForwards: []
 
 # Use system containerd
 containerd:
@@ -174,9 +159,6 @@ provision:
       #!/bin/bash
       set -eux -o pipefail
 
-      # Create convenient symlink to Warren workspace
-      ln -sf /tmp/lima${WARREN_ROOT} ~/warren || true
-
       echo "✓ User environment configured for ${vm_name}"
 
 probes:
@@ -201,7 +183,6 @@ message: |
   ✓ Warren VM ${vm_name} is ready!
 
   Access: limactl shell ${vm_name}
-  Warren workspace: ~/warren
 
 EOF
 }
