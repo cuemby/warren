@@ -115,7 +115,7 @@ warren_init_manager() {
 
   # Initialize cluster
   progress_start "Initializing Warren cluster"
-  if lima_exec_root "${vm_name}" "warren cluster init --listen-api ${api_host}:${api_port}" &>/dev/null; then
+  if lima_exec_root "${vm_name}" "warren cluster init --api-addr ${api_host}:${api_port}" &>/dev/null; then
     progress_done
   else
     progress_fail
