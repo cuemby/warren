@@ -7,6 +7,7 @@ import (
 
 	"github.com/cuemby/warren/pkg/log"
 	"github.com/cuemby/warren/pkg/manager"
+	"github.com/cuemby/warren/pkg/metrics"
 	"github.com/cuemby/warren/pkg/types"
 	"github.com/google/uuid"
 	"github.com/rs/zerolog"
@@ -49,7 +50,7 @@ func (s *Scheduler) run() {
 		case <-ticker.C:
 			if err := s.schedule(); err != nil {
 				// Log error but continue
-				fmt.Printf("Scheduler error: %v\n", err)
+				s.logger.Error().Err(err).Msg("Scheduling cycle failed")
 			}
 		case <-s.stopCh:
 			return
@@ -84,7 +85,11 @@ func (s *Scheduler) schedule() error {
 	// Schedule each service
 	for _, service := range services {
 		if err := s.scheduleService(service, readyNodes); err != nil {
-			fmt.Printf("Failed to schedule service %s: %v\n", service.Name, err)
+			s.logger.Error().
+				Err(err).
+				Str("service_name", service.Name).
+				Str("service_id", service.ID).
+				Msg("Failed to schedule service")
 			continue
 		}
 	}
@@ -121,6 +126,7 @@ func (s *Scheduler) scheduleGlobalService(service *types.Service, nodes []*types
 	for _, node := range nodes {
 		if _, exists := nodeContainerMap[node.ID]; !exists {
 			// Create container for this node
+			timer := metrics.NewTimer()
 			container := &types.Container{
 				ID:            uuid.New().String(),
 				ServiceID:     service.ID,
@@ -140,8 +146,12 @@ func (s *Scheduler) scheduleGlobalService(service *types.Service, nodes []*types
 			}
 
 			if err := s.manager.CreateContainer(container); err != nil {
+				metrics.ContainersFailed.Inc()
 				return fmt.Errorf("failed to create container: %w", err)
 			}
+
+			timer.ObserveDuration(metrics.SchedulingLatency)
+			metrics.ContainersScheduled.Inc()
 
 			s.logger.Info().
 				Str("container_id", container.ID).
@@ -198,12 +208,16 @@ func (s *Scheduler) scheduleReplicatedService(service *types.Service, nodes []*t
 	// Create missing containers
 	if containersToCreate > 0 {
 		for i := 0; i < containersToCreate; i++ {
+			timer := metrics.NewTimer()
+
 			// Check if service has volume requirements
 			node, err := s.selectNodeForService(service, nodes, containers)
 			if err != nil {
+				metrics.ContainersFailed.Inc()
 				return fmt.Errorf("failed to select node: %w", err)
 			}
 			if node == nil {
+				metrics.ContainersFailed.Inc()
 				return fmt.Errorf("no suitable node found")
 			}
 
@@ -226,8 +240,12 @@ func (s *Scheduler) scheduleReplicatedService(service *types.Service, nodes []*t
 			}
 
 			if err := s.manager.CreateContainer(container); err != nil {
+				metrics.ContainersFailed.Inc()
 				return fmt.Errorf("failed to create container: %w", err)
 			}
+
+			timer.ObserveDuration(metrics.SchedulingLatency)
+			metrics.ContainersScheduled.Inc()
 
 			s.logger.Info().
 				Str("container_id", container.ID).
@@ -275,8 +293,11 @@ func (s *Scheduler) selectNodeForService(service *types.Service, nodes []*types.
 			if volume.NodeID != "" {
 				for _, node := range nodes {
 					if node.ID == volume.NodeID {
-						fmt.Printf("Selecting node %s for service %s (volume affinity: %s)\n",
-							node.ID, service.Name, volume.Name)
+						s.logger.Debug().
+							Str("node_id", node.ID).
+							Str("service_name", service.Name).
+							Str("volume_name", volume.Name).
+							Msg("Selected node for service (volume affinity)")
 						return node, nil
 					}
 				}
