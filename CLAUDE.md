@@ -13,6 +13,31 @@ We should always update .agent docs after we implement certain feature, to make 
 
 Before you plan implementation, always read the .agent/README.md firstt to get context.
 
+## tasks/ Folder Organization
+
+IMPORTANT: Keep tasks folder organized with clear separation between done and in-progress work.
+
+**Structure**:
+- **tasks/todo.md**: ONLY current week's active tasks (lean, focused, under 200 lines)
+- **tasks/active/**: Files for initiatives currently in progress (2-5 files max)
+- **tasks/completed/**: Archive of completed milestones, phases, and initiatives
+- **tasks/backlog.md**: Future features and planned work
+- **tasks/README.md**: Index of all task documentation with links
+
+**Rules**:
+1. When starting new work, create file in `active/` folder
+2. When completing work, move file from `active/` to `completed/` with completion date in filename or frontmatter
+3. Keep todo.md under 200 lines - extract details to active/ files with links
+4. Archive completed milestones/phases immediately after completion
+5. Never delete completed work - always move to completed/ folder for historical record
+6. Update README.md index when adding/moving files
+
+**Benefits**:
+- Quick visibility into current focus (todo.md stays lean)
+- Historical record of all completed work (completed/ folder)
+- Easy navigation via README.md index
+- Active work clearly separated (active/ folder)
+
 ## Git Commits
 
 IMPORTANT: All git commits must use the user's configured git identity.

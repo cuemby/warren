@@ -104,7 +104,9 @@
       "Bash(git checkout:*)",
       "Bash(git merge:*)",
       "Bash(cloc:*)",
-      "Bash(go tool cover:*)"
+      "Bash(go tool cover:*)",
+      "Bash(git config:*)",
+      "Bash(tree:*)"
     ],
     "deny": [],
     "ask": []

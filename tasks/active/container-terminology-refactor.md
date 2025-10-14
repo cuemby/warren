@@ -1,9 +1,74 @@
-# Task → Container Terminology Refactor - Status
+# Task → Container Terminology Refactor
 
-**Status:** 🚧 IN PROGRESS
-**Branch:** `refactor/container-terminology`
-**Started:** 2025-10-13
-**Target:** v2.0.0 (Breaking Change)
+**Status**: 📋 PLANNING
+**Priority**: [CRITICAL]
+**Impact**: 🔥 BREAKING CHANGE
+**Version**: Requires v2.0.0
+**Branch**: `refactor/container-terminology`
+**Started**: 2025-10-13
+
+---
+
+## Executive Summary
+
+Replace Warren's confusing "Task" and "Instance" terminology with clear, descriptive terms:
+- **Container** = Single running container (replaces "Task")
+- **Replica** = Used in scaling context ("3 replicas")
+- **NO "Task" or "Instance"** anywhere
+
+This is a **full, consistent replacement** across code, API, storage, CLI, and documentation.
+
+---
+
+## Why This Change?
+
+### Current Problem
+
+**"Task" is abstract Kubernetes/Swarm jargon:**
+- ❌ Users don't know what a "task" is
+- ❌ Requires explanation
+- ❌ Not descriptive
+- ❌ Inconsistent with Docker terminology
+
+**"Instance" is overloaded:**
+- VM instance? Container instance? Task instance?
+- Ambiguous and confusing
+
+### Proposed Solution
+
+**Use "Container" everywhere:**
+- ✅ Clear: "a running container"
+- ✅ Descriptive: matches what it actually is
+- ✅ Familiar: Docker users understand "container"
+- ✅ Consistent: same term across all contexts
+
+**Use "Replica" for scaling:**
+- "Service with 3 replicas" (clear scaling intent)
+- "Scale to 5 replicas" (matches Docker Swarm)
+
+---
+
+## Scope Analysis
+
+**Comprehensive audit results:**
+- **57 Go files** with "Task" references
+- **464+ occurrences** to replace
+- **12 test files** to update
+- **20+ documentation files** to update
+- **Estimated effort**: 26 hours (4-5 days)
+
+### Breakdown by Package
+
+| Package | Occurrences | Impact |
+|---------|-------------|--------|
+| pkg/worker/ | 56 | High |
+| pkg/scheduler/ | 36 | High |
+| pkg/manager/ | 18 | Medium |
+| pkg/types/ | Core types | Critical |
+| api/proto/ | gRPC API | Breaking |
+| pkg/storage/ | Storage | Breaking |
+| cmd/warren/ | CLI | User-facing |
+| Others | Various | Low-Medium |
 
 ---
 
@@ -11,7 +76,7 @@
 
 ### Planning Phase
 - ✅ Comprehensive audit of codebase (57 Go files, 464+ occurrences)
-- ✅ Created detailed refactor plan ([terminology-refactor-plan.md](terminology-refactor-plan.md))
+- ✅ Created detailed refactor plan
 - ✅ Created feature branch `refactor/container-terminology`
 - ✅ Identified all breaking changes
 - ✅ Estimated effort: 26 hours (4-5 days)
@@ -23,11 +88,18 @@
 
 ---
 
-## 🚧 Next Steps
+## 🚧 Implementation Plan
 
-This is a **LARGE refactor** that should be done systematically. Here's the recommended approach:
+### Recommended Approach: Option B - Systematic Phased Refactor
 
-### Immediate Next Steps (Do in order)
+**Why:**
+1. This touches 57 files across the entire codebase
+2. gRPC API changes are breaking (requires careful handling)
+3. Storage migration affects existing deployments
+4. Need thorough testing at each stage
+5. Warren is production software now
+
+### Phase-by-Phase Plan
 
 **Step 1: Update Core Types** (`pkg/types/types.go`)
 ```go
@@ -82,69 +154,15 @@ Add aliases: warren ps, warren inspect, warren logs
 
 ---
 
-## 🎯 Recommended Approach
+## 📅 Timeline (7 Days)
 
-Given the scope, here are **three options**:
-
-### Option A: Do It Now (Aggressive)
-- Continue in this session
-- Use automated search/replace with validation
-- 4-5 day focused effort
-- **Risk:** Might introduce bugs if rushed
-
-### Option B: Systematic Refactor (Recommended)
-- **Do in dedicated sessions, one phase at a time**
-- Test after each phase
-- More careful and thorough
-- **Timeline:** 1-2 weeks
-- **Benefit:** Lower risk, higher quality
-
-### Option C: Create Automated Refactor Script
-- Write a refactor script that handles all renames
-- Review and test the script
-- Run it in one go
-- **Timeline:** 2-3 days (script + validation)
-- **Benefit:** Consistency, repeatability
-
----
-
-## 💡 My Recommendation
-
-**Option B: Systematic, phased approach**
-
-**Why:**
-1. This touches 57 files across the entire codebase
-2. gRPC API changes are breaking (requires careful handling)
-3. Storage migration affects existing deployments
-4. Need thorough testing at each stage
-5. Warren is production software now
-
-**How to proceed:**
-1. **Today:** Update core types (types.go) + proto file
-2. **Day 2:** Update storage + create migration tool
-3. **Day 3:** Update manager, scheduler, reconciler packages
-4. **Day 4:** Update worker, API, client packages
-5. **Day 5:** Update CLI + documentation
-6. **Day 6:** Testing + validation
-7. **Day 7:** Release prep (v2.0.0, CHANGELOG, migration guide)
-
----
-
-## 📋 Current Branch State
-
-```bash
-git branch
-# * refactor/container-terminology
-
-git status
-# On branch refactor/container-terminology
-# Clean (plan committed)
-
-git log --oneline -3
-# a6b281c docs: add comprehensive Task→Container terminology refactor plan
-# 8a001a5 fix(docs): use consistent 'task' terminology
-# 66275b6 docs: add comprehensive Go package documentation
-```
+**Day 1:** Update core types (types.go) + proto file
+**Day 2:** Update storage + create migration tool
+**Day 3:** Update manager, scheduler, reconciler packages
+**Day 4:** Update worker, API, client packages
+**Day 5:** Update CLI + documentation
+**Day 6:** Testing + validation
+**Day 7:** Release prep (v2.0.0, CHANGELOG, migration guide)
 
 ---
 
@@ -194,7 +212,7 @@ echo "Running E2E tests..."
 
 ---
 
-## ⚠️ Important Notes
+## ⚠️ Important Considerations
 
 1. **This is a v2.0.0 breaking change** - All existing clients/deployments must update
 
@@ -210,7 +228,7 @@ echo "Running E2E tests..."
 
 ## 🤔 Decision Point
 
-**Before proceeding further, confirm:**
+**Before proceeding, confirm:**
 
 1. ✅ **Approve systematic approach?** (Option B - phased refactor)
 2. ⏸️ **Schedule refactor work?** (Dedicated time blocks)
@@ -266,6 +284,23 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 
 ---
 
-**Status:** 🟡 PAUSED - Awaiting decision on approach
+## Current Status
 
-**Next Action:** Choose Option A, B, or C above and proceed accordingly
+**Status**: 🟡 PAUSED - Awaiting decision on approach
+
+**Next Action**: Confirm phased approach and begin Day 1 (core types + proto)
+
+**Branch State**:
+```bash
+git branch
+# * refactor/container-terminology
+
+git status
+# On branch refactor/container-terminology
+# Clean (plan committed)
+
+git log --oneline -3
+# a6b281c docs: add comprehensive Task→Container terminology refactor plan
+# 8a001a5 fix(docs): use consistent 'task' terminology
+# 66275b6 docs: add comprehensive Go package documentation
+```
