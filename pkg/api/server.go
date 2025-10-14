@@ -7,6 +7,7 @@ import (
 	"encoding/pem"
 	"fmt"
 	"net"
+	"os"
 	"strings"
 	"time"
 
@@ -22,11 +23,20 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
+const (
+	// DefaultUnixSocket is the default path for the Unix socket
+	DefaultUnixSocket = "/var/run/warren.sock"
+	// UnixSocketPermissions are the file permissions for the Unix socket (rw-rw----)
+	UnixSocketPermissions = 0660
+)
+
 // Server implements the WarrenAPI gRPC service
 type Server struct {
 	proto.UnimplementedWarrenAPIServer
-	manager *manager.Manager
-	grpc    *grpc.Server
+	manager    *manager.Manager
+	grpcTCP    *grpc.Server      // TCP listener with mTLS
+	grpcUnix   *grpc.Server      // Unix socket listener (no mTLS, read-only)
+	unixSocket string            // Path to Unix socket
 }
 
 // NewServer creates a new API server with mTLS
@@ -68,13 +78,19 @@ func NewServer(mgr *manager.Manager) (*Server, error) {
 		MinVersion:   tls.VersionTLS13,
 	}
 
-	// Create gRPC server with TLS credentials
+	// Create TCP gRPC server with TLS credentials
 	creds := credentials.NewTLS(tlsConfig)
-	grpcServer := grpc.NewServer(grpc.Creds(creds))
+	grpcTCP := grpc.NewServer(grpc.Creds(creds))
+
+	// Create Unix socket gRPC server without TLS (will use read-only interceptor)
+	// We'll add the read-only interceptor in the next step
+	grpcUnix := grpc.NewServer()
 
 	return &Server{
-		manager: mgr,
-		grpc:    grpcServer,
+		manager:    mgr,
+		grpcTCP:    grpcTCP,
+		grpcUnix:   grpcUnix,
+		unixSocket: DefaultUnixSocket,
 	}, nil
 }
 
@@ -91,23 +107,57 @@ func (s *Server) ensureLeader() error {
 	return nil
 }
 
-// Start starts the gRPC server
+// StartUnix starts the Unix socket listener (read-only, no mTLS)
+func (s *Server) StartUnix() error {
+	// Remove existing socket file if it exists
+	if err := os.RemoveAll(s.unixSocket); err != nil {
+		return fmt.Errorf("failed to remove existing socket: %w", err)
+	}
+
+	// Listen on Unix socket
+	lis, err := net.Listen("unix", s.unixSocket)
+	if err != nil {
+		return fmt.Errorf("failed to listen on Unix socket: %w", err)
+	}
+
+	// Set socket permissions (rw-rw----)
+	if err := os.Chmod(s.unixSocket, UnixSocketPermissions); err != nil {
+		return fmt.Errorf("failed to set socket permissions: %w", err)
+	}
+
+	// Register the API server
+	proto.RegisterWarrenAPIServer(s.grpcUnix, s)
+
+	log.Logger.Info().Str("socket", s.unixSocket).Msg("Unix socket API listening")
+
+	// Start serving (blocks)
+	return s.grpcUnix.Serve(lis)
+}
+
+// Start starts the TCP gRPC server with mTLS
 func (s *Server) Start(addr string) error {
 	lis, err := net.Listen("tcp", addr)
 	if err != nil {
 		return fmt.Errorf("failed to listen: %w", err)
 	}
 
-	proto.RegisterWarrenAPIServer(s.grpc, s)
+	proto.RegisterWarrenAPIServer(s.grpcTCP, s)
 
-	log.Logger.Info().Str("addr", addr).Msg("gRPC API listening")
-	return s.grpc.Serve(lis)
+	log.Logger.Info().Str("addr", addr).Msg("TCP gRPC API listening")
+	return s.grpcTCP.Serve(lis)
 }
 
-// Stop gracefully stops the gRPC server
+// Stop gracefully stops both gRPC servers
 func (s *Server) Stop() {
-	if s.grpc != nil {
-		s.grpc.GracefulStop()
+	if s.grpcTCP != nil {
+		s.grpcTCP.GracefulStop()
+	}
+	if s.grpcUnix != nil {
+		s.grpcUnix.GracefulStop()
+	}
+	// Clean up Unix socket file
+	if s.unixSocket != "" {
+		os.RemoveAll(s.unixSocket)
 	}
 }
 
