@@ -308,11 +308,12 @@ warren_cluster_status() {
 }
 
 # Verify cluster health
-# Usage: warren_verify_cluster_health <leader_vm_name> <expected_managers> <expected_workers>
+# Usage: warren_verify_cluster_health <leader_vm_name> <expected_managers> <expected_workers> <manager_token>
 warren_verify_cluster_health() {
   local leader_vm="$1"
   local expected_managers="$2"
   local expected_workers="$3"
+  local manager_token="$4"
 
   log_step "Verifying cluster health"
 
@@ -324,6 +325,24 @@ warren_verify_cluster_health() {
     return 1
   fi
   progress_done
+
+  # Initialize CLI certificates for node list command
+  # Get the manager's actual bind address
+  local manager_addr="0.0.0.0:8080"
+
+  log_verbose "Initializing CLI certificates..."
+  local init_output
+  init_output=$(lima_exec "${leader_vm}" "warren init --manager ${manager_addr} --token ${manager_token}" 2>&1)
+  local init_exit_code=$?
+
+  if [[ $init_exit_code -ne 0 ]]; then
+    log_warning "Failed to initialize CLI certificates (exit code: $init_exit_code)"
+    if [[ "$VERBOSE" == "true" ]]; then
+      log_verbose "CLI init output: $init_output"
+    fi
+  else
+    log_verbose "CLI certificates initialized successfully"
+  fi
 
   # Wait for nodes to register (they need time to join and sync)
   log_verbose "Waiting for nodes to register in cluster..."
@@ -337,17 +356,41 @@ warren_verify_cluster_health() {
 
   progress_start "Verifying node registration"
   while [[ $attempt -lt $max_attempts ]]; do
-    # Get node counts, ensuring we clean up any whitespace/newlines
-    manager_count=$(lima_exec "${leader_vm}" "warren node list --manager localhost:8080 2>/dev/null | grep -c manager" 2>/dev/null | tr -d '\n\r' || echo "0")
-    worker_count=$(lima_exec "${leader_vm}" "warren node list --manager localhost:8080 2>/dev/null | grep -c worker" 2>/dev/null | tr -d '\n\r' || echo "0")
+    # Get raw output from node list command
+    local node_list_output
+    node_list_output=$(lima_exec "${leader_vm}" "warren node list --manager localhost:8080 2>&1" || echo "")
 
-    # Clean up counts (remove any non-numeric characters)
-    manager_count=$(echo "$manager_count" | grep -o '[0-9]*' | head -1)
-    worker_count=$(echo "$worker_count" | grep -o '[0-9]*' | head -1)
+    # Debug: show raw output on first attempt
+    if [[ $attempt -eq 0 && "$VERBOSE" == "true" ]]; then
+      log_verbose "Raw node list output:"
+      log_verbose "$node_list_output"
+    fi
 
-    # Default to 0 if empty
-    manager_count=${manager_count:-0}
-    worker_count=${worker_count:-0}
+    # Count manager and worker nodes by counting lines that contain the role
+    # grep -c "manager" counts ALL lines containing "manager", including headers
+    # We need to count only data rows, so we'll grep for lines that look like node entries
+    if [[ -n "$node_list_output" ]]; then
+      # Count lines that contain "manager" or "worker" in the ROLE column
+      # Assuming format: ID NAME ROLE STATUS
+      # We'll count lines where the role field (3rd column) matches
+      manager_count=$(echo "$node_list_output" | awk '$3 == "manager" {count++} END {print count+0}')
+      worker_count=$(echo "$node_list_output" | awk '$3 == "worker" {count++} END {print count+0}')
+    else
+      manager_count="0"
+      worker_count="0"
+    fi
+
+    # Clean up any whitespace or newlines
+    manager_count=$(echo "$manager_count" | tr -d ' \t\n\r')
+    worker_count=$(echo "$worker_count" | tr -d ' \t\n\r')
+
+    # Ensure we have valid numbers (fallback to 0 if not)
+    if ! [[ "$manager_count" =~ ^[0-9]+$ ]]; then
+      manager_count="0"
+    fi
+    if ! [[ "$worker_count" =~ ^[0-9]+$ ]]; then
+      worker_count="0"
+    fi
 
     log_verbose "Attempt $((attempt + 1))/$max_attempts: Managers: ${manager_count}/${expected_managers}, Workers: ${worker_count}/${expected_workers}"
 
@@ -541,7 +584,7 @@ warren_initialize_cluster() {
   done
 
   # Verify cluster health
-  if ! warren_verify_cluster_health "${leader_vm}" "$num_managers" "$num_workers"; then
+  if ! warren_verify_cluster_health "${leader_vm}" "$num_managers" "$num_workers" "${manager_token}"; then
     return 1
   fi
 
