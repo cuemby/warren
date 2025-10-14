@@ -1,6 +1,6 @@
 # Warren Performance Benchmarking Guide
 
-This guide provides comprehensive performance benchmarking procedures for Warren v1.1.0, including baseline metrics, test scenarios, and performance targets.
+This guide provides comprehensive performance benchmarking procedures for Warren v1.3.1, including baseline metrics, test scenarios, and performance targets.
 
 ## Table of Contents
 
@@ -22,7 +22,7 @@ Warren's performance characteristics are critical for production deployments. Th
 
 ## Performance Targets
 
-### Latency Targets (v1.1.0)
+### Latency Targets (v1.3.1)
 
 | Operation | Target (p50) | Target (p95) | Target (p99) |
 |-----------|--------------|--------------|--------------|

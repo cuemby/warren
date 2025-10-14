@@ -1,6 +1,6 @@
 # Warren End-to-End Deployment Validation
 
-This guide covers the complete end-to-end validation process for Warren v1.1.0, including deployment, testing, and verification of all features.
+This guide covers the complete end-to-end validation process for Warren v1.3.1, including deployment, testing, and verification of all features.
 
 ## Table of Contents
 
@@ -43,7 +43,7 @@ This validation ensures Warren is production-ready by testing:
 
 ### Software Requirements
 
-- Warren binary (v1.1.0)
+- Warren binary (v1.3.1)
 - containerd (v1.7+)
 - Go 1.22+ (for running Go-based E2E tests)
 - curl/jq (for API testing)
@@ -663,7 +663,7 @@ grep -i "health" /var/log/warren.log
 
 ## Success Criteria
 
-Warren v1.1.0 is considered production-ready if:
+Warren v1.3.1 is considered production-ready if:
 
 - ✅ **Cluster Formation**: 3+3 cluster forms successfully
 - ✅ **High Availability**: Leader failover < 10 seconds

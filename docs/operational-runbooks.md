@@ -1,7 +1,7 @@
 # Warren Operational Runbooks
 
-**Version**: 1.1.1+
-**Last Updated**: 2025-10-13
+**Version**: 1.3.1+
+**Last Updated**: 2025-10-14
 **Audience**: Operations/SRE Teams
 
 ---
