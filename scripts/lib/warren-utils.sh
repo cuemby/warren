@@ -74,7 +74,7 @@ warren_install_on_vm() {
 
   # Install to /usr/local/bin and make executable
   progress_start "Installing Warren on ${vm_name}"
-  if limactl shell "${vm_name}" sudo sh -c "'mv /tmp/warren /usr/local/bin/warren && chmod +x /usr/local/bin/warren'" >> "${LOG_FILE}" 2>&1; then
+  if limactl shell "${vm_name}" sudo sh -c 'mv /tmp/warren /usr/local/bin/warren && chmod +x /usr/local/bin/warren' >> "${LOG_FILE}" 2>&1; then
     progress_done
     return 0
   else
