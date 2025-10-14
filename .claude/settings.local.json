@@ -109,7 +109,8 @@
       "Bash(tree:*)",
       "Bash(do echo \"Run $i:\")",
       "Bash(do echo \"=== Run $i ===\")",
-      "Bash(./scripts/deploy-production.sh:*)"
+      "Bash(./scripts/deploy-production.sh:*)",
+      "Bash(./bin/warren-linux-arm64:*)"
     ],
     "deny": [],
     "ask": []

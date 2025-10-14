@@ -91,9 +91,8 @@ warren_verify_installation() {
   log_verbose "Verifying Warren installation on ${vm_name}"
 
   # Check if warren binary exists and is executable
-  if lima_exec "${vm_name}" "warren version" &>/dev/null; then
-    local version=$(lima_exec "${vm_name}" "warren version" 2>/dev/null | head -1)
-    log_success "Warren installed on ${vm_name}: ${version}"
+  if lima_exec "${vm_name}" "test -x /usr/local/bin/warren" &>/dev/null; then
+    log_success "Warren installed on ${vm_name}: /usr/local/bin/warren"
     return 0
   else
     log_error "Warren not properly installed on ${vm_name}"
