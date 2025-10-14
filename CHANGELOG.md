@@ -5,6 +5,118 @@ All notable changes to Warren will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2025-10-14
+
+### Added - Advanced Deployment Strategies (Milestone 8)
+
+Warren v1.3.0 introduces production-grade deployment strategies enabling zero-downtime deployments with multiple risk/speed tradeoffs!
+
+#### Three Deployment Strategies
+
+**Blue-Green Deployment**:
+- Deploy full new version alongside current version
+- Instant traffic switch with zero downtime
+- Quick rollback capability (instant switch back)
+- Service versioning with deployment labels
+- Health check validation before traffic switch
+- Keeps standby version for graceful rollback
+
+**Canary Deployment**:
+- Gradual traffic migration (default: 10% → 25% → 50% → 100%)
+- Configurable canary steps and stability windows
+- Automatic rollback on health check failures
+- Progressive replica scaling based on traffic weight
+- Real traffic validation before full rollout
+- Minimal blast radius for new versions
+
+**Enhanced Rolling Updates**:
+- Health check integration (wait for healthy before next batch)
+- Automatic rollback on failures
+- Max surge / max unavailable controls
+- Configurable parallelism and delays
+- Deployment metrics and observability
+
+#### CLI Commands
+
+```bash
+# Rolling update (default)
+warren service update web --image nginx:1.21
+
+# Blue-green deployment
+warren service update web --image nginx:1.21 --strategy blue-green
+
+# Canary deployment with custom steps
+warren service update web --image nginx:1.21 --strategy canary --canary-steps 10,50,100
+
+# Manual rollback
+warren service rollback web
+```
+
+#### API & Proto Updates
+
+- **New RPC methods**: `UpdateServiceImage`, `RollbackService`
+- **Enhanced UpdateConfig**: 9 new deployment fields (canary steps, grace periods, surge controls)
+- **Deployment labels**: Version tracking, state management, strategy identification
+- **ServiceManager interface**: Clean abstraction breaking import cycles
+
+#### Deployment Metrics
+
+New Prometheus metrics for deployment observability:
+- `warren_deployments_total{strategy, status}` - Total deployments counter
+- `warren_deployment_duration_seconds{strategy}` - Deployment duration histogram
+- `warren_deployments_rolled_back_total{strategy, reason}` - Rollback counter
+
+#### Architecture Improvements
+
+- **Service versioning**: Unique version IDs for each deployment
+- **Deployment states**: Active, Standby, Canary, Rolling, Failed, RolledBack
+- **Service cloning**: Create versioned copies for blue-green/canary
+- **Health-gated promotion**: Wait for healthy containers before proceeding
+- **Automatic cleanup**: Remove old versions after grace period
+
+#### Documentation
+
+- **Comprehensive deployment guide** (docs/deployment-strategies.md)
+- Strategy comparison and selection criteria
+- Configuration examples and best practices
+- Troubleshooting guide
+- Migration guide from v1.2
+
+### Changed
+
+- UpdateService API now supports deployment strategy parameter
+- Deployer uses ServiceManager interface instead of concrete Manager type
+- Deployment operations are now asynchronous for long-running updates
+
+### Implementation Details
+
+**Files Modified/Added**:
+- `pkg/deploy/deploy.go`: Blue-green, canary, rollback implementations (+458 lines)
+- `pkg/types/types.go`: ServiceManager interface, deployment types
+- `pkg/api/server.go`: UpdateServiceImage, RollbackService handlers
+- `pkg/client/client.go`: UpdateServiceImage, RollbackService methods
+- `pkg/metrics/metrics.go`: 3 new deployment metrics
+- `api/proto/warren.proto`: New RPC methods and messages
+- `cmd/warren/main.go`: service update, service rollback commands
+- `docs/deployment-strategies.md`: 430-line comprehensive guide
+
+**Total Changes**:
+- 7 packages modified
+- ~2,000 lines added
+- 3 new RPC methods
+- 2 new CLI commands
+- 3 deployment metrics
+- Zero breaking changes (fully backward compatible)
+
+### Backward Compatibility
+
+- **100% backward compatible** - no breaking changes
+- Existing services continue with rolling updates by default
+- New strategies are opt-in via `--strategy` flag
+- All v1.1.x APIs continue to work unchanged
+
+---
+
 ## [1.1.1] - 2025-10-13
 
 ### Changed - Major Refactor & Infrastructure Updates
