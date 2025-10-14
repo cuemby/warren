@@ -82,9 +82,11 @@ func NewServer(mgr *manager.Manager) (*Server, error) {
 	creds := credentials.NewTLS(tlsConfig)
 	grpcTCP := grpc.NewServer(grpc.Creds(creds))
 
-	// Create Unix socket gRPC server without TLS (will use read-only interceptor)
-	// We'll add the read-only interceptor in the next step
-	grpcUnix := grpc.NewServer()
+	// Create Unix socket gRPC server without TLS but with read-only interceptor
+	// This enforces that Unix socket can only be used for read operations
+	grpcUnix := grpc.NewServer(
+		grpc.UnaryInterceptor(ReadOnlyInterceptor()),
+	)
 
 	return &Server{
 		manager:    mgr,
