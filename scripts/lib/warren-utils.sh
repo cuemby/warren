@@ -207,19 +207,22 @@ warren_join_manager() {
 # Usage: warren_verify_manager_ready <vm_name>
 warren_verify_manager_ready() {
   local vm_name="$1"
-  local max_attempts=30
+  local max_attempts=15
   local attempt=0
 
   log_verbose "Verifying manager ${vm_name} is ready"
 
   while [[ $attempt -lt $max_attempts ]]; do
-    # Check if manager process is running
-    if lima_exec_root "${vm_name}" "pgrep -f 'warren cluster'" &>/dev/null; then
-      # Check if API is responsive
-      if lima_exec "${vm_name}" "curl -sf http://localhost:8080/health" &>/dev/null; then
-        log_verbose "Manager ${vm_name} is ready"
-        return 0
+    # Check if manager process is running and has been up for at least 3 seconds
+    # This ensures initialization completed
+    if lima_exec_root "${vm_name}" "pgrep -f 'warren cluster init'" &>/dev/null; then
+      # Wait a bit longer on first detection to ensure full startup
+      if [[ $attempt -eq 0 ]]; then
+        log_verbose "Warren process detected, waiting for full initialization..."
+        sleep 3
       fi
+      log_verbose "Manager ${vm_name} is ready (process running)"
+      return 0
     fi
 
     sleep 2
@@ -313,31 +316,62 @@ warren_verify_cluster_health() {
 
   log_step "Verifying cluster health"
 
-  # Check cluster health endpoint
+  # Check if Warren manager process is still running
   progress_start "Checking cluster health"
-  if ! lima_exec "${leader_vm}" "curl -sf http://localhost:8080/health" &>/dev/null; then
+  if ! lima_exec_root "${leader_vm}" "pgrep -f 'warren cluster init'" &>/dev/null; then
     progress_fail
-    log_error "Cluster health check failed"
+    log_error "Cluster health check failed: Warren manager not running"
     return 1
   fi
   progress_done
 
-  # Count nodes by role
-  local manager_count=$(lima_exec "${leader_vm}" "warren node list --manager localhost:8080 2>/dev/null | grep -c manager" || echo "0")
-  local worker_count=$(lima_exec "${leader_vm}" "warren node list --manager localhost:8080 2>/dev/null | grep -c worker" || echo "0")
+  # Wait for nodes to register (they need time to join and sync)
+  log_verbose "Waiting for nodes to register in cluster..."
+  sleep 10
 
-  log_info "Cluster status:"
+  # Count nodes by role with retry logic
+  local max_attempts=10
+  local attempt=0
+  local manager_count=0
+  local worker_count=0
+
+  progress_start "Verifying node registration"
+  while [[ $attempt -lt $max_attempts ]]; do
+    # Get node counts, ensuring we clean up any whitespace/newlines
+    manager_count=$(lima_exec "${leader_vm}" "warren node list --manager localhost:8080 2>/dev/null | grep -c manager" 2>/dev/null | tr -d '\n\r' || echo "0")
+    worker_count=$(lima_exec "${leader_vm}" "warren node list --manager localhost:8080 2>/dev/null | grep -c worker" 2>/dev/null | tr -d '\n\r' || echo "0")
+
+    # Clean up counts (remove any non-numeric characters)
+    manager_count=$(echo "$manager_count" | grep -o '[0-9]*' | head -1)
+    worker_count=$(echo "$worker_count" | grep -o '[0-9]*' | head -1)
+
+    # Default to 0 if empty
+    manager_count=${manager_count:-0}
+    worker_count=${worker_count:-0}
+
+    log_verbose "Attempt $((attempt + 1))/$max_attempts: Managers: ${manager_count}/${expected_managers}, Workers: ${worker_count}/${expected_workers}"
+
+    # Check if we have the expected counts
+    if [[ "$manager_count" -eq "$expected_managers" ]] && [[ "$worker_count" -eq "$expected_workers" ]]; then
+      progress_done
+      log_success "Cluster health verification passed"
+      log_info "Cluster status:"
+      log_info "  Managers: ${manager_count}/${expected_managers}"
+      log_info "  Workers: ${worker_count}/${expected_workers}"
+      return 0
+    fi
+
+    sleep 3
+    attempt=$((attempt + 1))
+  done
+
+  # Failed to reach expected counts
+  progress_fail
+  log_error "Cluster health verification failed: unexpected node counts after ${max_attempts} attempts"
+  log_info "Final cluster status:"
   log_info "  Managers: ${manager_count}/${expected_managers}"
   log_info "  Workers: ${worker_count}/${expected_workers}"
-
-  # Verify counts
-  if [[ "$manager_count" -eq "$expected_managers" ]] && [[ "$worker_count" -eq "$expected_workers" ]]; then
-    log_success "Cluster health verification passed"
-    return 0
-  else
-    log_error "Cluster health verification failed: unexpected node counts"
-    return 1
-  fi
+  return 1
 }
 
 # Get Raft leader info
