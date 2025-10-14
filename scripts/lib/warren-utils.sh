@@ -113,9 +113,9 @@ warren_init_manager() {
 
   log_step "Initializing manager on ${vm_name}"
 
-  # Initialize cluster
+  # Initialize cluster in background (daemonize)
   progress_start "Initializing Warren cluster"
-  if lima_exec_root "${vm_name}" "warren cluster init --api-addr ${api_host}:${api_port}" &>/dev/null; then
+  if lima_exec_root "${vm_name}" "nohup warren cluster init --api-addr ${api_host}:${api_port} > /var/log/warren/manager.log 2>&1 &" &>/dev/null; then
     progress_done
   else
     progress_fail
@@ -124,7 +124,8 @@ warren_init_manager() {
   fi
 
   # Wait for cluster to be ready
-  sleep 3
+  log_verbose "Waiting for Warren manager to start..."
+  sleep 5
 
   # Verify cluster is running
   if warren_verify_manager_ready "${vm_name}"; then
@@ -242,8 +243,9 @@ warren_start_worker() {
 
   log_step "Starting worker ${vm_name}"
 
+  # Start worker in background (daemonize)
   progress_start "Starting worker ${vm_name}"
-  if lima_exec_root "${vm_name}" "warren worker start --manager ${manager_addr} --token ${token}" &>/dev/null; then
+  if lima_exec_root "${vm_name}" "nohup warren worker start --manager ${manager_addr} --token ${token} > /var/log/warren/worker.log 2>&1 &" &>/dev/null; then
     progress_done
   else
     progress_fail
@@ -252,7 +254,8 @@ warren_start_worker() {
   fi
 
   # Wait for worker to be ready
-  sleep 3
+  log_verbose "Waiting for Warren worker to start..."
+  sleep 5
 
   if warren_verify_worker_ready "${vm_name}"; then
     log_success "Worker ${vm_name} started successfully"
