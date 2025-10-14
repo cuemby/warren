@@ -175,6 +175,37 @@ func (c *Client) DeleteService(id string) error {
 	return err
 }
 
+// UpdateServiceImage updates a service with a new image using specified deployment strategy
+func (c *Client) UpdateServiceImage(id string, image string, strategy string, updateConfig *proto.UpdateConfig) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Minute) // Longer timeout for deployments
+	defer cancel()
+
+	req := &proto.UpdateServiceImageRequest{
+		Id:       id,
+		Image:    image,
+		Strategy: strategy,
+	}
+
+	if updateConfig != nil {
+		req.UpdateConfig = updateConfig
+	}
+
+	_, err := c.client.UpdateServiceImage(ctx, req)
+	return err
+}
+
+// RollbackService rolls back a service to the previous version
+func (c *Client) RollbackService(id string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+	defer cancel()
+
+	_, err := c.client.RollbackService(ctx, &proto.RollbackServiceRequest{
+		Id: id,
+	})
+
+	return err
+}
+
 // ListNodes lists all nodes
 func (c *Client) ListNodes() ([]*proto.Node, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)

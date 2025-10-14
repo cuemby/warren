@@ -1027,15 +1027,161 @@ var serviceScaleCmd = &cobra.Command{
 	},
 }
 
+var serviceUpdateCmd = &cobra.Command{
+	Use:   "update NAME --image IMAGE",
+	Short: "Update a service with a new image",
+	Long: `Update a service using different deployment strategies.
+
+Deployment strategies:
+  rolling:     Update containers one at a time (default)
+  blue-green:  Create full new version, switch traffic instantly
+  canary:      Gradually migrate traffic (10% → 25% → 50% → 100%)
+
+Examples:
+  # Rolling update (default)
+  warren service update web --image nginx:1.21
+
+  # Blue-green deployment
+  warren service update web --image nginx:1.21 --strategy blue-green
+
+  # Canary deployment with custom steps
+  warren service update web --image nginx:1.21 --strategy canary --canary-steps 10,50,100`,
+	Args:  cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		name := args[0]
+		image, _ := cmd.Flags().GetString("image")
+		strategy, _ := cmd.Flags().GetString("strategy")
+		manager, _ := cmd.Flags().GetString("manager")
+
+		// Canary-specific flags
+		canaryStepsStr, _ := cmd.Flags().GetString("canary-steps")
+		canaryWindow, _ := cmd.Flags().GetInt("canary-window")
+
+		if image == "" {
+			return fmt.Errorf("--image is required")
+		}
+
+		// Parse canary steps if provided
+		var canarySteps []int
+		if canaryStepsStr != "" {
+			parts := strings.Split(canaryStepsStr, ",")
+			for _, p := range parts {
+				var step int
+				_, err := fmt.Sscanf(strings.TrimSpace(p), "%d", &step)
+				if err != nil {
+					return fmt.Errorf("invalid canary step: %s", p)
+				}
+				if step <= 0 || step > 100 {
+					return fmt.Errorf("canary step must be between 1 and 100: %d", step)
+				}
+				canarySteps = append(canarySteps, step)
+			}
+		}
+
+		// Connect to manager
+		c, err := client.NewClient(manager)
+		if err != nil {
+			return fmt.Errorf("failed to connect to manager: %v", err)
+		}
+		defer c.Close()
+
+		// Get service to get ID
+		service, err := c.GetService(name)
+		if err != nil {
+			return fmt.Errorf("failed to find service: %v", err)
+		}
+
+		// Build update config if canary options provided
+		var updateConfig *proto.UpdateConfig
+		if len(canarySteps) > 0 || canaryWindow > 0 {
+			updateConfig = &proto.UpdateConfig{}
+			if len(canarySteps) > 0 {
+				updateConfig.CanarySteps = make([]int32, len(canarySteps))
+				for i, s := range canarySteps {
+					updateConfig.CanarySteps[i] = int32(s)
+				}
+			}
+			if canaryWindow > 0 {
+				updateConfig.CanaryStabilityWindowSeconds = int32(canaryWindow)
+			}
+		}
+
+		fmt.Printf("Updating service %s...\n", name)
+		fmt.Printf("  Current image: %s\n", service.Image)
+		fmt.Printf("  New image:     %s\n", image)
+		fmt.Printf("  Strategy:      %s\n", strategy)
+
+		// Update service with new image and strategy
+		err = c.UpdateServiceImage(service.Id, image, strategy, updateConfig)
+		if err != nil {
+			return fmt.Errorf("failed to update service: %v", err)
+		}
+
+		fmt.Printf("\n✓ Service update initiated\n")
+		if strategy == "blue-green" {
+			fmt.Println("Blue-green deployment in progress - traffic will switch once new version is healthy")
+		} else if strategy == "canary" {
+			fmt.Println("Canary deployment in progress - traffic will gradually shift to new version")
+			if len(canarySteps) > 0 {
+				fmt.Printf("Canary steps: %v\n", canarySteps)
+			}
+		} else {
+			fmt.Println("Rolling update in progress - containers will be updated one at a time")
+		}
+
+		return nil
+	},
+}
+
+var serviceRollbackCmd = &cobra.Command{
+	Use:   "rollback NAME",
+	Short: "Rollback a service to the previous version",
+	Long: `Rollback a service deployment to the previous version.
+
+This command switches traffic back to the standby version from a previous
+blue-green or canary deployment.`,
+	Args:  cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		name := args[0]
+		manager, _ := cmd.Flags().GetString("manager")
+
+		// Connect to manager
+		c, err := client.NewClient(manager)
+		if err != nil {
+			return fmt.Errorf("failed to connect to manager: %v", err)
+		}
+		defer c.Close()
+
+		// Get service to get ID
+		service, err := c.GetService(name)
+		if err != nil {
+			return fmt.Errorf("failed to find service: %v", err)
+		}
+
+		fmt.Printf("Rolling back service %s...\n", name)
+
+		// Rollback service
+		err = c.RollbackService(service.Id)
+		if err != nil {
+			return fmt.Errorf("failed to rollback service: %v", err)
+		}
+
+		fmt.Printf("\n✓ Service rolled back successfully\n")
+		return nil
+	},
+}
+
 func init() {
 	serviceCmd.AddCommand(serviceCreateCmd)
 	serviceCmd.AddCommand(serviceListCmd)
 	serviceCmd.AddCommand(serviceInspectCmd)
 	serviceCmd.AddCommand(serviceDeleteCmd)
 	serviceCmd.AddCommand(serviceScaleCmd)
+	serviceCmd.AddCommand(serviceUpdateCmd)
+	serviceCmd.AddCommand(serviceRollbackCmd)
 
 	// Common flag
-	for _, cmd := range []*cobra.Command{serviceCreateCmd, serviceListCmd, serviceInspectCmd, serviceDeleteCmd, serviceScaleCmd} {
+	for _, cmd := range []*cobra.Command{serviceCreateCmd, serviceListCmd, serviceInspectCmd, serviceDeleteCmd, serviceScaleCmd, serviceUpdateCmd, serviceRollbackCmd} {
 		cmd.Flags().String("manager", "127.0.0.1:8080", "Manager address")
 	}
 
@@ -1066,6 +1212,13 @@ func init() {
 
 	serviceScaleCmd.Flags().Int("replicas", 0, "Number of replicas")
 	_ = serviceScaleCmd.MarkFlagRequired("replicas")
+
+	// service update flags
+	serviceUpdateCmd.Flags().String("image", "", "New container image (required)")
+	serviceUpdateCmd.Flags().String("strategy", "rolling", "Deployment strategy: rolling, blue-green, canary")
+	serviceUpdateCmd.Flags().String("canary-steps", "", "Canary deployment steps (e.g., '10,25,50,100')")
+	serviceUpdateCmd.Flags().Int("canary-window", 300, "Seconds to wait between canary steps (default: 300)")
+	_ = serviceUpdateCmd.MarkFlagRequired("image")
 }
 
 // Node commands

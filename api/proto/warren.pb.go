@@ -1033,12 +1033,21 @@ func (x *Service) GetStopTimeout() int32 {
 }
 
 type UpdateConfig struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Parallelism   int32                  `protobuf:"varint,1,opt,name=parallelism,proto3" json:"parallelism,omitempty"`
-	DelaySeconds  int32                  `protobuf:"varint,2,opt,name=delay_seconds,json=delaySeconds,proto3" json:"delay_seconds,omitempty"`
-	FailureAction string                 `protobuf:"bytes,3,opt,name=failure_action,json=failureAction,proto3" json:"failure_action,omitempty"` // "pause", "continue", "rollback"
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                         protoimpl.MessageState `protogen:"open.v1"`
+	Parallelism                   int32                  `protobuf:"varint,1,opt,name=parallelism,proto3" json:"parallelism,omitempty"`
+	DelaySeconds                  int32                  `protobuf:"varint,2,opt,name=delay_seconds,json=delaySeconds,proto3" json:"delay_seconds,omitempty"`
+	FailureAction                 string                 `protobuf:"bytes,3,opt,name=failure_action,json=failureAction,proto3" json:"failure_action,omitempty"` // "pause", "continue", "rollback"
+	MaxSurge                      int32                  `protobuf:"varint,4,opt,name=max_surge,json=maxSurge,proto3" json:"max_surge,omitempty"`
+	MaxUnavailable                int32                  `protobuf:"varint,5,opt,name=max_unavailable,json=maxUnavailable,proto3" json:"max_unavailable,omitempty"`
+	HealthCheckGracePeriodSeconds int32                  `protobuf:"varint,6,opt,name=health_check_grace_period_seconds,json=healthCheckGracePeriodSeconds,proto3" json:"health_check_grace_period_seconds,omitempty"`
+	CanaryWeight                  int32                  `protobuf:"varint,7,opt,name=canary_weight,json=canaryWeight,proto3" json:"canary_weight,omitempty"`
+	CanarySteps                   []int32                `protobuf:"varint,8,rep,packed,name=canary_steps,json=canarySteps,proto3" json:"canary_steps,omitempty"`
+	CanaryStabilityWindowSeconds  int32                  `protobuf:"varint,9,opt,name=canary_stability_window_seconds,json=canaryStabilityWindowSeconds,proto3" json:"canary_stability_window_seconds,omitempty"`
+	BlueGreenGracePeriodSeconds   int32                  `protobuf:"varint,10,opt,name=blue_green_grace_period_seconds,json=blueGreenGracePeriodSeconds,proto3" json:"blue_green_grace_period_seconds,omitempty"`
+	AutoRollbackEnabled           bool                   `protobuf:"varint,11,opt,name=auto_rollback_enabled,json=autoRollbackEnabled,proto3" json:"auto_rollback_enabled,omitempty"`
+	FailureThresholdPercent       int32                  `protobuf:"varint,12,opt,name=failure_threshold_percent,json=failureThresholdPercent,proto3" json:"failure_threshold_percent,omitempty"`
+	unknownFields                 protoimpl.UnknownFields
+	sizeCache                     protoimpl.SizeCache
 }
 
 func (x *UpdateConfig) Reset() {
@@ -1090,6 +1099,69 @@ func (x *UpdateConfig) GetFailureAction() string {
 		return x.FailureAction
 	}
 	return ""
+}
+
+func (x *UpdateConfig) GetMaxSurge() int32 {
+	if x != nil {
+		return x.MaxSurge
+	}
+	return 0
+}
+
+func (x *UpdateConfig) GetMaxUnavailable() int32 {
+	if x != nil {
+		return x.MaxUnavailable
+	}
+	return 0
+}
+
+func (x *UpdateConfig) GetHealthCheckGracePeriodSeconds() int32 {
+	if x != nil {
+		return x.HealthCheckGracePeriodSeconds
+	}
+	return 0
+}
+
+func (x *UpdateConfig) GetCanaryWeight() int32 {
+	if x != nil {
+		return x.CanaryWeight
+	}
+	return 0
+}
+
+func (x *UpdateConfig) GetCanarySteps() []int32 {
+	if x != nil {
+		return x.CanarySteps
+	}
+	return nil
+}
+
+func (x *UpdateConfig) GetCanaryStabilityWindowSeconds() int32 {
+	if x != nil {
+		return x.CanaryStabilityWindowSeconds
+	}
+	return 0
+}
+
+func (x *UpdateConfig) GetBlueGreenGracePeriodSeconds() int32 {
+	if x != nil {
+		return x.BlueGreenGracePeriodSeconds
+	}
+	return 0
+}
+
+func (x *UpdateConfig) GetAutoRollbackEnabled() bool {
+	if x != nil {
+		return x.AutoRollbackEnabled
+	}
+	return false
+}
+
+func (x *UpdateConfig) GetFailureThresholdPercent() int32 {
+	if x != nil {
+		return x.FailureThresholdPercent
+	}
+	return 0
 }
 
 type HealthCheck struct {
@@ -1986,6 +2058,206 @@ func (x *UpdateServiceResponse) GetService() *Service {
 	return nil
 }
 
+type UpdateServiceImageRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Image         string                 `protobuf:"bytes,2,opt,name=image,proto3" json:"image,omitempty"`
+	Strategy      string                 `protobuf:"bytes,3,opt,name=strategy,proto3" json:"strategy,omitempty"` // "rolling", "blue-green", "canary"
+	UpdateConfig  *UpdateConfig          `protobuf:"bytes,4,opt,name=update_config,json=updateConfig,proto3" json:"update_config,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpdateServiceImageRequest) Reset() {
+	*x = UpdateServiceImageRequest{}
+	mi := &file_api_proto_warren_proto_msgTypes[28]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateServiceImageRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateServiceImageRequest) ProtoMessage() {}
+
+func (x *UpdateServiceImageRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_api_proto_warren_proto_msgTypes[28]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateServiceImageRequest.ProtoReflect.Descriptor instead.
+func (*UpdateServiceImageRequest) Descriptor() ([]byte, []int) {
+	return file_api_proto_warren_proto_rawDescGZIP(), []int{28}
+}
+
+func (x *UpdateServiceImageRequest) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *UpdateServiceImageRequest) GetImage() string {
+	if x != nil {
+		return x.Image
+	}
+	return ""
+}
+
+func (x *UpdateServiceImageRequest) GetStrategy() string {
+	if x != nil {
+		return x.Strategy
+	}
+	return ""
+}
+
+func (x *UpdateServiceImageRequest) GetUpdateConfig() *UpdateConfig {
+	if x != nil {
+		return x.UpdateConfig
+	}
+	return nil
+}
+
+type UpdateServiceImageResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Status        string                 `protobuf:"bytes,1,opt,name=status,proto3" json:"status,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpdateServiceImageResponse) Reset() {
+	*x = UpdateServiceImageResponse{}
+	mi := &file_api_proto_warren_proto_msgTypes[29]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateServiceImageResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateServiceImageResponse) ProtoMessage() {}
+
+func (x *UpdateServiceImageResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_api_proto_warren_proto_msgTypes[29]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateServiceImageResponse.ProtoReflect.Descriptor instead.
+func (*UpdateServiceImageResponse) Descriptor() ([]byte, []int) {
+	return file_api_proto_warren_proto_rawDescGZIP(), []int{29}
+}
+
+func (x *UpdateServiceImageResponse) GetStatus() string {
+	if x != nil {
+		return x.Status
+	}
+	return ""
+}
+
+type RollbackServiceRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RollbackServiceRequest) Reset() {
+	*x = RollbackServiceRequest{}
+	mi := &file_api_proto_warren_proto_msgTypes[30]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RollbackServiceRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RollbackServiceRequest) ProtoMessage() {}
+
+func (x *RollbackServiceRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_api_proto_warren_proto_msgTypes[30]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RollbackServiceRequest.ProtoReflect.Descriptor instead.
+func (*RollbackServiceRequest) Descriptor() ([]byte, []int) {
+	return file_api_proto_warren_proto_rawDescGZIP(), []int{30}
+}
+
+func (x *RollbackServiceRequest) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+type RollbackServiceResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Status        string                 `protobuf:"bytes,1,opt,name=status,proto3" json:"status,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RollbackServiceResponse) Reset() {
+	*x = RollbackServiceResponse{}
+	mi := &file_api_proto_warren_proto_msgTypes[31]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RollbackServiceResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RollbackServiceResponse) ProtoMessage() {}
+
+func (x *RollbackServiceResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_api_proto_warren_proto_msgTypes[31]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RollbackServiceResponse.ProtoReflect.Descriptor instead.
+func (*RollbackServiceResponse) Descriptor() ([]byte, []int) {
+	return file_api_proto_warren_proto_rawDescGZIP(), []int{31}
+}
+
+func (x *RollbackServiceResponse) GetStatus() string {
+	if x != nil {
+		return x.Status
+	}
+	return ""
+}
+
 type DeleteServiceRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
@@ -1995,7 +2267,7 @@ type DeleteServiceRequest struct {
 
 func (x *DeleteServiceRequest) Reset() {
 	*x = DeleteServiceRequest{}
-	mi := &file_api_proto_warren_proto_msgTypes[28]
+	mi := &file_api_proto_warren_proto_msgTypes[32]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2007,7 +2279,7 @@ func (x *DeleteServiceRequest) String() string {
 func (*DeleteServiceRequest) ProtoMessage() {}
 
 func (x *DeleteServiceRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_warren_proto_msgTypes[28]
+	mi := &file_api_proto_warren_proto_msgTypes[32]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2020,7 +2292,7 @@ func (x *DeleteServiceRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteServiceRequest.ProtoReflect.Descriptor instead.
 func (*DeleteServiceRequest) Descriptor() ([]byte, []int) {
-	return file_api_proto_warren_proto_rawDescGZIP(), []int{28}
+	return file_api_proto_warren_proto_rawDescGZIP(), []int{32}
 }
 
 func (x *DeleteServiceRequest) GetId() string {
@@ -2039,7 +2311,7 @@ type DeleteServiceResponse struct {
 
 func (x *DeleteServiceResponse) Reset() {
 	*x = DeleteServiceResponse{}
-	mi := &file_api_proto_warren_proto_msgTypes[29]
+	mi := &file_api_proto_warren_proto_msgTypes[33]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2051,7 +2323,7 @@ func (x *DeleteServiceResponse) String() string {
 func (*DeleteServiceResponse) ProtoMessage() {}
 
 func (x *DeleteServiceResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_warren_proto_msgTypes[29]
+	mi := &file_api_proto_warren_proto_msgTypes[33]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2064,7 +2336,7 @@ func (x *DeleteServiceResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteServiceResponse.ProtoReflect.Descriptor instead.
 func (*DeleteServiceResponse) Descriptor() ([]byte, []int) {
-	return file_api_proto_warren_proto_rawDescGZIP(), []int{29}
+	return file_api_proto_warren_proto_rawDescGZIP(), []int{33}
 }
 
 func (x *DeleteServiceResponse) GetStatus() string {
@@ -2084,7 +2356,7 @@ type GetServiceRequest struct {
 
 func (x *GetServiceRequest) Reset() {
 	*x = GetServiceRequest{}
-	mi := &file_api_proto_warren_proto_msgTypes[30]
+	mi := &file_api_proto_warren_proto_msgTypes[34]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2096,7 +2368,7 @@ func (x *GetServiceRequest) String() string {
 func (*GetServiceRequest) ProtoMessage() {}
 
 func (x *GetServiceRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_warren_proto_msgTypes[30]
+	mi := &file_api_proto_warren_proto_msgTypes[34]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2109,7 +2381,7 @@ func (x *GetServiceRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetServiceRequest.ProtoReflect.Descriptor instead.
 func (*GetServiceRequest) Descriptor() ([]byte, []int) {
-	return file_api_proto_warren_proto_rawDescGZIP(), []int{30}
+	return file_api_proto_warren_proto_rawDescGZIP(), []int{34}
 }
 
 func (x *GetServiceRequest) GetId() string {
@@ -2135,7 +2407,7 @@ type GetServiceResponse struct {
 
 func (x *GetServiceResponse) Reset() {
 	*x = GetServiceResponse{}
-	mi := &file_api_proto_warren_proto_msgTypes[31]
+	mi := &file_api_proto_warren_proto_msgTypes[35]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2147,7 +2419,7 @@ func (x *GetServiceResponse) String() string {
 func (*GetServiceResponse) ProtoMessage() {}
 
 func (x *GetServiceResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_warren_proto_msgTypes[31]
+	mi := &file_api_proto_warren_proto_msgTypes[35]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2160,7 +2432,7 @@ func (x *GetServiceResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetServiceResponse.ProtoReflect.Descriptor instead.
 func (*GetServiceResponse) Descriptor() ([]byte, []int) {
-	return file_api_proto_warren_proto_rawDescGZIP(), []int{31}
+	return file_api_proto_warren_proto_rawDescGZIP(), []int{35}
 }
 
 func (x *GetServiceResponse) GetService() *Service {
@@ -2178,7 +2450,7 @@ type ListServicesRequest struct {
 
 func (x *ListServicesRequest) Reset() {
 	*x = ListServicesRequest{}
-	mi := &file_api_proto_warren_proto_msgTypes[32]
+	mi := &file_api_proto_warren_proto_msgTypes[36]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2190,7 +2462,7 @@ func (x *ListServicesRequest) String() string {
 func (*ListServicesRequest) ProtoMessage() {}
 
 func (x *ListServicesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_warren_proto_msgTypes[32]
+	mi := &file_api_proto_warren_proto_msgTypes[36]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2203,7 +2475,7 @@ func (x *ListServicesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListServicesRequest.ProtoReflect.Descriptor instead.
 func (*ListServicesRequest) Descriptor() ([]byte, []int) {
-	return file_api_proto_warren_proto_rawDescGZIP(), []int{32}
+	return file_api_proto_warren_proto_rawDescGZIP(), []int{36}
 }
 
 type ListServicesResponse struct {
@@ -2215,7 +2487,7 @@ type ListServicesResponse struct {
 
 func (x *ListServicesResponse) Reset() {
 	*x = ListServicesResponse{}
-	mi := &file_api_proto_warren_proto_msgTypes[33]
+	mi := &file_api_proto_warren_proto_msgTypes[37]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2227,7 +2499,7 @@ func (x *ListServicesResponse) String() string {
 func (*ListServicesResponse) ProtoMessage() {}
 
 func (x *ListServicesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_warren_proto_msgTypes[33]
+	mi := &file_api_proto_warren_proto_msgTypes[37]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2240,7 +2512,7 @@ func (x *ListServicesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListServicesResponse.ProtoReflect.Descriptor instead.
 func (*ListServicesResponse) Descriptor() ([]byte, []int) {
-	return file_api_proto_warren_proto_rawDescGZIP(), []int{33}
+	return file_api_proto_warren_proto_rawDescGZIP(), []int{37}
 }
 
 func (x *ListServicesResponse) GetServices() []*Service {
@@ -2278,7 +2550,7 @@ type Container struct {
 
 func (x *Container) Reset() {
 	*x = Container{}
-	mi := &file_api_proto_warren_proto_msgTypes[34]
+	mi := &file_api_proto_warren_proto_msgTypes[38]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2290,7 +2562,7 @@ func (x *Container) String() string {
 func (*Container) ProtoMessage() {}
 
 func (x *Container) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_warren_proto_msgTypes[34]
+	mi := &file_api_proto_warren_proto_msgTypes[38]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2303,7 +2575,7 @@ func (x *Container) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Container.ProtoReflect.Descriptor instead.
 func (*Container) Descriptor() ([]byte, []int) {
-	return file_api_proto_warren_proto_rawDescGZIP(), []int{34}
+	return file_api_proto_warren_proto_rawDescGZIP(), []int{38}
 }
 
 func (x *Container) GetId() string {
@@ -2452,7 +2724,7 @@ type UpdateContainerStatusRequest struct {
 
 func (x *UpdateContainerStatusRequest) Reset() {
 	*x = UpdateContainerStatusRequest{}
-	mi := &file_api_proto_warren_proto_msgTypes[35]
+	mi := &file_api_proto_warren_proto_msgTypes[39]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2464,7 +2736,7 @@ func (x *UpdateContainerStatusRequest) String() string {
 func (*UpdateContainerStatusRequest) ProtoMessage() {}
 
 func (x *UpdateContainerStatusRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_warren_proto_msgTypes[35]
+	mi := &file_api_proto_warren_proto_msgTypes[39]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2477,7 +2749,7 @@ func (x *UpdateContainerStatusRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateContainerStatusRequest.ProtoReflect.Descriptor instead.
 func (*UpdateContainerStatusRequest) Descriptor() ([]byte, []int) {
-	return file_api_proto_warren_proto_rawDescGZIP(), []int{35}
+	return file_api_proto_warren_proto_rawDescGZIP(), []int{39}
 }
 
 func (x *UpdateContainerStatusRequest) GetContainerId() string {
@@ -2524,7 +2796,7 @@ type UpdateContainerStatusResponse struct {
 
 func (x *UpdateContainerStatusResponse) Reset() {
 	*x = UpdateContainerStatusResponse{}
-	mi := &file_api_proto_warren_proto_msgTypes[36]
+	mi := &file_api_proto_warren_proto_msgTypes[40]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2536,7 +2808,7 @@ func (x *UpdateContainerStatusResponse) String() string {
 func (*UpdateContainerStatusResponse) ProtoMessage() {}
 
 func (x *UpdateContainerStatusResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_warren_proto_msgTypes[36]
+	mi := &file_api_proto_warren_proto_msgTypes[40]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2549,7 +2821,7 @@ func (x *UpdateContainerStatusResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateContainerStatusResponse.ProtoReflect.Descriptor instead.
 func (*UpdateContainerStatusResponse) Descriptor() ([]byte, []int) {
-	return file_api_proto_warren_proto_rawDescGZIP(), []int{36}
+	return file_api_proto_warren_proto_rawDescGZIP(), []int{40}
 }
 
 func (x *UpdateContainerStatusResponse) GetStatus() string {
@@ -2569,7 +2841,7 @@ type ListContainersRequest struct {
 
 func (x *ListContainersRequest) Reset() {
 	*x = ListContainersRequest{}
-	mi := &file_api_proto_warren_proto_msgTypes[37]
+	mi := &file_api_proto_warren_proto_msgTypes[41]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2581,7 +2853,7 @@ func (x *ListContainersRequest) String() string {
 func (*ListContainersRequest) ProtoMessage() {}
 
 func (x *ListContainersRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_warren_proto_msgTypes[37]
+	mi := &file_api_proto_warren_proto_msgTypes[41]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2594,7 +2866,7 @@ func (x *ListContainersRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListContainersRequest.ProtoReflect.Descriptor instead.
 func (*ListContainersRequest) Descriptor() ([]byte, []int) {
-	return file_api_proto_warren_proto_rawDescGZIP(), []int{37}
+	return file_api_proto_warren_proto_rawDescGZIP(), []int{41}
 }
 
 func (x *ListContainersRequest) GetServiceId() string {
@@ -2620,7 +2892,7 @@ type ListContainersResponse struct {
 
 func (x *ListContainersResponse) Reset() {
 	*x = ListContainersResponse{}
-	mi := &file_api_proto_warren_proto_msgTypes[38]
+	mi := &file_api_proto_warren_proto_msgTypes[42]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2632,7 +2904,7 @@ func (x *ListContainersResponse) String() string {
 func (*ListContainersResponse) ProtoMessage() {}
 
 func (x *ListContainersResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_warren_proto_msgTypes[38]
+	mi := &file_api_proto_warren_proto_msgTypes[42]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2645,7 +2917,7 @@ func (x *ListContainersResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListContainersResponse.ProtoReflect.Descriptor instead.
 func (*ListContainersResponse) Descriptor() ([]byte, []int) {
-	return file_api_proto_warren_proto_rawDescGZIP(), []int{38}
+	return file_api_proto_warren_proto_rawDescGZIP(), []int{42}
 }
 
 func (x *ListContainersResponse) GetContainers() []*Container {
@@ -2664,7 +2936,7 @@ type GetContainerRequest struct {
 
 func (x *GetContainerRequest) Reset() {
 	*x = GetContainerRequest{}
-	mi := &file_api_proto_warren_proto_msgTypes[39]
+	mi := &file_api_proto_warren_proto_msgTypes[43]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2676,7 +2948,7 @@ func (x *GetContainerRequest) String() string {
 func (*GetContainerRequest) ProtoMessage() {}
 
 func (x *GetContainerRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_warren_proto_msgTypes[39]
+	mi := &file_api_proto_warren_proto_msgTypes[43]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2689,7 +2961,7 @@ func (x *GetContainerRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetContainerRequest.ProtoReflect.Descriptor instead.
 func (*GetContainerRequest) Descriptor() ([]byte, []int) {
-	return file_api_proto_warren_proto_rawDescGZIP(), []int{39}
+	return file_api_proto_warren_proto_rawDescGZIP(), []int{43}
 }
 
 func (x *GetContainerRequest) GetId() string {
@@ -2708,7 +2980,7 @@ type GetContainerResponse struct {
 
 func (x *GetContainerResponse) Reset() {
 	*x = GetContainerResponse{}
-	mi := &file_api_proto_warren_proto_msgTypes[40]
+	mi := &file_api_proto_warren_proto_msgTypes[44]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2720,7 +2992,7 @@ func (x *GetContainerResponse) String() string {
 func (*GetContainerResponse) ProtoMessage() {}
 
 func (x *GetContainerResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_warren_proto_msgTypes[40]
+	mi := &file_api_proto_warren_proto_msgTypes[44]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2733,7 +3005,7 @@ func (x *GetContainerResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetContainerResponse.ProtoReflect.Descriptor instead.
 func (*GetContainerResponse) Descriptor() ([]byte, []int) {
-	return file_api_proto_warren_proto_rawDescGZIP(), []int{40}
+	return file_api_proto_warren_proto_rawDescGZIP(), []int{44}
 }
 
 func (x *GetContainerResponse) GetContainer() *Container {
@@ -2752,7 +3024,7 @@ type WatchContainersRequest struct {
 
 func (x *WatchContainersRequest) Reset() {
 	*x = WatchContainersRequest{}
-	mi := &file_api_proto_warren_proto_msgTypes[41]
+	mi := &file_api_proto_warren_proto_msgTypes[45]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2764,7 +3036,7 @@ func (x *WatchContainersRequest) String() string {
 func (*WatchContainersRequest) ProtoMessage() {}
 
 func (x *WatchContainersRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_warren_proto_msgTypes[41]
+	mi := &file_api_proto_warren_proto_msgTypes[45]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2777,7 +3049,7 @@ func (x *WatchContainersRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WatchContainersRequest.ProtoReflect.Descriptor instead.
 func (*WatchContainersRequest) Descriptor() ([]byte, []int) {
-	return file_api_proto_warren_proto_rawDescGZIP(), []int{41}
+	return file_api_proto_warren_proto_rawDescGZIP(), []int{45}
 }
 
 func (x *WatchContainersRequest) GetNodeId() string {
@@ -2797,7 +3069,7 @@ type ContainerEvent struct {
 
 func (x *ContainerEvent) Reset() {
 	*x = ContainerEvent{}
-	mi := &file_api_proto_warren_proto_msgTypes[42]
+	mi := &file_api_proto_warren_proto_msgTypes[46]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2809,7 +3081,7 @@ func (x *ContainerEvent) String() string {
 func (*ContainerEvent) ProtoMessage() {}
 
 func (x *ContainerEvent) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_warren_proto_msgTypes[42]
+	mi := &file_api_proto_warren_proto_msgTypes[46]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2822,7 +3094,7 @@ func (x *ContainerEvent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ContainerEvent.ProtoReflect.Descriptor instead.
 func (*ContainerEvent) Descriptor() ([]byte, []int) {
-	return file_api_proto_warren_proto_rawDescGZIP(), []int{42}
+	return file_api_proto_warren_proto_rawDescGZIP(), []int{46}
 }
 
 func (x *ContainerEvent) GetType() string {
@@ -2852,7 +3124,7 @@ type Secret struct {
 
 func (x *Secret) Reset() {
 	*x = Secret{}
-	mi := &file_api_proto_warren_proto_msgTypes[43]
+	mi := &file_api_proto_warren_proto_msgTypes[47]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2864,7 +3136,7 @@ func (x *Secret) String() string {
 func (*Secret) ProtoMessage() {}
 
 func (x *Secret) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_warren_proto_msgTypes[43]
+	mi := &file_api_proto_warren_proto_msgTypes[47]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2877,7 +3149,7 @@ func (x *Secret) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Secret.ProtoReflect.Descriptor instead.
 func (*Secret) Descriptor() ([]byte, []int) {
-	return file_api_proto_warren_proto_rawDescGZIP(), []int{43}
+	return file_api_proto_warren_proto_rawDescGZIP(), []int{47}
 }
 
 func (x *Secret) GetId() string {
@@ -2918,7 +3190,7 @@ type CreateSecretRequest struct {
 
 func (x *CreateSecretRequest) Reset() {
 	*x = CreateSecretRequest{}
-	mi := &file_api_proto_warren_proto_msgTypes[44]
+	mi := &file_api_proto_warren_proto_msgTypes[48]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2930,7 +3202,7 @@ func (x *CreateSecretRequest) String() string {
 func (*CreateSecretRequest) ProtoMessage() {}
 
 func (x *CreateSecretRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_warren_proto_msgTypes[44]
+	mi := &file_api_proto_warren_proto_msgTypes[48]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2943,7 +3215,7 @@ func (x *CreateSecretRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateSecretRequest.ProtoReflect.Descriptor instead.
 func (*CreateSecretRequest) Descriptor() ([]byte, []int) {
-	return file_api_proto_warren_proto_rawDescGZIP(), []int{44}
+	return file_api_proto_warren_proto_rawDescGZIP(), []int{48}
 }
 
 func (x *CreateSecretRequest) GetName() string {
@@ -2969,7 +3241,7 @@ type CreateSecretResponse struct {
 
 func (x *CreateSecretResponse) Reset() {
 	*x = CreateSecretResponse{}
-	mi := &file_api_proto_warren_proto_msgTypes[45]
+	mi := &file_api_proto_warren_proto_msgTypes[49]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2981,7 +3253,7 @@ func (x *CreateSecretResponse) String() string {
 func (*CreateSecretResponse) ProtoMessage() {}
 
 func (x *CreateSecretResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_warren_proto_msgTypes[45]
+	mi := &file_api_proto_warren_proto_msgTypes[49]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2994,7 +3266,7 @@ func (x *CreateSecretResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateSecretResponse.ProtoReflect.Descriptor instead.
 func (*CreateSecretResponse) Descriptor() ([]byte, []int) {
-	return file_api_proto_warren_proto_rawDescGZIP(), []int{45}
+	return file_api_proto_warren_proto_rawDescGZIP(), []int{49}
 }
 
 func (x *CreateSecretResponse) GetSecret() *Secret {
@@ -3013,7 +3285,7 @@ type DeleteSecretRequest struct {
 
 func (x *DeleteSecretRequest) Reset() {
 	*x = DeleteSecretRequest{}
-	mi := &file_api_proto_warren_proto_msgTypes[46]
+	mi := &file_api_proto_warren_proto_msgTypes[50]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3025,7 +3297,7 @@ func (x *DeleteSecretRequest) String() string {
 func (*DeleteSecretRequest) ProtoMessage() {}
 
 func (x *DeleteSecretRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_warren_proto_msgTypes[46]
+	mi := &file_api_proto_warren_proto_msgTypes[50]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3038,7 +3310,7 @@ func (x *DeleteSecretRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteSecretRequest.ProtoReflect.Descriptor instead.
 func (*DeleteSecretRequest) Descriptor() ([]byte, []int) {
-	return file_api_proto_warren_proto_rawDescGZIP(), []int{46}
+	return file_api_proto_warren_proto_rawDescGZIP(), []int{50}
 }
 
 func (x *DeleteSecretRequest) GetId() string {
@@ -3057,7 +3329,7 @@ type DeleteSecretResponse struct {
 
 func (x *DeleteSecretResponse) Reset() {
 	*x = DeleteSecretResponse{}
-	mi := &file_api_proto_warren_proto_msgTypes[47]
+	mi := &file_api_proto_warren_proto_msgTypes[51]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3069,7 +3341,7 @@ func (x *DeleteSecretResponse) String() string {
 func (*DeleteSecretResponse) ProtoMessage() {}
 
 func (x *DeleteSecretResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_warren_proto_msgTypes[47]
+	mi := &file_api_proto_warren_proto_msgTypes[51]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3082,7 +3354,7 @@ func (x *DeleteSecretResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteSecretResponse.ProtoReflect.Descriptor instead.
 func (*DeleteSecretResponse) Descriptor() ([]byte, []int) {
-	return file_api_proto_warren_proto_rawDescGZIP(), []int{47}
+	return file_api_proto_warren_proto_rawDescGZIP(), []int{51}
 }
 
 func (x *DeleteSecretResponse) GetStatus() string {
@@ -3101,7 +3373,7 @@ type GetSecretByNameRequest struct {
 
 func (x *GetSecretByNameRequest) Reset() {
 	*x = GetSecretByNameRequest{}
-	mi := &file_api_proto_warren_proto_msgTypes[48]
+	mi := &file_api_proto_warren_proto_msgTypes[52]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3113,7 +3385,7 @@ func (x *GetSecretByNameRequest) String() string {
 func (*GetSecretByNameRequest) ProtoMessage() {}
 
 func (x *GetSecretByNameRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_warren_proto_msgTypes[48]
+	mi := &file_api_proto_warren_proto_msgTypes[52]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3126,7 +3398,7 @@ func (x *GetSecretByNameRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetSecretByNameRequest.ProtoReflect.Descriptor instead.
 func (*GetSecretByNameRequest) Descriptor() ([]byte, []int) {
-	return file_api_proto_warren_proto_rawDescGZIP(), []int{48}
+	return file_api_proto_warren_proto_rawDescGZIP(), []int{52}
 }
 
 func (x *GetSecretByNameRequest) GetName() string {
@@ -3145,7 +3417,7 @@ type GetSecretByNameResponse struct {
 
 func (x *GetSecretByNameResponse) Reset() {
 	*x = GetSecretByNameResponse{}
-	mi := &file_api_proto_warren_proto_msgTypes[49]
+	mi := &file_api_proto_warren_proto_msgTypes[53]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3157,7 +3429,7 @@ func (x *GetSecretByNameResponse) String() string {
 func (*GetSecretByNameResponse) ProtoMessage() {}
 
 func (x *GetSecretByNameResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_warren_proto_msgTypes[49]
+	mi := &file_api_proto_warren_proto_msgTypes[53]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3170,7 +3442,7 @@ func (x *GetSecretByNameResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetSecretByNameResponse.ProtoReflect.Descriptor instead.
 func (*GetSecretByNameResponse) Descriptor() ([]byte, []int) {
-	return file_api_proto_warren_proto_rawDescGZIP(), []int{49}
+	return file_api_proto_warren_proto_rawDescGZIP(), []int{53}
 }
 
 func (x *GetSecretByNameResponse) GetSecret() *Secret {
@@ -3188,7 +3460,7 @@ type ListSecretsRequest struct {
 
 func (x *ListSecretsRequest) Reset() {
 	*x = ListSecretsRequest{}
-	mi := &file_api_proto_warren_proto_msgTypes[50]
+	mi := &file_api_proto_warren_proto_msgTypes[54]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3200,7 +3472,7 @@ func (x *ListSecretsRequest) String() string {
 func (*ListSecretsRequest) ProtoMessage() {}
 
 func (x *ListSecretsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_warren_proto_msgTypes[50]
+	mi := &file_api_proto_warren_proto_msgTypes[54]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3213,7 +3485,7 @@ func (x *ListSecretsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListSecretsRequest.ProtoReflect.Descriptor instead.
 func (*ListSecretsRequest) Descriptor() ([]byte, []int) {
-	return file_api_proto_warren_proto_rawDescGZIP(), []int{50}
+	return file_api_proto_warren_proto_rawDescGZIP(), []int{54}
 }
 
 type ListSecretsResponse struct {
@@ -3225,7 +3497,7 @@ type ListSecretsResponse struct {
 
 func (x *ListSecretsResponse) Reset() {
 	*x = ListSecretsResponse{}
-	mi := &file_api_proto_warren_proto_msgTypes[51]
+	mi := &file_api_proto_warren_proto_msgTypes[55]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3237,7 +3509,7 @@ func (x *ListSecretsResponse) String() string {
 func (*ListSecretsResponse) ProtoMessage() {}
 
 func (x *ListSecretsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_warren_proto_msgTypes[51]
+	mi := &file_api_proto_warren_proto_msgTypes[55]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3250,7 +3522,7 @@ func (x *ListSecretsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListSecretsResponse.ProtoReflect.Descriptor instead.
 func (*ListSecretsResponse) Descriptor() ([]byte, []int) {
-	return file_api_proto_warren_proto_rawDescGZIP(), []int{51}
+	return file_api_proto_warren_proto_rawDescGZIP(), []int{55}
 }
 
 func (x *ListSecretsResponse) GetSecrets() []*Secret {
@@ -3277,7 +3549,7 @@ type Volume struct {
 
 func (x *Volume) Reset() {
 	*x = Volume{}
-	mi := &file_api_proto_warren_proto_msgTypes[52]
+	mi := &file_api_proto_warren_proto_msgTypes[56]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3289,7 +3561,7 @@ func (x *Volume) String() string {
 func (*Volume) ProtoMessage() {}
 
 func (x *Volume) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_warren_proto_msgTypes[52]
+	mi := &file_api_proto_warren_proto_msgTypes[56]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3302,7 +3574,7 @@ func (x *Volume) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Volume.ProtoReflect.Descriptor instead.
 func (*Volume) Descriptor() ([]byte, []int) {
-	return file_api_proto_warren_proto_rawDescGZIP(), []int{52}
+	return file_api_proto_warren_proto_rawDescGZIP(), []int{56}
 }
 
 func (x *Volume) GetId() string {
@@ -3373,7 +3645,7 @@ type CreateVolumeRequest struct {
 
 func (x *CreateVolumeRequest) Reset() {
 	*x = CreateVolumeRequest{}
-	mi := &file_api_proto_warren_proto_msgTypes[53]
+	mi := &file_api_proto_warren_proto_msgTypes[57]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3385,7 +3657,7 @@ func (x *CreateVolumeRequest) String() string {
 func (*CreateVolumeRequest) ProtoMessage() {}
 
 func (x *CreateVolumeRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_warren_proto_msgTypes[53]
+	mi := &file_api_proto_warren_proto_msgTypes[57]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3398,7 +3670,7 @@ func (x *CreateVolumeRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateVolumeRequest.ProtoReflect.Descriptor instead.
 func (*CreateVolumeRequest) Descriptor() ([]byte, []int) {
-	return file_api_proto_warren_proto_rawDescGZIP(), []int{53}
+	return file_api_proto_warren_proto_rawDescGZIP(), []int{57}
 }
 
 func (x *CreateVolumeRequest) GetName() string {
@@ -3438,7 +3710,7 @@ type CreateVolumeResponse struct {
 
 func (x *CreateVolumeResponse) Reset() {
 	*x = CreateVolumeResponse{}
-	mi := &file_api_proto_warren_proto_msgTypes[54]
+	mi := &file_api_proto_warren_proto_msgTypes[58]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3450,7 +3722,7 @@ func (x *CreateVolumeResponse) String() string {
 func (*CreateVolumeResponse) ProtoMessage() {}
 
 func (x *CreateVolumeResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_warren_proto_msgTypes[54]
+	mi := &file_api_proto_warren_proto_msgTypes[58]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3463,7 +3735,7 @@ func (x *CreateVolumeResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateVolumeResponse.ProtoReflect.Descriptor instead.
 func (*CreateVolumeResponse) Descriptor() ([]byte, []int) {
-	return file_api_proto_warren_proto_rawDescGZIP(), []int{54}
+	return file_api_proto_warren_proto_rawDescGZIP(), []int{58}
 }
 
 func (x *CreateVolumeResponse) GetVolume() *Volume {
@@ -3482,7 +3754,7 @@ type DeleteVolumeRequest struct {
 
 func (x *DeleteVolumeRequest) Reset() {
 	*x = DeleteVolumeRequest{}
-	mi := &file_api_proto_warren_proto_msgTypes[55]
+	mi := &file_api_proto_warren_proto_msgTypes[59]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3494,7 +3766,7 @@ func (x *DeleteVolumeRequest) String() string {
 func (*DeleteVolumeRequest) ProtoMessage() {}
 
 func (x *DeleteVolumeRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_warren_proto_msgTypes[55]
+	mi := &file_api_proto_warren_proto_msgTypes[59]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3507,7 +3779,7 @@ func (x *DeleteVolumeRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteVolumeRequest.ProtoReflect.Descriptor instead.
 func (*DeleteVolumeRequest) Descriptor() ([]byte, []int) {
-	return file_api_proto_warren_proto_rawDescGZIP(), []int{55}
+	return file_api_proto_warren_proto_rawDescGZIP(), []int{59}
 }
 
 func (x *DeleteVolumeRequest) GetId() string {
@@ -3526,7 +3798,7 @@ type DeleteVolumeResponse struct {
 
 func (x *DeleteVolumeResponse) Reset() {
 	*x = DeleteVolumeResponse{}
-	mi := &file_api_proto_warren_proto_msgTypes[56]
+	mi := &file_api_proto_warren_proto_msgTypes[60]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3538,7 +3810,7 @@ func (x *DeleteVolumeResponse) String() string {
 func (*DeleteVolumeResponse) ProtoMessage() {}
 
 func (x *DeleteVolumeResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_warren_proto_msgTypes[56]
+	mi := &file_api_proto_warren_proto_msgTypes[60]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3551,7 +3823,7 @@ func (x *DeleteVolumeResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteVolumeResponse.ProtoReflect.Descriptor instead.
 func (*DeleteVolumeResponse) Descriptor() ([]byte, []int) {
-	return file_api_proto_warren_proto_rawDescGZIP(), []int{56}
+	return file_api_proto_warren_proto_rawDescGZIP(), []int{60}
 }
 
 func (x *DeleteVolumeResponse) GetStatus() string {
@@ -3570,7 +3842,7 @@ type GetVolumeByNameRequest struct {
 
 func (x *GetVolumeByNameRequest) Reset() {
 	*x = GetVolumeByNameRequest{}
-	mi := &file_api_proto_warren_proto_msgTypes[57]
+	mi := &file_api_proto_warren_proto_msgTypes[61]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3582,7 +3854,7 @@ func (x *GetVolumeByNameRequest) String() string {
 func (*GetVolumeByNameRequest) ProtoMessage() {}
 
 func (x *GetVolumeByNameRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_warren_proto_msgTypes[57]
+	mi := &file_api_proto_warren_proto_msgTypes[61]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3595,7 +3867,7 @@ func (x *GetVolumeByNameRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetVolumeByNameRequest.ProtoReflect.Descriptor instead.
 func (*GetVolumeByNameRequest) Descriptor() ([]byte, []int) {
-	return file_api_proto_warren_proto_rawDescGZIP(), []int{57}
+	return file_api_proto_warren_proto_rawDescGZIP(), []int{61}
 }
 
 func (x *GetVolumeByNameRequest) GetName() string {
@@ -3614,7 +3886,7 @@ type GetVolumeByNameResponse struct {
 
 func (x *GetVolumeByNameResponse) Reset() {
 	*x = GetVolumeByNameResponse{}
-	mi := &file_api_proto_warren_proto_msgTypes[58]
+	mi := &file_api_proto_warren_proto_msgTypes[62]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3626,7 +3898,7 @@ func (x *GetVolumeByNameResponse) String() string {
 func (*GetVolumeByNameResponse) ProtoMessage() {}
 
 func (x *GetVolumeByNameResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_warren_proto_msgTypes[58]
+	mi := &file_api_proto_warren_proto_msgTypes[62]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3639,7 +3911,7 @@ func (x *GetVolumeByNameResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetVolumeByNameResponse.ProtoReflect.Descriptor instead.
 func (*GetVolumeByNameResponse) Descriptor() ([]byte, []int) {
-	return file_api_proto_warren_proto_rawDescGZIP(), []int{58}
+	return file_api_proto_warren_proto_rawDescGZIP(), []int{62}
 }
 
 func (x *GetVolumeByNameResponse) GetVolume() *Volume {
@@ -3657,7 +3929,7 @@ type ListVolumesRequest struct {
 
 func (x *ListVolumesRequest) Reset() {
 	*x = ListVolumesRequest{}
-	mi := &file_api_proto_warren_proto_msgTypes[59]
+	mi := &file_api_proto_warren_proto_msgTypes[63]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3669,7 +3941,7 @@ func (x *ListVolumesRequest) String() string {
 func (*ListVolumesRequest) ProtoMessage() {}
 
 func (x *ListVolumesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_warren_proto_msgTypes[59]
+	mi := &file_api_proto_warren_proto_msgTypes[63]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3682,7 +3954,7 @@ func (x *ListVolumesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListVolumesRequest.ProtoReflect.Descriptor instead.
 func (*ListVolumesRequest) Descriptor() ([]byte, []int) {
-	return file_api_proto_warren_proto_rawDescGZIP(), []int{59}
+	return file_api_proto_warren_proto_rawDescGZIP(), []int{63}
 }
 
 type ListVolumesResponse struct {
@@ -3694,7 +3966,7 @@ type ListVolumesResponse struct {
 
 func (x *ListVolumesResponse) Reset() {
 	*x = ListVolumesResponse{}
-	mi := &file_api_proto_warren_proto_msgTypes[60]
+	mi := &file_api_proto_warren_proto_msgTypes[64]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3706,7 +3978,7 @@ func (x *ListVolumesResponse) String() string {
 func (*ListVolumesResponse) ProtoMessage() {}
 
 func (x *ListVolumesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_warren_proto_msgTypes[60]
+	mi := &file_api_proto_warren_proto_msgTypes[64]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3719,7 +3991,7 @@ func (x *ListVolumesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListVolumesResponse.ProtoReflect.Descriptor instead.
 func (*ListVolumesResponse) Descriptor() ([]byte, []int) {
-	return file_api_proto_warren_proto_rawDescGZIP(), []int{60}
+	return file_api_proto_warren_proto_rawDescGZIP(), []int{64}
 }
 
 func (x *ListVolumesResponse) GetVolumes() []*Volume {
@@ -3739,7 +4011,7 @@ type GenerateJoinTokenRequest struct {
 
 func (x *GenerateJoinTokenRequest) Reset() {
 	*x = GenerateJoinTokenRequest{}
-	mi := &file_api_proto_warren_proto_msgTypes[61]
+	mi := &file_api_proto_warren_proto_msgTypes[65]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3751,7 +4023,7 @@ func (x *GenerateJoinTokenRequest) String() string {
 func (*GenerateJoinTokenRequest) ProtoMessage() {}
 
 func (x *GenerateJoinTokenRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_warren_proto_msgTypes[61]
+	mi := &file_api_proto_warren_proto_msgTypes[65]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3764,7 +4036,7 @@ func (x *GenerateJoinTokenRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GenerateJoinTokenRequest.ProtoReflect.Descriptor instead.
 func (*GenerateJoinTokenRequest) Descriptor() ([]byte, []int) {
-	return file_api_proto_warren_proto_rawDescGZIP(), []int{61}
+	return file_api_proto_warren_proto_rawDescGZIP(), []int{65}
 }
 
 func (x *GenerateJoinTokenRequest) GetRole() string {
@@ -3785,7 +4057,7 @@ type GenerateJoinTokenResponse struct {
 
 func (x *GenerateJoinTokenResponse) Reset() {
 	*x = GenerateJoinTokenResponse{}
-	mi := &file_api_proto_warren_proto_msgTypes[62]
+	mi := &file_api_proto_warren_proto_msgTypes[66]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3797,7 +4069,7 @@ func (x *GenerateJoinTokenResponse) String() string {
 func (*GenerateJoinTokenResponse) ProtoMessage() {}
 
 func (x *GenerateJoinTokenResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_warren_proto_msgTypes[62]
+	mi := &file_api_proto_warren_proto_msgTypes[66]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3810,7 +4082,7 @@ func (x *GenerateJoinTokenResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GenerateJoinTokenResponse.ProtoReflect.Descriptor instead.
 func (*GenerateJoinTokenResponse) Descriptor() ([]byte, []int) {
-	return file_api_proto_warren_proto_rawDescGZIP(), []int{62}
+	return file_api_proto_warren_proto_rawDescGZIP(), []int{66}
 }
 
 func (x *GenerateJoinTokenResponse) GetToken() string {
@@ -3845,7 +4117,7 @@ type JoinClusterRequest struct {
 
 func (x *JoinClusterRequest) Reset() {
 	*x = JoinClusterRequest{}
-	mi := &file_api_proto_warren_proto_msgTypes[63]
+	mi := &file_api_proto_warren_proto_msgTypes[67]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3857,7 +4129,7 @@ func (x *JoinClusterRequest) String() string {
 func (*JoinClusterRequest) ProtoMessage() {}
 
 func (x *JoinClusterRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_warren_proto_msgTypes[63]
+	mi := &file_api_proto_warren_proto_msgTypes[67]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3870,7 +4142,7 @@ func (x *JoinClusterRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use JoinClusterRequest.ProtoReflect.Descriptor instead.
 func (*JoinClusterRequest) Descriptor() ([]byte, []int) {
-	return file_api_proto_warren_proto_rawDescGZIP(), []int{63}
+	return file_api_proto_warren_proto_rawDescGZIP(), []int{67}
 }
 
 func (x *JoinClusterRequest) GetNodeId() string {
@@ -3904,7 +4176,7 @@ type JoinClusterResponse struct {
 
 func (x *JoinClusterResponse) Reset() {
 	*x = JoinClusterResponse{}
-	mi := &file_api_proto_warren_proto_msgTypes[64]
+	mi := &file_api_proto_warren_proto_msgTypes[68]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3916,7 +4188,7 @@ func (x *JoinClusterResponse) String() string {
 func (*JoinClusterResponse) ProtoMessage() {}
 
 func (x *JoinClusterResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_warren_proto_msgTypes[64]
+	mi := &file_api_proto_warren_proto_msgTypes[68]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3929,7 +4201,7 @@ func (x *JoinClusterResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use JoinClusterResponse.ProtoReflect.Descriptor instead.
 func (*JoinClusterResponse) Descriptor() ([]byte, []int) {
-	return file_api_proto_warren_proto_rawDescGZIP(), []int{64}
+	return file_api_proto_warren_proto_rawDescGZIP(), []int{68}
 }
 
 func (x *JoinClusterResponse) GetStatus() string {
@@ -3954,7 +4226,7 @@ type GetClusterInfoRequest struct {
 
 func (x *GetClusterInfoRequest) Reset() {
 	*x = GetClusterInfoRequest{}
-	mi := &file_api_proto_warren_proto_msgTypes[65]
+	mi := &file_api_proto_warren_proto_msgTypes[69]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3966,7 +4238,7 @@ func (x *GetClusterInfoRequest) String() string {
 func (*GetClusterInfoRequest) ProtoMessage() {}
 
 func (x *GetClusterInfoRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_warren_proto_msgTypes[65]
+	mi := &file_api_proto_warren_proto_msgTypes[69]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3979,7 +4251,7 @@ func (x *GetClusterInfoRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetClusterInfoRequest.ProtoReflect.Descriptor instead.
 func (*GetClusterInfoRequest) Descriptor() ([]byte, []int) {
-	return file_api_proto_warren_proto_rawDescGZIP(), []int{65}
+	return file_api_proto_warren_proto_rawDescGZIP(), []int{69}
 }
 
 type GetClusterInfoResponse struct {
@@ -3993,7 +4265,7 @@ type GetClusterInfoResponse struct {
 
 func (x *GetClusterInfoResponse) Reset() {
 	*x = GetClusterInfoResponse{}
-	mi := &file_api_proto_warren_proto_msgTypes[66]
+	mi := &file_api_proto_warren_proto_msgTypes[70]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4005,7 +4277,7 @@ func (x *GetClusterInfoResponse) String() string {
 func (*GetClusterInfoResponse) ProtoMessage() {}
 
 func (x *GetClusterInfoResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_warren_proto_msgTypes[66]
+	mi := &file_api_proto_warren_proto_msgTypes[70]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4018,7 +4290,7 @@ func (x *GetClusterInfoResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetClusterInfoResponse.ProtoReflect.Descriptor instead.
 func (*GetClusterInfoResponse) Descriptor() ([]byte, []int) {
-	return file_api_proto_warren_proto_rawDescGZIP(), []int{66}
+	return file_api_proto_warren_proto_rawDescGZIP(), []int{70}
 }
 
 func (x *GetClusterInfoResponse) GetLeaderId() string {
@@ -4053,7 +4325,7 @@ type ClusterServer struct {
 
 func (x *ClusterServer) Reset() {
 	*x = ClusterServer{}
-	mi := &file_api_proto_warren_proto_msgTypes[67]
+	mi := &file_api_proto_warren_proto_msgTypes[71]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4065,7 +4337,7 @@ func (x *ClusterServer) String() string {
 func (*ClusterServer) ProtoMessage() {}
 
 func (x *ClusterServer) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_warren_proto_msgTypes[67]
+	mi := &file_api_proto_warren_proto_msgTypes[71]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4078,7 +4350,7 @@ func (x *ClusterServer) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ClusterServer.ProtoReflect.Descriptor instead.
 func (*ClusterServer) Descriptor() ([]byte, []int) {
-	return file_api_proto_warren_proto_rawDescGZIP(), []int{67}
+	return file_api_proto_warren_proto_rawDescGZIP(), []int{71}
 }
 
 func (x *ClusterServer) GetId() string {
@@ -4117,7 +4389,7 @@ type ReportContainerHealthRequest struct {
 
 func (x *ReportContainerHealthRequest) Reset() {
 	*x = ReportContainerHealthRequest{}
-	mi := &file_api_proto_warren_proto_msgTypes[68]
+	mi := &file_api_proto_warren_proto_msgTypes[72]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4129,7 +4401,7 @@ func (x *ReportContainerHealthRequest) String() string {
 func (*ReportContainerHealthRequest) ProtoMessage() {}
 
 func (x *ReportContainerHealthRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_warren_proto_msgTypes[68]
+	mi := &file_api_proto_warren_proto_msgTypes[72]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4142,7 +4414,7 @@ func (x *ReportContainerHealthRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReportContainerHealthRequest.ProtoReflect.Descriptor instead.
 func (*ReportContainerHealthRequest) Descriptor() ([]byte, []int) {
-	return file_api_proto_warren_proto_rawDescGZIP(), []int{68}
+	return file_api_proto_warren_proto_rawDescGZIP(), []int{72}
 }
 
 func (x *ReportContainerHealthRequest) GetContainerId() string {
@@ -4196,7 +4468,7 @@ type ReportContainerHealthResponse struct {
 
 func (x *ReportContainerHealthResponse) Reset() {
 	*x = ReportContainerHealthResponse{}
-	mi := &file_api_proto_warren_proto_msgTypes[69]
+	mi := &file_api_proto_warren_proto_msgTypes[73]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4208,7 +4480,7 @@ func (x *ReportContainerHealthResponse) String() string {
 func (*ReportContainerHealthResponse) ProtoMessage() {}
 
 func (x *ReportContainerHealthResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_warren_proto_msgTypes[69]
+	mi := &file_api_proto_warren_proto_msgTypes[73]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4221,7 +4493,7 @@ func (x *ReportContainerHealthResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReportContainerHealthResponse.ProtoReflect.Descriptor instead.
 func (*ReportContainerHealthResponse) Descriptor() ([]byte, []int) {
-	return file_api_proto_warren_proto_rawDescGZIP(), []int{69}
+	return file_api_proto_warren_proto_rawDescGZIP(), []int{73}
 }
 
 func (x *ReportContainerHealthResponse) GetStatus() string {
@@ -4245,7 +4517,7 @@ type Event struct {
 
 func (x *Event) Reset() {
 	*x = Event{}
-	mi := &file_api_proto_warren_proto_msgTypes[70]
+	mi := &file_api_proto_warren_proto_msgTypes[74]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4257,7 +4529,7 @@ func (x *Event) String() string {
 func (*Event) ProtoMessage() {}
 
 func (x *Event) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_warren_proto_msgTypes[70]
+	mi := &file_api_proto_warren_proto_msgTypes[74]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4270,7 +4542,7 @@ func (x *Event) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Event.ProtoReflect.Descriptor instead.
 func (*Event) Descriptor() ([]byte, []int) {
-	return file_api_proto_warren_proto_rawDescGZIP(), []int{70}
+	return file_api_proto_warren_proto_rawDescGZIP(), []int{74}
 }
 
 func (x *Event) GetId() string {
@@ -4317,7 +4589,7 @@ type StreamEventsRequest struct {
 
 func (x *StreamEventsRequest) Reset() {
 	*x = StreamEventsRequest{}
-	mi := &file_api_proto_warren_proto_msgTypes[71]
+	mi := &file_api_proto_warren_proto_msgTypes[75]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4329,7 +4601,7 @@ func (x *StreamEventsRequest) String() string {
 func (*StreamEventsRequest) ProtoMessage() {}
 
 func (x *StreamEventsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_warren_proto_msgTypes[71]
+	mi := &file_api_proto_warren_proto_msgTypes[75]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4342,7 +4614,7 @@ func (x *StreamEventsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StreamEventsRequest.ProtoReflect.Descriptor instead.
 func (*StreamEventsRequest) Descriptor() ([]byte, []int) {
-	return file_api_proto_warren_proto_rawDescGZIP(), []int{71}
+	return file_api_proto_warren_proto_rawDescGZIP(), []int{75}
 }
 
 func (x *StreamEventsRequest) GetEventTypes() []string {
@@ -4363,7 +4635,7 @@ type RequestCertificateRequest struct {
 
 func (x *RequestCertificateRequest) Reset() {
 	*x = RequestCertificateRequest{}
-	mi := &file_api_proto_warren_proto_msgTypes[72]
+	mi := &file_api_proto_warren_proto_msgTypes[76]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4375,7 +4647,7 @@ func (x *RequestCertificateRequest) String() string {
 func (*RequestCertificateRequest) ProtoMessage() {}
 
 func (x *RequestCertificateRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_warren_proto_msgTypes[72]
+	mi := &file_api_proto_warren_proto_msgTypes[76]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4388,7 +4660,7 @@ func (x *RequestCertificateRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RequestCertificateRequest.ProtoReflect.Descriptor instead.
 func (*RequestCertificateRequest) Descriptor() ([]byte, []int) {
-	return file_api_proto_warren_proto_rawDescGZIP(), []int{72}
+	return file_api_proto_warren_proto_rawDescGZIP(), []int{76}
 }
 
 func (x *RequestCertificateRequest) GetNodeId() string {
@@ -4416,7 +4688,7 @@ type RequestCertificateResponse struct {
 
 func (x *RequestCertificateResponse) Reset() {
 	*x = RequestCertificateResponse{}
-	mi := &file_api_proto_warren_proto_msgTypes[73]
+	mi := &file_api_proto_warren_proto_msgTypes[77]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4428,7 +4700,7 @@ func (x *RequestCertificateResponse) String() string {
 func (*RequestCertificateResponse) ProtoMessage() {}
 
 func (x *RequestCertificateResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_warren_proto_msgTypes[73]
+	mi := &file_api_proto_warren_proto_msgTypes[77]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4441,7 +4713,7 @@ func (x *RequestCertificateResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RequestCertificateResponse.ProtoReflect.Descriptor instead.
 func (*RequestCertificateResponse) Descriptor() ([]byte, []int) {
-	return file_api_proto_warren_proto_rawDescGZIP(), []int{73}
+	return file_api_proto_warren_proto_rawDescGZIP(), []int{77}
 }
 
 func (x *RequestCertificateResponse) GetCertificate() []byte {
@@ -4481,7 +4753,7 @@ type Ingress struct {
 
 func (x *Ingress) Reset() {
 	*x = Ingress{}
-	mi := &file_api_proto_warren_proto_msgTypes[74]
+	mi := &file_api_proto_warren_proto_msgTypes[78]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4493,7 +4765,7 @@ func (x *Ingress) String() string {
 func (*Ingress) ProtoMessage() {}
 
 func (x *Ingress) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_warren_proto_msgTypes[74]
+	mi := &file_api_proto_warren_proto_msgTypes[78]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4506,7 +4778,7 @@ func (x *Ingress) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Ingress.ProtoReflect.Descriptor instead.
 func (*Ingress) Descriptor() ([]byte, []int) {
-	return file_api_proto_warren_proto_rawDescGZIP(), []int{74}
+	return file_api_proto_warren_proto_rawDescGZIP(), []int{78}
 }
 
 func (x *Ingress) GetId() string {
@@ -4568,7 +4840,7 @@ type IngressRule struct {
 
 func (x *IngressRule) Reset() {
 	*x = IngressRule{}
-	mi := &file_api_proto_warren_proto_msgTypes[75]
+	mi := &file_api_proto_warren_proto_msgTypes[79]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4580,7 +4852,7 @@ func (x *IngressRule) String() string {
 func (*IngressRule) ProtoMessage() {}
 
 func (x *IngressRule) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_warren_proto_msgTypes[75]
+	mi := &file_api_proto_warren_proto_msgTypes[79]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4593,7 +4865,7 @@ func (x *IngressRule) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use IngressRule.ProtoReflect.Descriptor instead.
 func (*IngressRule) Descriptor() ([]byte, []int) {
-	return file_api_proto_warren_proto_rawDescGZIP(), []int{75}
+	return file_api_proto_warren_proto_rawDescGZIP(), []int{79}
 }
 
 func (x *IngressRule) GetHost() string {
@@ -4621,7 +4893,7 @@ type IngressPath struct {
 
 func (x *IngressPath) Reset() {
 	*x = IngressPath{}
-	mi := &file_api_proto_warren_proto_msgTypes[76]
+	mi := &file_api_proto_warren_proto_msgTypes[80]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4633,7 +4905,7 @@ func (x *IngressPath) String() string {
 func (*IngressPath) ProtoMessage() {}
 
 func (x *IngressPath) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_warren_proto_msgTypes[76]
+	mi := &file_api_proto_warren_proto_msgTypes[80]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4646,7 +4918,7 @@ func (x *IngressPath) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use IngressPath.ProtoReflect.Descriptor instead.
 func (*IngressPath) Descriptor() ([]byte, []int) {
-	return file_api_proto_warren_proto_rawDescGZIP(), []int{76}
+	return file_api_proto_warren_proto_rawDescGZIP(), []int{80}
 }
 
 func (x *IngressPath) GetPath() string {
@@ -4680,7 +4952,7 @@ type IngressBackend struct {
 
 func (x *IngressBackend) Reset() {
 	*x = IngressBackend{}
-	mi := &file_api_proto_warren_proto_msgTypes[77]
+	mi := &file_api_proto_warren_proto_msgTypes[81]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4692,7 +4964,7 @@ func (x *IngressBackend) String() string {
 func (*IngressBackend) ProtoMessage() {}
 
 func (x *IngressBackend) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_warren_proto_msgTypes[77]
+	mi := &file_api_proto_warren_proto_msgTypes[81]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4705,7 +4977,7 @@ func (x *IngressBackend) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use IngressBackend.ProtoReflect.Descriptor instead.
 func (*IngressBackend) Descriptor() ([]byte, []int) {
-	return file_api_proto_warren_proto_rawDescGZIP(), []int{77}
+	return file_api_proto_warren_proto_rawDescGZIP(), []int{81}
 }
 
 func (x *IngressBackend) GetServiceName() string {
@@ -4735,7 +5007,7 @@ type IngressTLS struct {
 
 func (x *IngressTLS) Reset() {
 	*x = IngressTLS{}
-	mi := &file_api_proto_warren_proto_msgTypes[78]
+	mi := &file_api_proto_warren_proto_msgTypes[82]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4747,7 +5019,7 @@ func (x *IngressTLS) String() string {
 func (*IngressTLS) ProtoMessage() {}
 
 func (x *IngressTLS) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_warren_proto_msgTypes[78]
+	mi := &file_api_proto_warren_proto_msgTypes[82]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4760,7 +5032,7 @@ func (x *IngressTLS) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use IngressTLS.ProtoReflect.Descriptor instead.
 func (*IngressTLS) Descriptor() ([]byte, []int) {
-	return file_api_proto_warren_proto_rawDescGZIP(), []int{78}
+	return file_api_proto_warren_proto_rawDescGZIP(), []int{82}
 }
 
 func (x *IngressTLS) GetEnabled() bool {
@@ -4810,7 +5082,7 @@ type CreateIngressRequest struct {
 
 func (x *CreateIngressRequest) Reset() {
 	*x = CreateIngressRequest{}
-	mi := &file_api_proto_warren_proto_msgTypes[79]
+	mi := &file_api_proto_warren_proto_msgTypes[83]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4822,7 +5094,7 @@ func (x *CreateIngressRequest) String() string {
 func (*CreateIngressRequest) ProtoMessage() {}
 
 func (x *CreateIngressRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_warren_proto_msgTypes[79]
+	mi := &file_api_proto_warren_proto_msgTypes[83]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4835,7 +5107,7 @@ func (x *CreateIngressRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateIngressRequest.ProtoReflect.Descriptor instead.
 func (*CreateIngressRequest) Descriptor() ([]byte, []int) {
-	return file_api_proto_warren_proto_rawDescGZIP(), []int{79}
+	return file_api_proto_warren_proto_rawDescGZIP(), []int{83}
 }
 
 func (x *CreateIngressRequest) GetName() string {
@@ -4875,7 +5147,7 @@ type CreateIngressResponse struct {
 
 func (x *CreateIngressResponse) Reset() {
 	*x = CreateIngressResponse{}
-	mi := &file_api_proto_warren_proto_msgTypes[80]
+	mi := &file_api_proto_warren_proto_msgTypes[84]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4887,7 +5159,7 @@ func (x *CreateIngressResponse) String() string {
 func (*CreateIngressResponse) ProtoMessage() {}
 
 func (x *CreateIngressResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_warren_proto_msgTypes[80]
+	mi := &file_api_proto_warren_proto_msgTypes[84]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4900,7 +5172,7 @@ func (x *CreateIngressResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateIngressResponse.ProtoReflect.Descriptor instead.
 func (*CreateIngressResponse) Descriptor() ([]byte, []int) {
-	return file_api_proto_warren_proto_rawDescGZIP(), []int{80}
+	return file_api_proto_warren_proto_rawDescGZIP(), []int{84}
 }
 
 func (x *CreateIngressResponse) GetIngress() *Ingress {
@@ -4923,7 +5195,7 @@ type UpdateIngressRequest struct {
 
 func (x *UpdateIngressRequest) Reset() {
 	*x = UpdateIngressRequest{}
-	mi := &file_api_proto_warren_proto_msgTypes[81]
+	mi := &file_api_proto_warren_proto_msgTypes[85]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4935,7 +5207,7 @@ func (x *UpdateIngressRequest) String() string {
 func (*UpdateIngressRequest) ProtoMessage() {}
 
 func (x *UpdateIngressRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_warren_proto_msgTypes[81]
+	mi := &file_api_proto_warren_proto_msgTypes[85]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4948,7 +5220,7 @@ func (x *UpdateIngressRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateIngressRequest.ProtoReflect.Descriptor instead.
 func (*UpdateIngressRequest) Descriptor() ([]byte, []int) {
-	return file_api_proto_warren_proto_rawDescGZIP(), []int{81}
+	return file_api_proto_warren_proto_rawDescGZIP(), []int{85}
 }
 
 func (x *UpdateIngressRequest) GetId() string {
@@ -4995,7 +5267,7 @@ type UpdateIngressResponse struct {
 
 func (x *UpdateIngressResponse) Reset() {
 	*x = UpdateIngressResponse{}
-	mi := &file_api_proto_warren_proto_msgTypes[82]
+	mi := &file_api_proto_warren_proto_msgTypes[86]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5007,7 +5279,7 @@ func (x *UpdateIngressResponse) String() string {
 func (*UpdateIngressResponse) ProtoMessage() {}
 
 func (x *UpdateIngressResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_warren_proto_msgTypes[82]
+	mi := &file_api_proto_warren_proto_msgTypes[86]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5020,7 +5292,7 @@ func (x *UpdateIngressResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateIngressResponse.ProtoReflect.Descriptor instead.
 func (*UpdateIngressResponse) Descriptor() ([]byte, []int) {
-	return file_api_proto_warren_proto_rawDescGZIP(), []int{82}
+	return file_api_proto_warren_proto_rawDescGZIP(), []int{86}
 }
 
 func (x *UpdateIngressResponse) GetIngress() *Ingress {
@@ -5040,7 +5312,7 @@ type DeleteIngressRequest struct {
 
 func (x *DeleteIngressRequest) Reset() {
 	*x = DeleteIngressRequest{}
-	mi := &file_api_proto_warren_proto_msgTypes[83]
+	mi := &file_api_proto_warren_proto_msgTypes[87]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5052,7 +5324,7 @@ func (x *DeleteIngressRequest) String() string {
 func (*DeleteIngressRequest) ProtoMessage() {}
 
 func (x *DeleteIngressRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_warren_proto_msgTypes[83]
+	mi := &file_api_proto_warren_proto_msgTypes[87]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5065,7 +5337,7 @@ func (x *DeleteIngressRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteIngressRequest.ProtoReflect.Descriptor instead.
 func (*DeleteIngressRequest) Descriptor() ([]byte, []int) {
-	return file_api_proto_warren_proto_rawDescGZIP(), []int{83}
+	return file_api_proto_warren_proto_rawDescGZIP(), []int{87}
 }
 
 func (x *DeleteIngressRequest) GetId() string {
@@ -5091,7 +5363,7 @@ type DeleteIngressResponse struct {
 
 func (x *DeleteIngressResponse) Reset() {
 	*x = DeleteIngressResponse{}
-	mi := &file_api_proto_warren_proto_msgTypes[84]
+	mi := &file_api_proto_warren_proto_msgTypes[88]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5103,7 +5375,7 @@ func (x *DeleteIngressResponse) String() string {
 func (*DeleteIngressResponse) ProtoMessage() {}
 
 func (x *DeleteIngressResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_warren_proto_msgTypes[84]
+	mi := &file_api_proto_warren_proto_msgTypes[88]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5116,7 +5388,7 @@ func (x *DeleteIngressResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteIngressResponse.ProtoReflect.Descriptor instead.
 func (*DeleteIngressResponse) Descriptor() ([]byte, []int) {
-	return file_api_proto_warren_proto_rawDescGZIP(), []int{84}
+	return file_api_proto_warren_proto_rawDescGZIP(), []int{88}
 }
 
 func (x *DeleteIngressResponse) GetStatus() string {
@@ -5136,7 +5408,7 @@ type GetIngressRequest struct {
 
 func (x *GetIngressRequest) Reset() {
 	*x = GetIngressRequest{}
-	mi := &file_api_proto_warren_proto_msgTypes[85]
+	mi := &file_api_proto_warren_proto_msgTypes[89]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5148,7 +5420,7 @@ func (x *GetIngressRequest) String() string {
 func (*GetIngressRequest) ProtoMessage() {}
 
 func (x *GetIngressRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_warren_proto_msgTypes[85]
+	mi := &file_api_proto_warren_proto_msgTypes[89]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5161,7 +5433,7 @@ func (x *GetIngressRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetIngressRequest.ProtoReflect.Descriptor instead.
 func (*GetIngressRequest) Descriptor() ([]byte, []int) {
-	return file_api_proto_warren_proto_rawDescGZIP(), []int{85}
+	return file_api_proto_warren_proto_rawDescGZIP(), []int{89}
 }
 
 func (x *GetIngressRequest) GetId() string {
@@ -5187,7 +5459,7 @@ type GetIngressResponse struct {
 
 func (x *GetIngressResponse) Reset() {
 	*x = GetIngressResponse{}
-	mi := &file_api_proto_warren_proto_msgTypes[86]
+	mi := &file_api_proto_warren_proto_msgTypes[90]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5199,7 +5471,7 @@ func (x *GetIngressResponse) String() string {
 func (*GetIngressResponse) ProtoMessage() {}
 
 func (x *GetIngressResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_warren_proto_msgTypes[86]
+	mi := &file_api_proto_warren_proto_msgTypes[90]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5212,7 +5484,7 @@ func (x *GetIngressResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetIngressResponse.ProtoReflect.Descriptor instead.
 func (*GetIngressResponse) Descriptor() ([]byte, []int) {
-	return file_api_proto_warren_proto_rawDescGZIP(), []int{86}
+	return file_api_proto_warren_proto_rawDescGZIP(), []int{90}
 }
 
 func (x *GetIngressResponse) GetIngress() *Ingress {
@@ -5230,7 +5502,7 @@ type ListIngressesRequest struct {
 
 func (x *ListIngressesRequest) Reset() {
 	*x = ListIngressesRequest{}
-	mi := &file_api_proto_warren_proto_msgTypes[87]
+	mi := &file_api_proto_warren_proto_msgTypes[91]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5242,7 +5514,7 @@ func (x *ListIngressesRequest) String() string {
 func (*ListIngressesRequest) ProtoMessage() {}
 
 func (x *ListIngressesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_warren_proto_msgTypes[87]
+	mi := &file_api_proto_warren_proto_msgTypes[91]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5255,7 +5527,7 @@ func (x *ListIngressesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListIngressesRequest.ProtoReflect.Descriptor instead.
 func (*ListIngressesRequest) Descriptor() ([]byte, []int) {
-	return file_api_proto_warren_proto_rawDescGZIP(), []int{87}
+	return file_api_proto_warren_proto_rawDescGZIP(), []int{91}
 }
 
 type ListIngressesResponse struct {
@@ -5267,7 +5539,7 @@ type ListIngressesResponse struct {
 
 func (x *ListIngressesResponse) Reset() {
 	*x = ListIngressesResponse{}
-	mi := &file_api_proto_warren_proto_msgTypes[88]
+	mi := &file_api_proto_warren_proto_msgTypes[92]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5279,7 +5551,7 @@ func (x *ListIngressesResponse) String() string {
 func (*ListIngressesResponse) ProtoMessage() {}
 
 func (x *ListIngressesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_warren_proto_msgTypes[88]
+	mi := &file_api_proto_warren_proto_msgTypes[92]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5292,7 +5564,7 @@ func (x *ListIngressesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListIngressesResponse.ProtoReflect.Descriptor instead.
 func (*ListIngressesResponse) Descriptor() ([]byte, []int) {
-	return file_api_proto_warren_proto_rawDescGZIP(), []int{88}
+	return file_api_proto_warren_proto_rawDescGZIP(), []int{92}
 }
 
 func (x *ListIngressesResponse) GetIngresses() []*Ingress {
@@ -5322,7 +5594,7 @@ type TLSCertificate struct {
 
 func (x *TLSCertificate) Reset() {
 	*x = TLSCertificate{}
-	mi := &file_api_proto_warren_proto_msgTypes[89]
+	mi := &file_api_proto_warren_proto_msgTypes[93]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5334,7 +5606,7 @@ func (x *TLSCertificate) String() string {
 func (*TLSCertificate) ProtoMessage() {}
 
 func (x *TLSCertificate) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_warren_proto_msgTypes[89]
+	mi := &file_api_proto_warren_proto_msgTypes[93]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5347,7 +5619,7 @@ func (x *TLSCertificate) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TLSCertificate.ProtoReflect.Descriptor instead.
 func (*TLSCertificate) Descriptor() ([]byte, []int) {
-	return file_api_proto_warren_proto_rawDescGZIP(), []int{89}
+	return file_api_proto_warren_proto_rawDescGZIP(), []int{93}
 }
 
 func (x *TLSCertificate) GetId() string {
@@ -5447,7 +5719,7 @@ type CreateTLSCertificateRequest struct {
 
 func (x *CreateTLSCertificateRequest) Reset() {
 	*x = CreateTLSCertificateRequest{}
-	mi := &file_api_proto_warren_proto_msgTypes[90]
+	mi := &file_api_proto_warren_proto_msgTypes[94]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5459,7 +5731,7 @@ func (x *CreateTLSCertificateRequest) String() string {
 func (*CreateTLSCertificateRequest) ProtoMessage() {}
 
 func (x *CreateTLSCertificateRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_warren_proto_msgTypes[90]
+	mi := &file_api_proto_warren_proto_msgTypes[94]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5472,7 +5744,7 @@ func (x *CreateTLSCertificateRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateTLSCertificateRequest.ProtoReflect.Descriptor instead.
 func (*CreateTLSCertificateRequest) Descriptor() ([]byte, []int) {
-	return file_api_proto_warren_proto_rawDescGZIP(), []int{90}
+	return file_api_proto_warren_proto_rawDescGZIP(), []int{94}
 }
 
 func (x *CreateTLSCertificateRequest) GetName() string {
@@ -5519,7 +5791,7 @@ type CreateTLSCertificateResponse struct {
 
 func (x *CreateTLSCertificateResponse) Reset() {
 	*x = CreateTLSCertificateResponse{}
-	mi := &file_api_proto_warren_proto_msgTypes[91]
+	mi := &file_api_proto_warren_proto_msgTypes[95]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5531,7 +5803,7 @@ func (x *CreateTLSCertificateResponse) String() string {
 func (*CreateTLSCertificateResponse) ProtoMessage() {}
 
 func (x *CreateTLSCertificateResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_warren_proto_msgTypes[91]
+	mi := &file_api_proto_warren_proto_msgTypes[95]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5544,7 +5816,7 @@ func (x *CreateTLSCertificateResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateTLSCertificateResponse.ProtoReflect.Descriptor instead.
 func (*CreateTLSCertificateResponse) Descriptor() ([]byte, []int) {
-	return file_api_proto_warren_proto_rawDescGZIP(), []int{91}
+	return file_api_proto_warren_proto_rawDescGZIP(), []int{95}
 }
 
 func (x *CreateTLSCertificateResponse) GetCertificate() *TLSCertificate {
@@ -5564,7 +5836,7 @@ type GetTLSCertificateRequest struct {
 
 func (x *GetTLSCertificateRequest) Reset() {
 	*x = GetTLSCertificateRequest{}
-	mi := &file_api_proto_warren_proto_msgTypes[92]
+	mi := &file_api_proto_warren_proto_msgTypes[96]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5576,7 +5848,7 @@ func (x *GetTLSCertificateRequest) String() string {
 func (*GetTLSCertificateRequest) ProtoMessage() {}
 
 func (x *GetTLSCertificateRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_warren_proto_msgTypes[92]
+	mi := &file_api_proto_warren_proto_msgTypes[96]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5589,7 +5861,7 @@ func (x *GetTLSCertificateRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetTLSCertificateRequest.ProtoReflect.Descriptor instead.
 func (*GetTLSCertificateRequest) Descriptor() ([]byte, []int) {
-	return file_api_proto_warren_proto_rawDescGZIP(), []int{92}
+	return file_api_proto_warren_proto_rawDescGZIP(), []int{96}
 }
 
 func (x *GetTLSCertificateRequest) GetId() string {
@@ -5615,7 +5887,7 @@ type GetTLSCertificateResponse struct {
 
 func (x *GetTLSCertificateResponse) Reset() {
 	*x = GetTLSCertificateResponse{}
-	mi := &file_api_proto_warren_proto_msgTypes[93]
+	mi := &file_api_proto_warren_proto_msgTypes[97]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5627,7 +5899,7 @@ func (x *GetTLSCertificateResponse) String() string {
 func (*GetTLSCertificateResponse) ProtoMessage() {}
 
 func (x *GetTLSCertificateResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_warren_proto_msgTypes[93]
+	mi := &file_api_proto_warren_proto_msgTypes[97]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5640,7 +5912,7 @@ func (x *GetTLSCertificateResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetTLSCertificateResponse.ProtoReflect.Descriptor instead.
 func (*GetTLSCertificateResponse) Descriptor() ([]byte, []int) {
-	return file_api_proto_warren_proto_rawDescGZIP(), []int{93}
+	return file_api_proto_warren_proto_rawDescGZIP(), []int{97}
 }
 
 func (x *GetTLSCertificateResponse) GetCertificate() *TLSCertificate {
@@ -5658,7 +5930,7 @@ type ListTLSCertificatesRequest struct {
 
 func (x *ListTLSCertificatesRequest) Reset() {
 	*x = ListTLSCertificatesRequest{}
-	mi := &file_api_proto_warren_proto_msgTypes[94]
+	mi := &file_api_proto_warren_proto_msgTypes[98]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5670,7 +5942,7 @@ func (x *ListTLSCertificatesRequest) String() string {
 func (*ListTLSCertificatesRequest) ProtoMessage() {}
 
 func (x *ListTLSCertificatesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_warren_proto_msgTypes[94]
+	mi := &file_api_proto_warren_proto_msgTypes[98]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5683,7 +5955,7 @@ func (x *ListTLSCertificatesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListTLSCertificatesRequest.ProtoReflect.Descriptor instead.
 func (*ListTLSCertificatesRequest) Descriptor() ([]byte, []int) {
-	return file_api_proto_warren_proto_rawDescGZIP(), []int{94}
+	return file_api_proto_warren_proto_rawDescGZIP(), []int{98}
 }
 
 type ListTLSCertificatesResponse struct {
@@ -5695,7 +5967,7 @@ type ListTLSCertificatesResponse struct {
 
 func (x *ListTLSCertificatesResponse) Reset() {
 	*x = ListTLSCertificatesResponse{}
-	mi := &file_api_proto_warren_proto_msgTypes[95]
+	mi := &file_api_proto_warren_proto_msgTypes[99]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5707,7 +5979,7 @@ func (x *ListTLSCertificatesResponse) String() string {
 func (*ListTLSCertificatesResponse) ProtoMessage() {}
 
 func (x *ListTLSCertificatesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_warren_proto_msgTypes[95]
+	mi := &file_api_proto_warren_proto_msgTypes[99]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5720,7 +5992,7 @@ func (x *ListTLSCertificatesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListTLSCertificatesResponse.ProtoReflect.Descriptor instead.
 func (*ListTLSCertificatesResponse) Descriptor() ([]byte, []int) {
-	return file_api_proto_warren_proto_rawDescGZIP(), []int{95}
+	return file_api_proto_warren_proto_rawDescGZIP(), []int{99}
 }
 
 func (x *ListTLSCertificatesResponse) GetCertificates() []*TLSCertificate {
@@ -5740,7 +6012,7 @@ type DeleteTLSCertificateRequest struct {
 
 func (x *DeleteTLSCertificateRequest) Reset() {
 	*x = DeleteTLSCertificateRequest{}
-	mi := &file_api_proto_warren_proto_msgTypes[96]
+	mi := &file_api_proto_warren_proto_msgTypes[100]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5752,7 +6024,7 @@ func (x *DeleteTLSCertificateRequest) String() string {
 func (*DeleteTLSCertificateRequest) ProtoMessage() {}
 
 func (x *DeleteTLSCertificateRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_warren_proto_msgTypes[96]
+	mi := &file_api_proto_warren_proto_msgTypes[100]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5765,7 +6037,7 @@ func (x *DeleteTLSCertificateRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteTLSCertificateRequest.ProtoReflect.Descriptor instead.
 func (*DeleteTLSCertificateRequest) Descriptor() ([]byte, []int) {
-	return file_api_proto_warren_proto_rawDescGZIP(), []int{96}
+	return file_api_proto_warren_proto_rawDescGZIP(), []int{100}
 }
 
 func (x *DeleteTLSCertificateRequest) GetId() string {
@@ -5791,7 +6063,7 @@ type DeleteTLSCertificateResponse struct {
 
 func (x *DeleteTLSCertificateResponse) Reset() {
 	*x = DeleteTLSCertificateResponse{}
-	mi := &file_api_proto_warren_proto_msgTypes[97]
+	mi := &file_api_proto_warren_proto_msgTypes[101]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5803,7 +6075,7 @@ func (x *DeleteTLSCertificateResponse) String() string {
 func (*DeleteTLSCertificateResponse) ProtoMessage() {}
 
 func (x *DeleteTLSCertificateResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_warren_proto_msgTypes[97]
+	mi := &file_api_proto_warren_proto_msgTypes[101]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5816,7 +6088,7 @@ func (x *DeleteTLSCertificateResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteTLSCertificateResponse.ProtoReflect.Descriptor instead.
 func (*DeleteTLSCertificateResponse) Descriptor() ([]byte, []int) {
-	return file_api_proto_warren_proto_rawDescGZIP(), []int{97}
+	return file_api_proto_warren_proto_rawDescGZIP(), []int{101}
 }
 
 func (x *DeleteTLSCertificateResponse) GetStatus() string {
@@ -5912,11 +6184,21 @@ const file_api_proto_warren_proto_rawDesc = "" +
 	"\fstop_timeout\x18\x12 \x01(\x05R\vstopTimeout\x1a6\n" +
 	"\bEnvEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"|\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xd1\x04\n" +
 	"\fUpdateConfig\x12 \n" +
 	"\vparallelism\x18\x01 \x01(\x05R\vparallelism\x12#\n" +
 	"\rdelay_seconds\x18\x02 \x01(\x05R\fdelaySeconds\x12%\n" +
-	"\x0efailure_action\x18\x03 \x01(\tR\rfailureAction\"\x90\x03\n" +
+	"\x0efailure_action\x18\x03 \x01(\tR\rfailureAction\x12\x1b\n" +
+	"\tmax_surge\x18\x04 \x01(\x05R\bmaxSurge\x12'\n" +
+	"\x0fmax_unavailable\x18\x05 \x01(\x05R\x0emaxUnavailable\x12H\n" +
+	"!health_check_grace_period_seconds\x18\x06 \x01(\x05R\x1dhealthCheckGracePeriodSeconds\x12#\n" +
+	"\rcanary_weight\x18\a \x01(\x05R\fcanaryWeight\x12!\n" +
+	"\fcanary_steps\x18\b \x03(\x05R\vcanarySteps\x12E\n" +
+	"\x1fcanary_stability_window_seconds\x18\t \x01(\x05R\x1ccanaryStabilityWindowSeconds\x12D\n" +
+	"\x1fblue_green_grace_period_seconds\x18\n" +
+	" \x01(\x05R\x1bblueGreenGracePeriodSeconds\x122\n" +
+	"\x15auto_rollback_enabled\x18\v \x01(\bR\x13autoRollbackEnabled\x12:\n" +
+	"\x19failure_threshold_percent\x18\f \x01(\x05R\x17failureThresholdPercent\"\x90\x03\n" +
 	"\vHealthCheck\x12/\n" +
 	"\x04type\x18\x01 \x01(\x0e2\x1b.warren.v1.HealthCheck.TypeR\x04type\x12.\n" +
 	"\x04http\x18\x02 \x01(\v2\x1a.warren.v1.HTTPHealthCheckR\x04http\x12+\n" +
@@ -5997,7 +6279,18 @@ const file_api_proto_warren_proto_rawDesc = "" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"E\n" +
 	"\x15UpdateServiceResponse\x12,\n" +
-	"\aservice\x18\x01 \x01(\v2\x12.warren.v1.ServiceR\aservice\"&\n" +
+	"\aservice\x18\x01 \x01(\v2\x12.warren.v1.ServiceR\aservice\"\x9b\x01\n" +
+	"\x19UpdateServiceImageRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
+	"\x05image\x18\x02 \x01(\tR\x05image\x12\x1a\n" +
+	"\bstrategy\x18\x03 \x01(\tR\bstrategy\x12<\n" +
+	"\rupdate_config\x18\x04 \x01(\v2\x17.warren.v1.UpdateConfigR\fupdateConfig\"4\n" +
+	"\x1aUpdateServiceImageResponse\x12\x16\n" +
+	"\x06status\x18\x01 \x01(\tR\x06status\"(\n" +
+	"\x16RollbackServiceRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\"1\n" +
+	"\x17RollbackServiceResponse\x12\x16\n" +
+	"\x06status\x18\x01 \x01(\tR\x06status\"&\n" +
 	"\x14DeleteServiceRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\"/\n" +
 	"\x15DeleteServiceResponse\x12\x16\n" +
@@ -6291,7 +6584,7 @@ const file_api_proto_warren_proto_rawDesc = "" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\"6\n" +
 	"\x1cDeleteTLSCertificateResponse\x12\x16\n" +
-	"\x06status\x18\x01 \x01(\tR\x06status2\xd7\x18\n" +
+	"\x06status\x18\x01 \x01(\tR\x06status2\x94\x1a\n" +
 	"\tWarrenAPI\x12O\n" +
 	"\fRegisterNode\x12\x1e.warren.v1.RegisterNodeRequest\x1a\x1f.warren.v1.RegisterNodeResponse\x12F\n" +
 	"\tHeartbeat\x12\x1b.warren.v1.HeartbeatRequest\x1a\x1c.warren.v1.HeartbeatResponse\x12F\n" +
@@ -6300,7 +6593,9 @@ const file_api_proto_warren_proto_rawDesc = "" +
 	"\n" +
 	"RemoveNode\x12\x1c.warren.v1.RemoveNodeRequest\x1a\x1d.warren.v1.RemoveNodeResponse\x12R\n" +
 	"\rCreateService\x12\x1f.warren.v1.CreateServiceRequest\x1a .warren.v1.CreateServiceResponse\x12R\n" +
-	"\rUpdateService\x12\x1f.warren.v1.UpdateServiceRequest\x1a .warren.v1.UpdateServiceResponse\x12R\n" +
+	"\rUpdateService\x12\x1f.warren.v1.UpdateServiceRequest\x1a .warren.v1.UpdateServiceResponse\x12a\n" +
+	"\x12UpdateServiceImage\x12$.warren.v1.UpdateServiceImageRequest\x1a%.warren.v1.UpdateServiceImageResponse\x12X\n" +
+	"\x0fRollbackService\x12!.warren.v1.RollbackServiceRequest\x1a\".warren.v1.RollbackServiceResponse\x12R\n" +
 	"\rDeleteService\x12\x1f.warren.v1.DeleteServiceRequest\x1a .warren.v1.DeleteServiceResponse\x12I\n" +
 	"\n" +
 	"GetService\x12\x1c.warren.v1.GetServiceRequest\x1a\x1d.warren.v1.GetServiceResponse\x12O\n" +
@@ -6347,7 +6642,7 @@ func file_api_proto_warren_proto_rawDescGZIP() []byte {
 }
 
 var file_api_proto_warren_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_api_proto_warren_proto_msgTypes = make([]protoimpl.MessageInfo, 114)
+var file_api_proto_warren_proto_msgTypes = make([]protoimpl.MessageInfo, 118)
 var file_api_proto_warren_proto_goTypes = []any{
 	(HealthCheck_Type)(0),                 // 0: warren.v1.HealthCheck.Type
 	(PortMapping_PublishMode)(0),          // 1: warren.v1.PortMapping.PublishMode
@@ -6379,101 +6674,105 @@ var file_api_proto_warren_proto_goTypes = []any{
 	(*CreateServiceResponse)(nil),         // 27: warren.v1.CreateServiceResponse
 	(*UpdateServiceRequest)(nil),          // 28: warren.v1.UpdateServiceRequest
 	(*UpdateServiceResponse)(nil),         // 29: warren.v1.UpdateServiceResponse
-	(*DeleteServiceRequest)(nil),          // 30: warren.v1.DeleteServiceRequest
-	(*DeleteServiceResponse)(nil),         // 31: warren.v1.DeleteServiceResponse
-	(*GetServiceRequest)(nil),             // 32: warren.v1.GetServiceRequest
-	(*GetServiceResponse)(nil),            // 33: warren.v1.GetServiceResponse
-	(*ListServicesRequest)(nil),           // 34: warren.v1.ListServicesRequest
-	(*ListServicesResponse)(nil),          // 35: warren.v1.ListServicesResponse
-	(*Container)(nil),                     // 36: warren.v1.Container
-	(*UpdateContainerStatusRequest)(nil),  // 37: warren.v1.UpdateContainerStatusRequest
-	(*UpdateContainerStatusResponse)(nil), // 38: warren.v1.UpdateContainerStatusResponse
-	(*ListContainersRequest)(nil),         // 39: warren.v1.ListContainersRequest
-	(*ListContainersResponse)(nil),        // 40: warren.v1.ListContainersResponse
-	(*GetContainerRequest)(nil),           // 41: warren.v1.GetContainerRequest
-	(*GetContainerResponse)(nil),          // 42: warren.v1.GetContainerResponse
-	(*WatchContainersRequest)(nil),        // 43: warren.v1.WatchContainersRequest
-	(*ContainerEvent)(nil),                // 44: warren.v1.ContainerEvent
-	(*Secret)(nil),                        // 45: warren.v1.Secret
-	(*CreateSecretRequest)(nil),           // 46: warren.v1.CreateSecretRequest
-	(*CreateSecretResponse)(nil),          // 47: warren.v1.CreateSecretResponse
-	(*DeleteSecretRequest)(nil),           // 48: warren.v1.DeleteSecretRequest
-	(*DeleteSecretResponse)(nil),          // 49: warren.v1.DeleteSecretResponse
-	(*GetSecretByNameRequest)(nil),        // 50: warren.v1.GetSecretByNameRequest
-	(*GetSecretByNameResponse)(nil),       // 51: warren.v1.GetSecretByNameResponse
-	(*ListSecretsRequest)(nil),            // 52: warren.v1.ListSecretsRequest
-	(*ListSecretsResponse)(nil),           // 53: warren.v1.ListSecretsResponse
-	(*Volume)(nil),                        // 54: warren.v1.Volume
-	(*CreateVolumeRequest)(nil),           // 55: warren.v1.CreateVolumeRequest
-	(*CreateVolumeResponse)(nil),          // 56: warren.v1.CreateVolumeResponse
-	(*DeleteVolumeRequest)(nil),           // 57: warren.v1.DeleteVolumeRequest
-	(*DeleteVolumeResponse)(nil),          // 58: warren.v1.DeleteVolumeResponse
-	(*GetVolumeByNameRequest)(nil),        // 59: warren.v1.GetVolumeByNameRequest
-	(*GetVolumeByNameResponse)(nil),       // 60: warren.v1.GetVolumeByNameResponse
-	(*ListVolumesRequest)(nil),            // 61: warren.v1.ListVolumesRequest
-	(*ListVolumesResponse)(nil),           // 62: warren.v1.ListVolumesResponse
-	(*GenerateJoinTokenRequest)(nil),      // 63: warren.v1.GenerateJoinTokenRequest
-	(*GenerateJoinTokenResponse)(nil),     // 64: warren.v1.GenerateJoinTokenResponse
-	(*JoinClusterRequest)(nil),            // 65: warren.v1.JoinClusterRequest
-	(*JoinClusterResponse)(nil),           // 66: warren.v1.JoinClusterResponse
-	(*GetClusterInfoRequest)(nil),         // 67: warren.v1.GetClusterInfoRequest
-	(*GetClusterInfoResponse)(nil),        // 68: warren.v1.GetClusterInfoResponse
-	(*ClusterServer)(nil),                 // 69: warren.v1.ClusterServer
-	(*ReportContainerHealthRequest)(nil),  // 70: warren.v1.ReportContainerHealthRequest
-	(*ReportContainerHealthResponse)(nil), // 71: warren.v1.ReportContainerHealthResponse
-	(*Event)(nil),                         // 72: warren.v1.Event
-	(*StreamEventsRequest)(nil),           // 73: warren.v1.StreamEventsRequest
-	(*RequestCertificateRequest)(nil),     // 74: warren.v1.RequestCertificateRequest
-	(*RequestCertificateResponse)(nil),    // 75: warren.v1.RequestCertificateResponse
-	(*Ingress)(nil),                       // 76: warren.v1.Ingress
-	(*IngressRule)(nil),                   // 77: warren.v1.IngressRule
-	(*IngressPath)(nil),                   // 78: warren.v1.IngressPath
-	(*IngressBackend)(nil),                // 79: warren.v1.IngressBackend
-	(*IngressTLS)(nil),                    // 80: warren.v1.IngressTLS
-	(*CreateIngressRequest)(nil),          // 81: warren.v1.CreateIngressRequest
-	(*CreateIngressResponse)(nil),         // 82: warren.v1.CreateIngressResponse
-	(*UpdateIngressRequest)(nil),          // 83: warren.v1.UpdateIngressRequest
-	(*UpdateIngressResponse)(nil),         // 84: warren.v1.UpdateIngressResponse
-	(*DeleteIngressRequest)(nil),          // 85: warren.v1.DeleteIngressRequest
-	(*DeleteIngressResponse)(nil),         // 86: warren.v1.DeleteIngressResponse
-	(*GetIngressRequest)(nil),             // 87: warren.v1.GetIngressRequest
-	(*GetIngressResponse)(nil),            // 88: warren.v1.GetIngressResponse
-	(*ListIngressesRequest)(nil),          // 89: warren.v1.ListIngressesRequest
-	(*ListIngressesResponse)(nil),         // 90: warren.v1.ListIngressesResponse
-	(*TLSCertificate)(nil),                // 91: warren.v1.TLSCertificate
-	(*CreateTLSCertificateRequest)(nil),   // 92: warren.v1.CreateTLSCertificateRequest
-	(*CreateTLSCertificateResponse)(nil),  // 93: warren.v1.CreateTLSCertificateResponse
-	(*GetTLSCertificateRequest)(nil),      // 94: warren.v1.GetTLSCertificateRequest
-	(*GetTLSCertificateResponse)(nil),     // 95: warren.v1.GetTLSCertificateResponse
-	(*ListTLSCertificatesRequest)(nil),    // 96: warren.v1.ListTLSCertificatesRequest
-	(*ListTLSCertificatesResponse)(nil),   // 97: warren.v1.ListTLSCertificatesResponse
-	(*DeleteTLSCertificateRequest)(nil),   // 98: warren.v1.DeleteTLSCertificateRequest
-	(*DeleteTLSCertificateResponse)(nil),  // 99: warren.v1.DeleteTLSCertificateResponse
-	nil,                                   // 100: warren.v1.Node.LabelsEntry
-	nil,                                   // 101: warren.v1.RegisterNodeRequest.LabelsEntry
-	nil,                                   // 102: warren.v1.Service.EnvEntry
-	nil,                                   // 103: warren.v1.CreateServiceRequest.EnvEntry
-	nil,                                   // 104: warren.v1.UpdateServiceRequest.EnvEntry
-	nil,                                   // 105: warren.v1.Container.EnvEntry
-	nil,                                   // 106: warren.v1.Volume.DriverOptsEntry
-	nil,                                   // 107: warren.v1.Volume.LabelsEntry
-	nil,                                   // 108: warren.v1.CreateVolumeRequest.DriverOptsEntry
-	nil,                                   // 109: warren.v1.CreateVolumeRequest.LabelsEntry
-	nil,                                   // 110: warren.v1.Event.MetadataEntry
-	nil,                                   // 111: warren.v1.Ingress.LabelsEntry
-	nil,                                   // 112: warren.v1.CreateIngressRequest.LabelsEntry
-	nil,                                   // 113: warren.v1.UpdateIngressRequest.LabelsEntry
-	nil,                                   // 114: warren.v1.TLSCertificate.LabelsEntry
-	nil,                                   // 115: warren.v1.CreateTLSCertificateRequest.LabelsEntry
-	(*timestamppb.Timestamp)(nil),         // 116: google.protobuf.Timestamp
+	(*UpdateServiceImageRequest)(nil),     // 30: warren.v1.UpdateServiceImageRequest
+	(*UpdateServiceImageResponse)(nil),    // 31: warren.v1.UpdateServiceImageResponse
+	(*RollbackServiceRequest)(nil),        // 32: warren.v1.RollbackServiceRequest
+	(*RollbackServiceResponse)(nil),       // 33: warren.v1.RollbackServiceResponse
+	(*DeleteServiceRequest)(nil),          // 34: warren.v1.DeleteServiceRequest
+	(*DeleteServiceResponse)(nil),         // 35: warren.v1.DeleteServiceResponse
+	(*GetServiceRequest)(nil),             // 36: warren.v1.GetServiceRequest
+	(*GetServiceResponse)(nil),            // 37: warren.v1.GetServiceResponse
+	(*ListServicesRequest)(nil),           // 38: warren.v1.ListServicesRequest
+	(*ListServicesResponse)(nil),          // 39: warren.v1.ListServicesResponse
+	(*Container)(nil),                     // 40: warren.v1.Container
+	(*UpdateContainerStatusRequest)(nil),  // 41: warren.v1.UpdateContainerStatusRequest
+	(*UpdateContainerStatusResponse)(nil), // 42: warren.v1.UpdateContainerStatusResponse
+	(*ListContainersRequest)(nil),         // 43: warren.v1.ListContainersRequest
+	(*ListContainersResponse)(nil),        // 44: warren.v1.ListContainersResponse
+	(*GetContainerRequest)(nil),           // 45: warren.v1.GetContainerRequest
+	(*GetContainerResponse)(nil),          // 46: warren.v1.GetContainerResponse
+	(*WatchContainersRequest)(nil),        // 47: warren.v1.WatchContainersRequest
+	(*ContainerEvent)(nil),                // 48: warren.v1.ContainerEvent
+	(*Secret)(nil),                        // 49: warren.v1.Secret
+	(*CreateSecretRequest)(nil),           // 50: warren.v1.CreateSecretRequest
+	(*CreateSecretResponse)(nil),          // 51: warren.v1.CreateSecretResponse
+	(*DeleteSecretRequest)(nil),           // 52: warren.v1.DeleteSecretRequest
+	(*DeleteSecretResponse)(nil),          // 53: warren.v1.DeleteSecretResponse
+	(*GetSecretByNameRequest)(nil),        // 54: warren.v1.GetSecretByNameRequest
+	(*GetSecretByNameResponse)(nil),       // 55: warren.v1.GetSecretByNameResponse
+	(*ListSecretsRequest)(nil),            // 56: warren.v1.ListSecretsRequest
+	(*ListSecretsResponse)(nil),           // 57: warren.v1.ListSecretsResponse
+	(*Volume)(nil),                        // 58: warren.v1.Volume
+	(*CreateVolumeRequest)(nil),           // 59: warren.v1.CreateVolumeRequest
+	(*CreateVolumeResponse)(nil),          // 60: warren.v1.CreateVolumeResponse
+	(*DeleteVolumeRequest)(nil),           // 61: warren.v1.DeleteVolumeRequest
+	(*DeleteVolumeResponse)(nil),          // 62: warren.v1.DeleteVolumeResponse
+	(*GetVolumeByNameRequest)(nil),        // 63: warren.v1.GetVolumeByNameRequest
+	(*GetVolumeByNameResponse)(nil),       // 64: warren.v1.GetVolumeByNameResponse
+	(*ListVolumesRequest)(nil),            // 65: warren.v1.ListVolumesRequest
+	(*ListVolumesResponse)(nil),           // 66: warren.v1.ListVolumesResponse
+	(*GenerateJoinTokenRequest)(nil),      // 67: warren.v1.GenerateJoinTokenRequest
+	(*GenerateJoinTokenResponse)(nil),     // 68: warren.v1.GenerateJoinTokenResponse
+	(*JoinClusterRequest)(nil),            // 69: warren.v1.JoinClusterRequest
+	(*JoinClusterResponse)(nil),           // 70: warren.v1.JoinClusterResponse
+	(*GetClusterInfoRequest)(nil),         // 71: warren.v1.GetClusterInfoRequest
+	(*GetClusterInfoResponse)(nil),        // 72: warren.v1.GetClusterInfoResponse
+	(*ClusterServer)(nil),                 // 73: warren.v1.ClusterServer
+	(*ReportContainerHealthRequest)(nil),  // 74: warren.v1.ReportContainerHealthRequest
+	(*ReportContainerHealthResponse)(nil), // 75: warren.v1.ReportContainerHealthResponse
+	(*Event)(nil),                         // 76: warren.v1.Event
+	(*StreamEventsRequest)(nil),           // 77: warren.v1.StreamEventsRequest
+	(*RequestCertificateRequest)(nil),     // 78: warren.v1.RequestCertificateRequest
+	(*RequestCertificateResponse)(nil),    // 79: warren.v1.RequestCertificateResponse
+	(*Ingress)(nil),                       // 80: warren.v1.Ingress
+	(*IngressRule)(nil),                   // 81: warren.v1.IngressRule
+	(*IngressPath)(nil),                   // 82: warren.v1.IngressPath
+	(*IngressBackend)(nil),                // 83: warren.v1.IngressBackend
+	(*IngressTLS)(nil),                    // 84: warren.v1.IngressTLS
+	(*CreateIngressRequest)(nil),          // 85: warren.v1.CreateIngressRequest
+	(*CreateIngressResponse)(nil),         // 86: warren.v1.CreateIngressResponse
+	(*UpdateIngressRequest)(nil),          // 87: warren.v1.UpdateIngressRequest
+	(*UpdateIngressResponse)(nil),         // 88: warren.v1.UpdateIngressResponse
+	(*DeleteIngressRequest)(nil),          // 89: warren.v1.DeleteIngressRequest
+	(*DeleteIngressResponse)(nil),         // 90: warren.v1.DeleteIngressResponse
+	(*GetIngressRequest)(nil),             // 91: warren.v1.GetIngressRequest
+	(*GetIngressResponse)(nil),            // 92: warren.v1.GetIngressResponse
+	(*ListIngressesRequest)(nil),          // 93: warren.v1.ListIngressesRequest
+	(*ListIngressesResponse)(nil),         // 94: warren.v1.ListIngressesResponse
+	(*TLSCertificate)(nil),                // 95: warren.v1.TLSCertificate
+	(*CreateTLSCertificateRequest)(nil),   // 96: warren.v1.CreateTLSCertificateRequest
+	(*CreateTLSCertificateResponse)(nil),  // 97: warren.v1.CreateTLSCertificateResponse
+	(*GetTLSCertificateRequest)(nil),      // 98: warren.v1.GetTLSCertificateRequest
+	(*GetTLSCertificateResponse)(nil),     // 99: warren.v1.GetTLSCertificateResponse
+	(*ListTLSCertificatesRequest)(nil),    // 100: warren.v1.ListTLSCertificatesRequest
+	(*ListTLSCertificatesResponse)(nil),   // 101: warren.v1.ListTLSCertificatesResponse
+	(*DeleteTLSCertificateRequest)(nil),   // 102: warren.v1.DeleteTLSCertificateRequest
+	(*DeleteTLSCertificateResponse)(nil),  // 103: warren.v1.DeleteTLSCertificateResponse
+	nil,                                   // 104: warren.v1.Node.LabelsEntry
+	nil,                                   // 105: warren.v1.RegisterNodeRequest.LabelsEntry
+	nil,                                   // 106: warren.v1.Service.EnvEntry
+	nil,                                   // 107: warren.v1.CreateServiceRequest.EnvEntry
+	nil,                                   // 108: warren.v1.UpdateServiceRequest.EnvEntry
+	nil,                                   // 109: warren.v1.Container.EnvEntry
+	nil,                                   // 110: warren.v1.Volume.DriverOptsEntry
+	nil,                                   // 111: warren.v1.Volume.LabelsEntry
+	nil,                                   // 112: warren.v1.CreateVolumeRequest.DriverOptsEntry
+	nil,                                   // 113: warren.v1.CreateVolumeRequest.LabelsEntry
+	nil,                                   // 114: warren.v1.Event.MetadataEntry
+	nil,                                   // 115: warren.v1.Ingress.LabelsEntry
+	nil,                                   // 116: warren.v1.CreateIngressRequest.LabelsEntry
+	nil,                                   // 117: warren.v1.UpdateIngressRequest.LabelsEntry
+	nil,                                   // 118: warren.v1.TLSCertificate.LabelsEntry
+	nil,                                   // 119: warren.v1.CreateTLSCertificateRequest.LabelsEntry
+	(*timestamppb.Timestamp)(nil),         // 120: google.protobuf.Timestamp
 }
 var file_api_proto_warren_proto_depIdxs = []int32{
 	3,   // 0: warren.v1.Node.resources:type_name -> warren.v1.NodeResources
-	116, // 1: warren.v1.Node.last_heartbeat:type_name -> google.protobuf.Timestamp
-	116, // 2: warren.v1.Node.created_at:type_name -> google.protobuf.Timestamp
-	100, // 3: warren.v1.Node.labels:type_name -> warren.v1.Node.LabelsEntry
+	120, // 1: warren.v1.Node.last_heartbeat:type_name -> google.protobuf.Timestamp
+	120, // 2: warren.v1.Node.created_at:type_name -> google.protobuf.Timestamp
+	104, // 3: warren.v1.Node.labels:type_name -> warren.v1.Node.LabelsEntry
 	3,   // 4: warren.v1.RegisterNodeRequest.resources:type_name -> warren.v1.NodeResources
-	101, // 5: warren.v1.RegisterNodeRequest.labels:type_name -> warren.v1.RegisterNodeRequest.LabelsEntry
+	105, // 5: warren.v1.RegisterNodeRequest.labels:type_name -> warren.v1.RegisterNodeRequest.LabelsEntry
 	2,   // 6: warren.v1.RegisterNodeResponse.node:type_name -> warren.v1.Node
 	3,   // 7: warren.v1.HeartbeatRequest.available_resources:type_name -> warren.v1.NodeResources
 	8,   // 8: warren.v1.HeartbeatRequest.container_statuses:type_name -> warren.v1.ContainerStatus
@@ -6484,9 +6783,9 @@ var file_api_proto_warren_proto_depIdxs = []int32{
 	22,  // 13: warren.v1.Service.restart_policy:type_name -> warren.v1.RestartPolicy
 	23,  // 14: warren.v1.Service.resources:type_name -> warren.v1.ResourceRequirements
 	24,  // 15: warren.v1.Service.volumes:type_name -> warren.v1.VolumeMount
-	102, // 16: warren.v1.Service.env:type_name -> warren.v1.Service.EnvEntry
-	116, // 17: warren.v1.Service.created_at:type_name -> google.protobuf.Timestamp
-	116, // 18: warren.v1.Service.updated_at:type_name -> google.protobuf.Timestamp
+	106, // 16: warren.v1.Service.env:type_name -> warren.v1.Service.EnvEntry
+	120, // 17: warren.v1.Service.created_at:type_name -> google.protobuf.Timestamp
+	120, // 18: warren.v1.Service.updated_at:type_name -> google.protobuf.Timestamp
 	25,  // 19: warren.v1.Service.ports:type_name -> warren.v1.PortMapping
 	0,   // 20: warren.v1.HealthCheck.type:type_name -> warren.v1.HealthCheck.Type
 	18,  // 21: warren.v1.HealthCheck.http:type_name -> warren.v1.HTTPHealthCheck
@@ -6499,145 +6798,150 @@ var file_api_proto_warren_proto_depIdxs = []int32{
 	22,  // 28: warren.v1.CreateServiceRequest.restart_policy:type_name -> warren.v1.RestartPolicy
 	23,  // 29: warren.v1.CreateServiceRequest.resources:type_name -> warren.v1.ResourceRequirements
 	24,  // 30: warren.v1.CreateServiceRequest.volumes:type_name -> warren.v1.VolumeMount
-	103, // 31: warren.v1.CreateServiceRequest.env:type_name -> warren.v1.CreateServiceRequest.EnvEntry
+	107, // 31: warren.v1.CreateServiceRequest.env:type_name -> warren.v1.CreateServiceRequest.EnvEntry
 	25,  // 32: warren.v1.CreateServiceRequest.ports:type_name -> warren.v1.PortMapping
 	15,  // 33: warren.v1.CreateServiceResponse.service:type_name -> warren.v1.Service
-	104, // 34: warren.v1.UpdateServiceRequest.env:type_name -> warren.v1.UpdateServiceRequest.EnvEntry
+	108, // 34: warren.v1.UpdateServiceRequest.env:type_name -> warren.v1.UpdateServiceRequest.EnvEntry
 	15,  // 35: warren.v1.UpdateServiceResponse.service:type_name -> warren.v1.Service
-	15,  // 36: warren.v1.GetServiceResponse.service:type_name -> warren.v1.Service
-	15,  // 37: warren.v1.ListServicesResponse.services:type_name -> warren.v1.Service
-	105, // 38: warren.v1.Container.env:type_name -> warren.v1.Container.EnvEntry
-	23,  // 39: warren.v1.Container.resources:type_name -> warren.v1.ResourceRequirements
-	24,  // 40: warren.v1.Container.volumes:type_name -> warren.v1.VolumeMount
-	17,  // 41: warren.v1.Container.health_check:type_name -> warren.v1.HealthCheck
-	22,  // 42: warren.v1.Container.restart_policy:type_name -> warren.v1.RestartPolicy
-	116, // 43: warren.v1.Container.created_at:type_name -> google.protobuf.Timestamp
-	116, // 44: warren.v1.Container.updated_at:type_name -> google.protobuf.Timestamp
-	36,  // 45: warren.v1.ListContainersResponse.containers:type_name -> warren.v1.Container
-	36,  // 46: warren.v1.GetContainerResponse.container:type_name -> warren.v1.Container
-	36,  // 47: warren.v1.ContainerEvent.container:type_name -> warren.v1.Container
-	116, // 48: warren.v1.Secret.created_at:type_name -> google.protobuf.Timestamp
-	45,  // 49: warren.v1.CreateSecretResponse.secret:type_name -> warren.v1.Secret
-	45,  // 50: warren.v1.GetSecretByNameResponse.secret:type_name -> warren.v1.Secret
-	45,  // 51: warren.v1.ListSecretsResponse.secrets:type_name -> warren.v1.Secret
-	106, // 52: warren.v1.Volume.driver_opts:type_name -> warren.v1.Volume.DriverOptsEntry
-	107, // 53: warren.v1.Volume.labels:type_name -> warren.v1.Volume.LabelsEntry
-	116, // 54: warren.v1.Volume.created_at:type_name -> google.protobuf.Timestamp
-	108, // 55: warren.v1.CreateVolumeRequest.driver_opts:type_name -> warren.v1.CreateVolumeRequest.DriverOptsEntry
-	109, // 56: warren.v1.CreateVolumeRequest.labels:type_name -> warren.v1.CreateVolumeRequest.LabelsEntry
-	54,  // 57: warren.v1.CreateVolumeResponse.volume:type_name -> warren.v1.Volume
-	54,  // 58: warren.v1.GetVolumeByNameResponse.volume:type_name -> warren.v1.Volume
-	54,  // 59: warren.v1.ListVolumesResponse.volumes:type_name -> warren.v1.Volume
-	116, // 60: warren.v1.GenerateJoinTokenResponse.expires_at:type_name -> google.protobuf.Timestamp
-	69,  // 61: warren.v1.GetClusterInfoResponse.servers:type_name -> warren.v1.ClusterServer
-	116, // 62: warren.v1.ReportContainerHealthRequest.checked_at:type_name -> google.protobuf.Timestamp
-	116, // 63: warren.v1.Event.timestamp:type_name -> google.protobuf.Timestamp
-	110, // 64: warren.v1.Event.metadata:type_name -> warren.v1.Event.MetadataEntry
-	77,  // 65: warren.v1.Ingress.rules:type_name -> warren.v1.IngressRule
-	80,  // 66: warren.v1.Ingress.tls:type_name -> warren.v1.IngressTLS
-	111, // 67: warren.v1.Ingress.labels:type_name -> warren.v1.Ingress.LabelsEntry
-	116, // 68: warren.v1.Ingress.created_at:type_name -> google.protobuf.Timestamp
-	116, // 69: warren.v1.Ingress.updated_at:type_name -> google.protobuf.Timestamp
-	78,  // 70: warren.v1.IngressRule.paths:type_name -> warren.v1.IngressPath
-	79,  // 71: warren.v1.IngressPath.backend:type_name -> warren.v1.IngressBackend
-	77,  // 72: warren.v1.CreateIngressRequest.rules:type_name -> warren.v1.IngressRule
-	80,  // 73: warren.v1.CreateIngressRequest.tls:type_name -> warren.v1.IngressTLS
-	112, // 74: warren.v1.CreateIngressRequest.labels:type_name -> warren.v1.CreateIngressRequest.LabelsEntry
-	76,  // 75: warren.v1.CreateIngressResponse.ingress:type_name -> warren.v1.Ingress
-	77,  // 76: warren.v1.UpdateIngressRequest.rules:type_name -> warren.v1.IngressRule
-	80,  // 77: warren.v1.UpdateIngressRequest.tls:type_name -> warren.v1.IngressTLS
-	113, // 78: warren.v1.UpdateIngressRequest.labels:type_name -> warren.v1.UpdateIngressRequest.LabelsEntry
-	76,  // 79: warren.v1.UpdateIngressResponse.ingress:type_name -> warren.v1.Ingress
-	76,  // 80: warren.v1.GetIngressResponse.ingress:type_name -> warren.v1.Ingress
-	76,  // 81: warren.v1.ListIngressesResponse.ingresses:type_name -> warren.v1.Ingress
-	116, // 82: warren.v1.TLSCertificate.not_before:type_name -> google.protobuf.Timestamp
-	116, // 83: warren.v1.TLSCertificate.not_after:type_name -> google.protobuf.Timestamp
-	114, // 84: warren.v1.TLSCertificate.labels:type_name -> warren.v1.TLSCertificate.LabelsEntry
-	116, // 85: warren.v1.TLSCertificate.created_at:type_name -> google.protobuf.Timestamp
-	116, // 86: warren.v1.TLSCertificate.updated_at:type_name -> google.protobuf.Timestamp
-	115, // 87: warren.v1.CreateTLSCertificateRequest.labels:type_name -> warren.v1.CreateTLSCertificateRequest.LabelsEntry
-	91,  // 88: warren.v1.CreateTLSCertificateResponse.certificate:type_name -> warren.v1.TLSCertificate
-	91,  // 89: warren.v1.GetTLSCertificateResponse.certificate:type_name -> warren.v1.TLSCertificate
-	91,  // 90: warren.v1.ListTLSCertificatesResponse.certificates:type_name -> warren.v1.TLSCertificate
-	4,   // 91: warren.v1.WarrenAPI.RegisterNode:input_type -> warren.v1.RegisterNodeRequest
-	6,   // 92: warren.v1.WarrenAPI.Heartbeat:input_type -> warren.v1.HeartbeatRequest
-	9,   // 93: warren.v1.WarrenAPI.ListNodes:input_type -> warren.v1.ListNodesRequest
-	11,  // 94: warren.v1.WarrenAPI.GetNode:input_type -> warren.v1.GetNodeRequest
-	13,  // 95: warren.v1.WarrenAPI.RemoveNode:input_type -> warren.v1.RemoveNodeRequest
-	26,  // 96: warren.v1.WarrenAPI.CreateService:input_type -> warren.v1.CreateServiceRequest
-	28,  // 97: warren.v1.WarrenAPI.UpdateService:input_type -> warren.v1.UpdateServiceRequest
-	30,  // 98: warren.v1.WarrenAPI.DeleteService:input_type -> warren.v1.DeleteServiceRequest
-	32,  // 99: warren.v1.WarrenAPI.GetService:input_type -> warren.v1.GetServiceRequest
-	34,  // 100: warren.v1.WarrenAPI.ListServices:input_type -> warren.v1.ListServicesRequest
-	37,  // 101: warren.v1.WarrenAPI.UpdateContainerStatus:input_type -> warren.v1.UpdateContainerStatusRequest
-	39,  // 102: warren.v1.WarrenAPI.ListContainers:input_type -> warren.v1.ListContainersRequest
-	41,  // 103: warren.v1.WarrenAPI.GetContainer:input_type -> warren.v1.GetContainerRequest
-	43,  // 104: warren.v1.WarrenAPI.WatchContainers:input_type -> warren.v1.WatchContainersRequest
-	70,  // 105: warren.v1.WarrenAPI.ReportContainerHealth:input_type -> warren.v1.ReportContainerHealthRequest
-	46,  // 106: warren.v1.WarrenAPI.CreateSecret:input_type -> warren.v1.CreateSecretRequest
-	50,  // 107: warren.v1.WarrenAPI.GetSecretByName:input_type -> warren.v1.GetSecretByNameRequest
-	48,  // 108: warren.v1.WarrenAPI.DeleteSecret:input_type -> warren.v1.DeleteSecretRequest
-	52,  // 109: warren.v1.WarrenAPI.ListSecrets:input_type -> warren.v1.ListSecretsRequest
-	55,  // 110: warren.v1.WarrenAPI.CreateVolume:input_type -> warren.v1.CreateVolumeRequest
-	59,  // 111: warren.v1.WarrenAPI.GetVolumeByName:input_type -> warren.v1.GetVolumeByNameRequest
-	57,  // 112: warren.v1.WarrenAPI.DeleteVolume:input_type -> warren.v1.DeleteVolumeRequest
-	61,  // 113: warren.v1.WarrenAPI.ListVolumes:input_type -> warren.v1.ListVolumesRequest
-	63,  // 114: warren.v1.WarrenAPI.GenerateJoinToken:input_type -> warren.v1.GenerateJoinTokenRequest
-	65,  // 115: warren.v1.WarrenAPI.JoinCluster:input_type -> warren.v1.JoinClusterRequest
-	67,  // 116: warren.v1.WarrenAPI.GetClusterInfo:input_type -> warren.v1.GetClusterInfoRequest
-	74,  // 117: warren.v1.WarrenAPI.RequestCertificate:input_type -> warren.v1.RequestCertificateRequest
-	81,  // 118: warren.v1.WarrenAPI.CreateIngress:input_type -> warren.v1.CreateIngressRequest
-	83,  // 119: warren.v1.WarrenAPI.UpdateIngress:input_type -> warren.v1.UpdateIngressRequest
-	85,  // 120: warren.v1.WarrenAPI.DeleteIngress:input_type -> warren.v1.DeleteIngressRequest
-	87,  // 121: warren.v1.WarrenAPI.GetIngress:input_type -> warren.v1.GetIngressRequest
-	89,  // 122: warren.v1.WarrenAPI.ListIngresses:input_type -> warren.v1.ListIngressesRequest
-	92,  // 123: warren.v1.WarrenAPI.CreateTLSCertificate:input_type -> warren.v1.CreateTLSCertificateRequest
-	94,  // 124: warren.v1.WarrenAPI.GetTLSCertificate:input_type -> warren.v1.GetTLSCertificateRequest
-	96,  // 125: warren.v1.WarrenAPI.ListTLSCertificates:input_type -> warren.v1.ListTLSCertificatesRequest
-	98,  // 126: warren.v1.WarrenAPI.DeleteTLSCertificate:input_type -> warren.v1.DeleteTLSCertificateRequest
-	73,  // 127: warren.v1.WarrenAPI.StreamEvents:input_type -> warren.v1.StreamEventsRequest
-	5,   // 128: warren.v1.WarrenAPI.RegisterNode:output_type -> warren.v1.RegisterNodeResponse
-	7,   // 129: warren.v1.WarrenAPI.Heartbeat:output_type -> warren.v1.HeartbeatResponse
-	10,  // 130: warren.v1.WarrenAPI.ListNodes:output_type -> warren.v1.ListNodesResponse
-	12,  // 131: warren.v1.WarrenAPI.GetNode:output_type -> warren.v1.GetNodeResponse
-	14,  // 132: warren.v1.WarrenAPI.RemoveNode:output_type -> warren.v1.RemoveNodeResponse
-	27,  // 133: warren.v1.WarrenAPI.CreateService:output_type -> warren.v1.CreateServiceResponse
-	29,  // 134: warren.v1.WarrenAPI.UpdateService:output_type -> warren.v1.UpdateServiceResponse
-	31,  // 135: warren.v1.WarrenAPI.DeleteService:output_type -> warren.v1.DeleteServiceResponse
-	33,  // 136: warren.v1.WarrenAPI.GetService:output_type -> warren.v1.GetServiceResponse
-	35,  // 137: warren.v1.WarrenAPI.ListServices:output_type -> warren.v1.ListServicesResponse
-	38,  // 138: warren.v1.WarrenAPI.UpdateContainerStatus:output_type -> warren.v1.UpdateContainerStatusResponse
-	40,  // 139: warren.v1.WarrenAPI.ListContainers:output_type -> warren.v1.ListContainersResponse
-	42,  // 140: warren.v1.WarrenAPI.GetContainer:output_type -> warren.v1.GetContainerResponse
-	44,  // 141: warren.v1.WarrenAPI.WatchContainers:output_type -> warren.v1.ContainerEvent
-	71,  // 142: warren.v1.WarrenAPI.ReportContainerHealth:output_type -> warren.v1.ReportContainerHealthResponse
-	47,  // 143: warren.v1.WarrenAPI.CreateSecret:output_type -> warren.v1.CreateSecretResponse
-	51,  // 144: warren.v1.WarrenAPI.GetSecretByName:output_type -> warren.v1.GetSecretByNameResponse
-	49,  // 145: warren.v1.WarrenAPI.DeleteSecret:output_type -> warren.v1.DeleteSecretResponse
-	53,  // 146: warren.v1.WarrenAPI.ListSecrets:output_type -> warren.v1.ListSecretsResponse
-	56,  // 147: warren.v1.WarrenAPI.CreateVolume:output_type -> warren.v1.CreateVolumeResponse
-	60,  // 148: warren.v1.WarrenAPI.GetVolumeByName:output_type -> warren.v1.GetVolumeByNameResponse
-	58,  // 149: warren.v1.WarrenAPI.DeleteVolume:output_type -> warren.v1.DeleteVolumeResponse
-	62,  // 150: warren.v1.WarrenAPI.ListVolumes:output_type -> warren.v1.ListVolumesResponse
-	64,  // 151: warren.v1.WarrenAPI.GenerateJoinToken:output_type -> warren.v1.GenerateJoinTokenResponse
-	66,  // 152: warren.v1.WarrenAPI.JoinCluster:output_type -> warren.v1.JoinClusterResponse
-	68,  // 153: warren.v1.WarrenAPI.GetClusterInfo:output_type -> warren.v1.GetClusterInfoResponse
-	75,  // 154: warren.v1.WarrenAPI.RequestCertificate:output_type -> warren.v1.RequestCertificateResponse
-	82,  // 155: warren.v1.WarrenAPI.CreateIngress:output_type -> warren.v1.CreateIngressResponse
-	84,  // 156: warren.v1.WarrenAPI.UpdateIngress:output_type -> warren.v1.UpdateIngressResponse
-	86,  // 157: warren.v1.WarrenAPI.DeleteIngress:output_type -> warren.v1.DeleteIngressResponse
-	88,  // 158: warren.v1.WarrenAPI.GetIngress:output_type -> warren.v1.GetIngressResponse
-	90,  // 159: warren.v1.WarrenAPI.ListIngresses:output_type -> warren.v1.ListIngressesResponse
-	93,  // 160: warren.v1.WarrenAPI.CreateTLSCertificate:output_type -> warren.v1.CreateTLSCertificateResponse
-	95,  // 161: warren.v1.WarrenAPI.GetTLSCertificate:output_type -> warren.v1.GetTLSCertificateResponse
-	97,  // 162: warren.v1.WarrenAPI.ListTLSCertificates:output_type -> warren.v1.ListTLSCertificatesResponse
-	99,  // 163: warren.v1.WarrenAPI.DeleteTLSCertificate:output_type -> warren.v1.DeleteTLSCertificateResponse
-	72,  // 164: warren.v1.WarrenAPI.StreamEvents:output_type -> warren.v1.Event
-	128, // [128:165] is the sub-list for method output_type
-	91,  // [91:128] is the sub-list for method input_type
-	91,  // [91:91] is the sub-list for extension type_name
-	91,  // [91:91] is the sub-list for extension extendee
-	0,   // [0:91] is the sub-list for field type_name
+	16,  // 36: warren.v1.UpdateServiceImageRequest.update_config:type_name -> warren.v1.UpdateConfig
+	15,  // 37: warren.v1.GetServiceResponse.service:type_name -> warren.v1.Service
+	15,  // 38: warren.v1.ListServicesResponse.services:type_name -> warren.v1.Service
+	109, // 39: warren.v1.Container.env:type_name -> warren.v1.Container.EnvEntry
+	23,  // 40: warren.v1.Container.resources:type_name -> warren.v1.ResourceRequirements
+	24,  // 41: warren.v1.Container.volumes:type_name -> warren.v1.VolumeMount
+	17,  // 42: warren.v1.Container.health_check:type_name -> warren.v1.HealthCheck
+	22,  // 43: warren.v1.Container.restart_policy:type_name -> warren.v1.RestartPolicy
+	120, // 44: warren.v1.Container.created_at:type_name -> google.protobuf.Timestamp
+	120, // 45: warren.v1.Container.updated_at:type_name -> google.protobuf.Timestamp
+	40,  // 46: warren.v1.ListContainersResponse.containers:type_name -> warren.v1.Container
+	40,  // 47: warren.v1.GetContainerResponse.container:type_name -> warren.v1.Container
+	40,  // 48: warren.v1.ContainerEvent.container:type_name -> warren.v1.Container
+	120, // 49: warren.v1.Secret.created_at:type_name -> google.protobuf.Timestamp
+	49,  // 50: warren.v1.CreateSecretResponse.secret:type_name -> warren.v1.Secret
+	49,  // 51: warren.v1.GetSecretByNameResponse.secret:type_name -> warren.v1.Secret
+	49,  // 52: warren.v1.ListSecretsResponse.secrets:type_name -> warren.v1.Secret
+	110, // 53: warren.v1.Volume.driver_opts:type_name -> warren.v1.Volume.DriverOptsEntry
+	111, // 54: warren.v1.Volume.labels:type_name -> warren.v1.Volume.LabelsEntry
+	120, // 55: warren.v1.Volume.created_at:type_name -> google.protobuf.Timestamp
+	112, // 56: warren.v1.CreateVolumeRequest.driver_opts:type_name -> warren.v1.CreateVolumeRequest.DriverOptsEntry
+	113, // 57: warren.v1.CreateVolumeRequest.labels:type_name -> warren.v1.CreateVolumeRequest.LabelsEntry
+	58,  // 58: warren.v1.CreateVolumeResponse.volume:type_name -> warren.v1.Volume
+	58,  // 59: warren.v1.GetVolumeByNameResponse.volume:type_name -> warren.v1.Volume
+	58,  // 60: warren.v1.ListVolumesResponse.volumes:type_name -> warren.v1.Volume
+	120, // 61: warren.v1.GenerateJoinTokenResponse.expires_at:type_name -> google.protobuf.Timestamp
+	73,  // 62: warren.v1.GetClusterInfoResponse.servers:type_name -> warren.v1.ClusterServer
+	120, // 63: warren.v1.ReportContainerHealthRequest.checked_at:type_name -> google.protobuf.Timestamp
+	120, // 64: warren.v1.Event.timestamp:type_name -> google.protobuf.Timestamp
+	114, // 65: warren.v1.Event.metadata:type_name -> warren.v1.Event.MetadataEntry
+	81,  // 66: warren.v1.Ingress.rules:type_name -> warren.v1.IngressRule
+	84,  // 67: warren.v1.Ingress.tls:type_name -> warren.v1.IngressTLS
+	115, // 68: warren.v1.Ingress.labels:type_name -> warren.v1.Ingress.LabelsEntry
+	120, // 69: warren.v1.Ingress.created_at:type_name -> google.protobuf.Timestamp
+	120, // 70: warren.v1.Ingress.updated_at:type_name -> google.protobuf.Timestamp
+	82,  // 71: warren.v1.IngressRule.paths:type_name -> warren.v1.IngressPath
+	83,  // 72: warren.v1.IngressPath.backend:type_name -> warren.v1.IngressBackend
+	81,  // 73: warren.v1.CreateIngressRequest.rules:type_name -> warren.v1.IngressRule
+	84,  // 74: warren.v1.CreateIngressRequest.tls:type_name -> warren.v1.IngressTLS
+	116, // 75: warren.v1.CreateIngressRequest.labels:type_name -> warren.v1.CreateIngressRequest.LabelsEntry
+	80,  // 76: warren.v1.CreateIngressResponse.ingress:type_name -> warren.v1.Ingress
+	81,  // 77: warren.v1.UpdateIngressRequest.rules:type_name -> warren.v1.IngressRule
+	84,  // 78: warren.v1.UpdateIngressRequest.tls:type_name -> warren.v1.IngressTLS
+	117, // 79: warren.v1.UpdateIngressRequest.labels:type_name -> warren.v1.UpdateIngressRequest.LabelsEntry
+	80,  // 80: warren.v1.UpdateIngressResponse.ingress:type_name -> warren.v1.Ingress
+	80,  // 81: warren.v1.GetIngressResponse.ingress:type_name -> warren.v1.Ingress
+	80,  // 82: warren.v1.ListIngressesResponse.ingresses:type_name -> warren.v1.Ingress
+	120, // 83: warren.v1.TLSCertificate.not_before:type_name -> google.protobuf.Timestamp
+	120, // 84: warren.v1.TLSCertificate.not_after:type_name -> google.protobuf.Timestamp
+	118, // 85: warren.v1.TLSCertificate.labels:type_name -> warren.v1.TLSCertificate.LabelsEntry
+	120, // 86: warren.v1.TLSCertificate.created_at:type_name -> google.protobuf.Timestamp
+	120, // 87: warren.v1.TLSCertificate.updated_at:type_name -> google.protobuf.Timestamp
+	119, // 88: warren.v1.CreateTLSCertificateRequest.labels:type_name -> warren.v1.CreateTLSCertificateRequest.LabelsEntry
+	95,  // 89: warren.v1.CreateTLSCertificateResponse.certificate:type_name -> warren.v1.TLSCertificate
+	95,  // 90: warren.v1.GetTLSCertificateResponse.certificate:type_name -> warren.v1.TLSCertificate
+	95,  // 91: warren.v1.ListTLSCertificatesResponse.certificates:type_name -> warren.v1.TLSCertificate
+	4,   // 92: warren.v1.WarrenAPI.RegisterNode:input_type -> warren.v1.RegisterNodeRequest
+	6,   // 93: warren.v1.WarrenAPI.Heartbeat:input_type -> warren.v1.HeartbeatRequest
+	9,   // 94: warren.v1.WarrenAPI.ListNodes:input_type -> warren.v1.ListNodesRequest
+	11,  // 95: warren.v1.WarrenAPI.GetNode:input_type -> warren.v1.GetNodeRequest
+	13,  // 96: warren.v1.WarrenAPI.RemoveNode:input_type -> warren.v1.RemoveNodeRequest
+	26,  // 97: warren.v1.WarrenAPI.CreateService:input_type -> warren.v1.CreateServiceRequest
+	28,  // 98: warren.v1.WarrenAPI.UpdateService:input_type -> warren.v1.UpdateServiceRequest
+	30,  // 99: warren.v1.WarrenAPI.UpdateServiceImage:input_type -> warren.v1.UpdateServiceImageRequest
+	32,  // 100: warren.v1.WarrenAPI.RollbackService:input_type -> warren.v1.RollbackServiceRequest
+	34,  // 101: warren.v1.WarrenAPI.DeleteService:input_type -> warren.v1.DeleteServiceRequest
+	36,  // 102: warren.v1.WarrenAPI.GetService:input_type -> warren.v1.GetServiceRequest
+	38,  // 103: warren.v1.WarrenAPI.ListServices:input_type -> warren.v1.ListServicesRequest
+	41,  // 104: warren.v1.WarrenAPI.UpdateContainerStatus:input_type -> warren.v1.UpdateContainerStatusRequest
+	43,  // 105: warren.v1.WarrenAPI.ListContainers:input_type -> warren.v1.ListContainersRequest
+	45,  // 106: warren.v1.WarrenAPI.GetContainer:input_type -> warren.v1.GetContainerRequest
+	47,  // 107: warren.v1.WarrenAPI.WatchContainers:input_type -> warren.v1.WatchContainersRequest
+	74,  // 108: warren.v1.WarrenAPI.ReportContainerHealth:input_type -> warren.v1.ReportContainerHealthRequest
+	50,  // 109: warren.v1.WarrenAPI.CreateSecret:input_type -> warren.v1.CreateSecretRequest
+	54,  // 110: warren.v1.WarrenAPI.GetSecretByName:input_type -> warren.v1.GetSecretByNameRequest
+	52,  // 111: warren.v1.WarrenAPI.DeleteSecret:input_type -> warren.v1.DeleteSecretRequest
+	56,  // 112: warren.v1.WarrenAPI.ListSecrets:input_type -> warren.v1.ListSecretsRequest
+	59,  // 113: warren.v1.WarrenAPI.CreateVolume:input_type -> warren.v1.CreateVolumeRequest
+	63,  // 114: warren.v1.WarrenAPI.GetVolumeByName:input_type -> warren.v1.GetVolumeByNameRequest
+	61,  // 115: warren.v1.WarrenAPI.DeleteVolume:input_type -> warren.v1.DeleteVolumeRequest
+	65,  // 116: warren.v1.WarrenAPI.ListVolumes:input_type -> warren.v1.ListVolumesRequest
+	67,  // 117: warren.v1.WarrenAPI.GenerateJoinToken:input_type -> warren.v1.GenerateJoinTokenRequest
+	69,  // 118: warren.v1.WarrenAPI.JoinCluster:input_type -> warren.v1.JoinClusterRequest
+	71,  // 119: warren.v1.WarrenAPI.GetClusterInfo:input_type -> warren.v1.GetClusterInfoRequest
+	78,  // 120: warren.v1.WarrenAPI.RequestCertificate:input_type -> warren.v1.RequestCertificateRequest
+	85,  // 121: warren.v1.WarrenAPI.CreateIngress:input_type -> warren.v1.CreateIngressRequest
+	87,  // 122: warren.v1.WarrenAPI.UpdateIngress:input_type -> warren.v1.UpdateIngressRequest
+	89,  // 123: warren.v1.WarrenAPI.DeleteIngress:input_type -> warren.v1.DeleteIngressRequest
+	91,  // 124: warren.v1.WarrenAPI.GetIngress:input_type -> warren.v1.GetIngressRequest
+	93,  // 125: warren.v1.WarrenAPI.ListIngresses:input_type -> warren.v1.ListIngressesRequest
+	96,  // 126: warren.v1.WarrenAPI.CreateTLSCertificate:input_type -> warren.v1.CreateTLSCertificateRequest
+	98,  // 127: warren.v1.WarrenAPI.GetTLSCertificate:input_type -> warren.v1.GetTLSCertificateRequest
+	100, // 128: warren.v1.WarrenAPI.ListTLSCertificates:input_type -> warren.v1.ListTLSCertificatesRequest
+	102, // 129: warren.v1.WarrenAPI.DeleteTLSCertificate:input_type -> warren.v1.DeleteTLSCertificateRequest
+	77,  // 130: warren.v1.WarrenAPI.StreamEvents:input_type -> warren.v1.StreamEventsRequest
+	5,   // 131: warren.v1.WarrenAPI.RegisterNode:output_type -> warren.v1.RegisterNodeResponse
+	7,   // 132: warren.v1.WarrenAPI.Heartbeat:output_type -> warren.v1.HeartbeatResponse
+	10,  // 133: warren.v1.WarrenAPI.ListNodes:output_type -> warren.v1.ListNodesResponse
+	12,  // 134: warren.v1.WarrenAPI.GetNode:output_type -> warren.v1.GetNodeResponse
+	14,  // 135: warren.v1.WarrenAPI.RemoveNode:output_type -> warren.v1.RemoveNodeResponse
+	27,  // 136: warren.v1.WarrenAPI.CreateService:output_type -> warren.v1.CreateServiceResponse
+	29,  // 137: warren.v1.WarrenAPI.UpdateService:output_type -> warren.v1.UpdateServiceResponse
+	31,  // 138: warren.v1.WarrenAPI.UpdateServiceImage:output_type -> warren.v1.UpdateServiceImageResponse
+	33,  // 139: warren.v1.WarrenAPI.RollbackService:output_type -> warren.v1.RollbackServiceResponse
+	35,  // 140: warren.v1.WarrenAPI.DeleteService:output_type -> warren.v1.DeleteServiceResponse
+	37,  // 141: warren.v1.WarrenAPI.GetService:output_type -> warren.v1.GetServiceResponse
+	39,  // 142: warren.v1.WarrenAPI.ListServices:output_type -> warren.v1.ListServicesResponse
+	42,  // 143: warren.v1.WarrenAPI.UpdateContainerStatus:output_type -> warren.v1.UpdateContainerStatusResponse
+	44,  // 144: warren.v1.WarrenAPI.ListContainers:output_type -> warren.v1.ListContainersResponse
+	46,  // 145: warren.v1.WarrenAPI.GetContainer:output_type -> warren.v1.GetContainerResponse
+	48,  // 146: warren.v1.WarrenAPI.WatchContainers:output_type -> warren.v1.ContainerEvent
+	75,  // 147: warren.v1.WarrenAPI.ReportContainerHealth:output_type -> warren.v1.ReportContainerHealthResponse
+	51,  // 148: warren.v1.WarrenAPI.CreateSecret:output_type -> warren.v1.CreateSecretResponse
+	55,  // 149: warren.v1.WarrenAPI.GetSecretByName:output_type -> warren.v1.GetSecretByNameResponse
+	53,  // 150: warren.v1.WarrenAPI.DeleteSecret:output_type -> warren.v1.DeleteSecretResponse
+	57,  // 151: warren.v1.WarrenAPI.ListSecrets:output_type -> warren.v1.ListSecretsResponse
+	60,  // 152: warren.v1.WarrenAPI.CreateVolume:output_type -> warren.v1.CreateVolumeResponse
+	64,  // 153: warren.v1.WarrenAPI.GetVolumeByName:output_type -> warren.v1.GetVolumeByNameResponse
+	62,  // 154: warren.v1.WarrenAPI.DeleteVolume:output_type -> warren.v1.DeleteVolumeResponse
+	66,  // 155: warren.v1.WarrenAPI.ListVolumes:output_type -> warren.v1.ListVolumesResponse
+	68,  // 156: warren.v1.WarrenAPI.GenerateJoinToken:output_type -> warren.v1.GenerateJoinTokenResponse
+	70,  // 157: warren.v1.WarrenAPI.JoinCluster:output_type -> warren.v1.JoinClusterResponse
+	72,  // 158: warren.v1.WarrenAPI.GetClusterInfo:output_type -> warren.v1.GetClusterInfoResponse
+	79,  // 159: warren.v1.WarrenAPI.RequestCertificate:output_type -> warren.v1.RequestCertificateResponse
+	86,  // 160: warren.v1.WarrenAPI.CreateIngress:output_type -> warren.v1.CreateIngressResponse
+	88,  // 161: warren.v1.WarrenAPI.UpdateIngress:output_type -> warren.v1.UpdateIngressResponse
+	90,  // 162: warren.v1.WarrenAPI.DeleteIngress:output_type -> warren.v1.DeleteIngressResponse
+	92,  // 163: warren.v1.WarrenAPI.GetIngress:output_type -> warren.v1.GetIngressResponse
+	94,  // 164: warren.v1.WarrenAPI.ListIngresses:output_type -> warren.v1.ListIngressesResponse
+	97,  // 165: warren.v1.WarrenAPI.CreateTLSCertificate:output_type -> warren.v1.CreateTLSCertificateResponse
+	99,  // 166: warren.v1.WarrenAPI.GetTLSCertificate:output_type -> warren.v1.GetTLSCertificateResponse
+	101, // 167: warren.v1.WarrenAPI.ListTLSCertificates:output_type -> warren.v1.ListTLSCertificatesResponse
+	103, // 168: warren.v1.WarrenAPI.DeleteTLSCertificate:output_type -> warren.v1.DeleteTLSCertificateResponse
+	76,  // 169: warren.v1.WarrenAPI.StreamEvents:output_type -> warren.v1.Event
+	131, // [131:170] is the sub-list for method output_type
+	92,  // [92:131] is the sub-list for method input_type
+	92,  // [92:92] is the sub-list for extension type_name
+	92,  // [92:92] is the sub-list for extension extendee
+	0,   // [0:92] is the sub-list for field type_name
 }
 
 func init() { file_api_proto_warren_proto_init() }
@@ -6651,7 +6955,7 @@ func file_api_proto_warren_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_api_proto_warren_proto_rawDesc), len(file_api_proto_warren_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   114,
+			NumMessages:   118,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

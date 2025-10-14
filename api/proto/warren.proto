@@ -18,6 +18,8 @@ service WarrenAPI {
   // Service operations
   rpc CreateService(CreateServiceRequest) returns (CreateServiceResponse);
   rpc UpdateService(UpdateServiceRequest) returns (UpdateServiceResponse);
+  rpc UpdateServiceImage(UpdateServiceImageRequest) returns (UpdateServiceImageResponse);
+  rpc RollbackService(RollbackServiceRequest) returns (RollbackServiceResponse);
   rpc DeleteService(DeleteServiceRequest) returns (DeleteServiceResponse);
   rpc GetService(GetServiceRequest) returns (GetServiceResponse);
   rpc ListServices(ListServicesRequest) returns (ListServicesResponse);
@@ -169,6 +171,15 @@ message UpdateConfig {
   int32 parallelism = 1;
   int32 delay_seconds = 2;
   string failure_action = 3; // "pause", "continue", "rollback"
+  int32 max_surge = 4;
+  int32 max_unavailable = 5;
+  int32 health_check_grace_period_seconds = 6;
+  int32 canary_weight = 7;
+  repeated int32 canary_steps = 8;
+  int32 canary_stability_window_seconds = 9;
+  int32 blue_green_grace_period_seconds = 10;
+  bool auto_rollback_enabled = 11;
+  int32 failure_threshold_percent = 12;
 }
 
 message HealthCheck {
@@ -277,6 +288,25 @@ message UpdateServiceRequest {
 
 message UpdateServiceResponse {
   Service service = 1;
+}
+
+message UpdateServiceImageRequest {
+  string id = 1;
+  string image = 2;
+  string strategy = 3; // "rolling", "blue-green", "canary"
+  UpdateConfig update_config = 4;
+}
+
+message UpdateServiceImageResponse {
+  string status = 1;
+}
+
+message RollbackServiceRequest {
+  string id = 1;
+}
+
+message RollbackServiceResponse {
+  string status = 1;
 }
 
 message DeleteServiceRequest {

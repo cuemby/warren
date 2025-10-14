@@ -26,6 +26,8 @@ const (
 	WarrenAPI_RemoveNode_FullMethodName            = "/warren.v1.WarrenAPI/RemoveNode"
 	WarrenAPI_CreateService_FullMethodName         = "/warren.v1.WarrenAPI/CreateService"
 	WarrenAPI_UpdateService_FullMethodName         = "/warren.v1.WarrenAPI/UpdateService"
+	WarrenAPI_UpdateServiceImage_FullMethodName    = "/warren.v1.WarrenAPI/UpdateServiceImage"
+	WarrenAPI_RollbackService_FullMethodName       = "/warren.v1.WarrenAPI/RollbackService"
 	WarrenAPI_DeleteService_FullMethodName         = "/warren.v1.WarrenAPI/DeleteService"
 	WarrenAPI_GetService_FullMethodName            = "/warren.v1.WarrenAPI/GetService"
 	WarrenAPI_ListServices_FullMethodName          = "/warren.v1.WarrenAPI/ListServices"
@@ -73,6 +75,8 @@ type WarrenAPIClient interface {
 	// Service operations
 	CreateService(ctx context.Context, in *CreateServiceRequest, opts ...grpc.CallOption) (*CreateServiceResponse, error)
 	UpdateService(ctx context.Context, in *UpdateServiceRequest, opts ...grpc.CallOption) (*UpdateServiceResponse, error)
+	UpdateServiceImage(ctx context.Context, in *UpdateServiceImageRequest, opts ...grpc.CallOption) (*UpdateServiceImageResponse, error)
+	RollbackService(ctx context.Context, in *RollbackServiceRequest, opts ...grpc.CallOption) (*RollbackServiceResponse, error)
 	DeleteService(ctx context.Context, in *DeleteServiceRequest, opts ...grpc.CallOption) (*DeleteServiceResponse, error)
 	GetService(ctx context.Context, in *GetServiceRequest, opts ...grpc.CallOption) (*GetServiceResponse, error)
 	ListServices(ctx context.Context, in *ListServicesRequest, opts ...grpc.CallOption) (*ListServicesResponse, error)
@@ -187,6 +191,26 @@ func (c *warrenAPIClient) UpdateService(ctx context.Context, in *UpdateServiceRe
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(UpdateServiceResponse)
 	err := c.cc.Invoke(ctx, WarrenAPI_UpdateService_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *warrenAPIClient) UpdateServiceImage(ctx context.Context, in *UpdateServiceImageRequest, opts ...grpc.CallOption) (*UpdateServiceImageResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UpdateServiceImageResponse)
+	err := c.cc.Invoke(ctx, WarrenAPI_UpdateServiceImage_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *warrenAPIClient) RollbackService(ctx context.Context, in *RollbackServiceRequest, opts ...grpc.CallOption) (*RollbackServiceResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RollbackServiceResponse)
+	err := c.cc.Invoke(ctx, WarrenAPI_RollbackService_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -526,6 +550,8 @@ type WarrenAPIServer interface {
 	// Service operations
 	CreateService(context.Context, *CreateServiceRequest) (*CreateServiceResponse, error)
 	UpdateService(context.Context, *UpdateServiceRequest) (*UpdateServiceResponse, error)
+	UpdateServiceImage(context.Context, *UpdateServiceImageRequest) (*UpdateServiceImageResponse, error)
+	RollbackService(context.Context, *RollbackServiceRequest) (*RollbackServiceResponse, error)
 	DeleteService(context.Context, *DeleteServiceRequest) (*DeleteServiceResponse, error)
 	GetService(context.Context, *GetServiceRequest) (*GetServiceResponse, error)
 	ListServices(context.Context, *ListServicesRequest) (*ListServicesResponse, error)
@@ -596,6 +622,12 @@ func (UnimplementedWarrenAPIServer) CreateService(context.Context, *CreateServic
 }
 func (UnimplementedWarrenAPIServer) UpdateService(context.Context, *UpdateServiceRequest) (*UpdateServiceResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateService not implemented")
+}
+func (UnimplementedWarrenAPIServer) UpdateServiceImage(context.Context, *UpdateServiceImageRequest) (*UpdateServiceImageResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateServiceImage not implemented")
+}
+func (UnimplementedWarrenAPIServer) RollbackService(context.Context, *RollbackServiceRequest) (*RollbackServiceResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RollbackService not implemented")
 }
 func (UnimplementedWarrenAPIServer) DeleteService(context.Context, *DeleteServiceRequest) (*DeleteServiceResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteService not implemented")
@@ -830,6 +862,42 @@ func _WarrenAPI_UpdateService_Handler(srv interface{}, ctx context.Context, dec 
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(WarrenAPIServer).UpdateService(ctx, req.(*UpdateServiceRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WarrenAPI_UpdateServiceImage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateServiceImageRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WarrenAPIServer).UpdateServiceImage(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WarrenAPI_UpdateServiceImage_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WarrenAPIServer).UpdateServiceImage(ctx, req.(*UpdateServiceImageRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WarrenAPI_RollbackService_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RollbackServiceRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WarrenAPIServer).RollbackService(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WarrenAPI_RollbackService_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WarrenAPIServer).RollbackService(ctx, req.(*RollbackServiceRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1394,6 +1462,14 @@ var WarrenAPI_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UpdateService",
 			Handler:    _WarrenAPI_UpdateService_Handler,
+		},
+		{
+			MethodName: "UpdateServiceImage",
+			Handler:    _WarrenAPI_UpdateServiceImage_Handler,
+		},
+		{
+			MethodName: "RollbackService",
+			Handler:    _WarrenAPI_RollbackService_Handler,
 		},
 		{
 			MethodName: "DeleteService",

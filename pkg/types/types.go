@@ -99,12 +99,40 @@ const (
 	DeployStrategyCanary    DeployStrategy = "canary"
 )
 
+// DeploymentState represents the state of a deployment version
+type DeploymentState string
+
+const (
+	DeploymentStateActive   DeploymentState = "active"   // Currently serving traffic
+	DeploymentStateStandby  DeploymentState = "standby"  // Ready but not serving (blue in blue-green)
+	DeploymentStateCanary   DeploymentState = "canary"   // Canary version receiving partial traffic
+	DeploymentStateRolling  DeploymentState = "rolling"  // Rolling update in progress
+	DeploymentStateFailed   DeploymentState = "failed"   // Deployment failed
+	DeploymentStateRolledBack DeploymentState = "rolled-back" // Deployment was rolled back
+)
+
+// Deployment version label keys
+const (
+	LabelDeploymentVersion  = "warren.deployment.version"
+	LabelDeploymentState    = "warren.deployment.state"
+	LabelDeploymentStrategy = "warren.deployment.strategy"
+	LabelOriginalService    = "warren.deployment.original-service"
+)
+
 // UpdateConfig controls how service updates are performed
 type UpdateConfig struct {
-	Parallelism   int           // How many containers to update simultaneously
-	Delay         time.Duration // Delay between batches
-	FailureAction string        // "pause", "rollback", "continue"
-	CanaryWeight  int           // 0-100 (for canary strategy)
+	Parallelism             int           // How many containers to update simultaneously
+	Delay                   time.Duration // Delay between batches
+	FailureAction           string        // "pause", "rollback", "continue"
+	MaxSurge                int           // Max extra containers during update (default: 1)
+	MaxUnavailable          int           // Max containers that can be unavailable (default: 0)
+	HealthCheckGracePeriod  time.Duration // Wait time for health checks (default: 30s)
+	CanaryWeight            int           // 0-100 (current canary traffic weight)
+	CanarySteps             []int         // Promotion steps, e.g., [10, 25, 50, 100]
+	CanaryStabilityWindow   time.Duration // Wait time between canary steps (default: 5m)
+	BlueGreenGracePeriod    time.Duration // Time to keep blue version after switch (default: 5m)
+	AutoRollbackEnabled     bool          // Enable automatic rollback on failures
+	FailureThresholdPercent int           // Error rate % to trigger rollback (default: 10)
 }
 
 // PortMapping defines port exposure
