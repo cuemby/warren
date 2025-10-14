@@ -5,14 +5,17 @@ import (
 	"sync"
 	"time"
 
+	"github.com/cuemby/warren/pkg/log"
 	"github.com/cuemby/warren/pkg/manager"
 	"github.com/cuemby/warren/pkg/metrics"
 	"github.com/cuemby/warren/pkg/types"
+	"github.com/rs/zerolog"
 )
 
 // Reconciler ensures actual cluster state matches desired state
 type Reconciler struct {
 	manager *manager.Manager
+	logger  zerolog.Logger
 	mu      sync.RWMutex
 	stopCh  chan struct{}
 }
@@ -21,6 +24,7 @@ type Reconciler struct {
 func NewReconciler(mgr *manager.Manager) *Reconciler {
 	return &Reconciler{
 		manager: mgr,
+		logger:  log.WithComponent("reconciler"),
 		stopCh:  make(chan struct{}),
 	}
 }
@@ -40,14 +44,17 @@ func (r *Reconciler) run() {
 	ticker := time.NewTicker(10 * time.Second)
 	defer ticker.Stop()
 
+	r.logger.Info().Msg("Reconciler started")
+
 	for {
 		select {
 		case <-ticker.C:
 			if err := r.reconcile(); err != nil {
 				// Log error but continue
-				fmt.Printf("Reconciler error: %v\n", err)
+				r.logger.Error().Err(err).Msg("Reconciliation cycle failed")
 			}
 		case <-r.stopCh:
+			r.logger.Info().Msg("Reconciler stopped")
 			return
 		}
 	}
@@ -67,12 +74,12 @@ func (r *Reconciler) reconcile() error {
 
 	// Reconcile nodes
 	if err := r.reconcileNodes(); err != nil {
-		fmt.Printf("Failed to reconcile nodes: %v\n", err)
+		r.logger.Error().Err(err).Msg("Failed to reconcile nodes")
 	}
 
 	// Reconcile containers
 	if err := r.reconcileContainers(); err != nil {
-		fmt.Printf("Failed to reconcile containers: %v\n", err)
+		r.logger.Error().Err(err).Msg("Failed to reconcile containers")
 	}
 
 	return nil
@@ -90,10 +97,16 @@ func (r *Reconciler) reconcileNodes() error {
 		// Check if node is down (no heartbeat in 30 seconds)
 		if now.Sub(node.LastHeartbeat) > 30*time.Second {
 			if node.Status != types.NodeStatusDown {
-				fmt.Printf("Node %s is down (no heartbeat for %v)\n", node.ID, now.Sub(node.LastHeartbeat))
+				r.logger.Warn().
+					Str("node_id", node.ID).
+					Dur("no_heartbeat_duration", now.Sub(node.LastHeartbeat)).
+					Msg("Node is down, marking as down")
 				node.Status = types.NodeStatusDown
 				if err := r.manager.UpdateNode(node); err != nil {
-					fmt.Printf("Failed to mark node %s as down: %v\n", node.ID, err)
+					r.logger.Error().
+						Err(err).
+						Str("node_id", node.ID).
+						Msg("Failed to mark node as down")
 				}
 			}
 		}
@@ -112,12 +125,18 @@ func (r *Reconciler) reconcileContainers() error {
 	for _, container := range containers {
 		// Handle failed containers
 		if container.ActualState == types.ContainerStateFailed && container.DesiredState == types.ContainerStateRunning {
-			fmt.Printf("Container %s failed on node %s, marking for cleanup\n", container.ID, container.NodeID)
+			r.logger.Info().
+				Str("container_id", container.ID).
+				Str("node_id", container.NodeID).
+				Msg("Container failed, marking for cleanup")
 
 			// Mark container as shutdown (scheduler will create replacement)
 			container.DesiredState = types.ContainerStateShutdown
 			if err := r.manager.UpdateContainer(container); err != nil {
-				fmt.Printf("Failed to mark container %s for cleanup: %v\n", container.ID, err)
+				r.logger.Error().
+					Err(err).
+					Str("container_id", container.ID).
+					Msg("Failed to mark container for cleanup")
 			}
 		}
 
@@ -126,14 +145,20 @@ func (r *Reconciler) reconcileContainers() error {
 			if container.HealthStatus != nil && !container.HealthStatus.Healthy {
 				// Check if container has exceeded failure threshold
 				// For now, we use a simple check: if unhealthy, mark as failed
-				fmt.Printf("Container %s is unhealthy (%d consecutive failures): %s\n",
-					container.ID, container.HealthStatus.ConsecutiveFailures, container.HealthStatus.Message)
+				r.logger.Warn().
+					Str("container_id", container.ID).
+					Int("consecutive_failures", container.HealthStatus.ConsecutiveFailures).
+					Str("health_message", container.HealthStatus.Message).
+					Msg("Container is unhealthy, marking as failed")
 
 				// Mark container as failed so it gets replaced
 				container.ActualState = types.ContainerStateFailed
 				container.Error = fmt.Sprintf("health check failed: %s", container.HealthStatus.Message)
 				if err := r.manager.UpdateContainer(container); err != nil {
-					fmt.Printf("Failed to mark unhealthy container %s as failed: %v\n", container.ID, err)
+					r.logger.Error().
+						Err(err).
+						Str("container_id", container.ID).
+						Msg("Failed to mark unhealthy container as failed")
 				}
 			}
 		}
@@ -141,17 +166,28 @@ func (r *Reconciler) reconcileContainers() error {
 		// Handle containers on down nodes
 		node, err := r.manager.GetNode(container.NodeID)
 		if err != nil {
+			r.logger.Debug().
+				Err(err).
+				Str("container_id", container.ID).
+				Str("node_id", container.NodeID).
+				Msg("Could not get node for container")
 			continue
 		}
 
 		if node.Status == types.NodeStatusDown && container.DesiredState == types.ContainerStateRunning {
-			fmt.Printf("Container %s on down node %s, marking for rescheduling\n", container.ID, node.ID)
+			r.logger.Info().
+				Str("container_id", container.ID).
+				Str("node_id", node.ID).
+				Msg("Container on down node, marking for rescheduling")
 
 			// Mark container as failed so scheduler can create replacement
 			container.ActualState = types.ContainerStateFailed
 			container.DesiredState = types.ContainerStateShutdown
 			if err := r.manager.UpdateContainer(container); err != nil {
-				fmt.Printf("Failed to mark container %s as failed: %v\n", container.ID, err)
+				r.logger.Error().
+					Err(err).
+					Str("container_id", container.ID).
+					Msg("Failed to mark container as failed")
 			}
 		}
 
@@ -159,8 +195,14 @@ func (r *Reconciler) reconcileContainers() error {
 		if container.DesiredState == types.ContainerStateShutdown && container.ActualState == types.ContainerStateComplete {
 			// Container can be deleted after some grace period
 			if time.Since(container.FinishedAt) > 5*time.Minute {
+				r.logger.Debug().
+					Str("container_id", container.ID).
+					Msg("Deleting completed container")
 				if err := r.manager.DeleteContainer(container.ID); err != nil {
-					fmt.Printf("Failed to delete completed container %s: %v\n", container.ID, err)
+					r.logger.Error().
+						Err(err).
+						Str("container_id", container.ID).
+						Msg("Failed to delete completed container")
 				}
 			}
 		}
