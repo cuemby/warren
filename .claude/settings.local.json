@@ -103,7 +103,8 @@
       "Bash(do echo \"=== Checking pkg/$dir/doc.go ===\")",
       "Bash(git checkout:*)",
       "Bash(git merge:*)",
-      "Bash(cloc:*)"
+      "Bash(cloc:*)",
+      "Bash(go tool cover:*)"
     ],
     "deny": [],
     "ask": []

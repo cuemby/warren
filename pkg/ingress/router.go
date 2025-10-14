@@ -103,8 +103,8 @@ func (r *Router) matchPath(ingressPath *types.IngressPath, requestPath string) b
 
 	case types.PathTypePrefix:
 		// Match if request path starts with pattern
-		// "/" matches everything
-		if pattern == "/" {
+		// "/" or empty pattern matches everything
+		if pattern == "/" || pattern == "" {
 			return true
 		}
 		// Ensure pattern ends with / or request path has / after pattern

@@ -236,14 +236,14 @@ func TestRouterRoute(t *testing.T) {
 		{
 			ID:   "ing-1",
 			Name: "api-ingress",
-			Rules: []types.IngressRule{
+			Rules: []*types.IngressRule{
 				{
 					Host: "api.example.com",
-					Paths: []types.IngressPath{
+					Paths: []*types.IngressPath{
 						{
 							Path:     "/v1",
 							PathType: types.PathTypePrefix,
-							Backend: types.IngressBackend{
+							Backend: &types.IngressBackend{
 								ServiceName: "api-v1",
 								Port:        8080,
 							},
@@ -251,7 +251,7 @@ func TestRouterRoute(t *testing.T) {
 						{
 							Path:     "/v2",
 							PathType: types.PathTypePrefix,
-							Backend: types.IngressBackend{
+							Backend: &types.IngressBackend{
 								ServiceName: "api-v2",
 								Port:        8080,
 							},
@@ -263,14 +263,14 @@ func TestRouterRoute(t *testing.T) {
 		{
 			ID:   "ing-2",
 			Name: "web-ingress",
-			Rules: []types.IngressRule{
+			Rules: []*types.IngressRule{
 				{
 					Host: "example.com",
-					Paths: []types.IngressPath{
+					Paths: []*types.IngressPath{
 						{
 							Path:     "/",
 							PathType: types.PathTypePrefix,
-							Backend: types.IngressBackend{
+							Backend: &types.IngressBackend{
 								ServiceName: "web",
 								Port:        80,
 							},
@@ -361,14 +361,14 @@ func TestRouterLongestPrefixMatch(t *testing.T) {
 		{
 			ID:   "ing-test",
 			Name: "test-ingress",
-			Rules: []types.IngressRule{
+			Rules: []*types.IngressRule{
 				{
 					Host: "example.com",
-					Paths: []types.IngressPath{
+					Paths: []*types.IngressPath{
 						{
 							Path:     "/",
 							PathType: types.PathTypePrefix,
-							Backend: types.IngressBackend{
+							Backend: &types.IngressBackend{
 								ServiceName: "root",
 								Port:        80,
 							},
@@ -376,7 +376,7 @@ func TestRouterLongestPrefixMatch(t *testing.T) {
 						{
 							Path:     "/api",
 							PathType: types.PathTypePrefix,
-							Backend: types.IngressBackend{
+							Backend: &types.IngressBackend{
 								ServiceName: "api",
 								Port:        8080,
 							},
@@ -384,7 +384,7 @@ func TestRouterLongestPrefixMatch(t *testing.T) {
 						{
 							Path:     "/api/admin",
 							PathType: types.PathTypePrefix,
-							Backend: types.IngressBackend{
+							Backend: &types.IngressBackend{
 								ServiceName: "admin",
 								Port:        9090,
 							},
@@ -455,14 +455,14 @@ func TestRouterWildcardHost(t *testing.T) {
 		{
 			ID:   "ing-wildcard",
 			Name: "wildcard-ingress",
-			Rules: []types.IngressRule{
+			Rules: []*types.IngressRule{
 				{
 					Host: "*.apps.example.com",
-					Paths: []types.IngressPath{
+					Paths: []*types.IngressPath{
 						{
 							Path:     "/",
 							PathType: types.PathTypePrefix,
-							Backend: types.IngressBackend{
+							Backend: &types.IngressBackend{
 								ServiceName: "app-proxy",
 								Port:        8080,
 							},
