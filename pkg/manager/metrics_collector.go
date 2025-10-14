@@ -1,28 +1,28 @@
-package metrics
+package manager
 
 import (
 	"time"
 
-	"github.com/cuemby/warren/pkg/manager"
+	"github.com/cuemby/warren/pkg/metrics"
 	"github.com/cuemby/warren/pkg/types"
 )
 
-// Collector collects metrics from the manager
-type Collector struct {
-	manager *manager.Manager
+// MetricsCollector collects metrics from the manager
+type MetricsCollector struct {
+	manager *Manager
 	stopCh  chan struct{}
 }
 
-// NewCollector creates a new metrics collector
-func NewCollector(mgr *manager.Manager) *Collector {
-	return &Collector{
+// NewMetricsCollector creates a new metrics collector
+func NewMetricsCollector(mgr *Manager) *MetricsCollector {
+	return &MetricsCollector{
 		manager: mgr,
 		stopCh:  make(chan struct{}),
 	}
 }
 
 // Start begins collecting metrics
-func (c *Collector) Start() {
+func (c *MetricsCollector) Start() {
 	ticker := time.NewTicker(15 * time.Second)
 	go func() {
 		// Collect immediately on start
@@ -41,11 +41,11 @@ func (c *Collector) Start() {
 }
 
 // Stop stops the collector
-func (c *Collector) Stop() {
+func (c *MetricsCollector) Stop() {
 	close(c.stopCh)
 }
 
-func (c *Collector) collect() {
+func (c *MetricsCollector) collect() {
 	// Collect node metrics
 	c.collectNodeMetrics()
 
@@ -65,7 +65,7 @@ func (c *Collector) collect() {
 	c.collectRaftMetrics()
 }
 
-func (c *Collector) collectNodeMetrics() {
+func (c *MetricsCollector) collectNodeMetrics() {
 	nodes, err := c.manager.ListNodes()
 	if err != nil {
 		return
@@ -87,21 +87,21 @@ func (c *Collector) collectNodeMetrics() {
 	// Update metrics
 	for role, statuses := range nodeCounts {
 		for status, count := range statuses {
-			NodesTotal.WithLabelValues(role, status).Set(float64(count))
+			metrics.NodesTotal.WithLabelValues(role, status).Set(float64(count))
 		}
 	}
 }
 
-func (c *Collector) collectServiceMetrics() {
+func (c *MetricsCollector) collectServiceMetrics() {
 	services, err := c.manager.ListServices()
 	if err != nil {
 		return
 	}
 
-	ServicesTotal.Set(float64(len(services)))
+	metrics.ServicesTotal.Set(float64(len(services)))
 }
 
-func (c *Collector) collectContainerMetrics() {
+func (c *MetricsCollector) collectContainerMetrics() {
 	services, err := c.manager.ListServices()
 	if err != nil {
 		return
@@ -122,47 +122,47 @@ func (c *Collector) collectContainerMetrics() {
 
 	// Update metrics
 	for state, count := range containerCounts {
-		ContainersTotal.WithLabelValues(string(state)).Set(float64(count))
+		metrics.ContainersTotal.WithLabelValues(string(state)).Set(float64(count))
 	}
 }
 
-func (c *Collector) collectSecretMetrics() {
+func (c *MetricsCollector) collectSecretMetrics() {
 	secrets, err := c.manager.ListSecrets()
 	if err != nil {
 		return
 	}
 
-	SecretsTotal.Set(float64(len(secrets)))
+	metrics.SecretsTotal.Set(float64(len(secrets)))
 }
 
-func (c *Collector) collectVolumeMetrics() {
+func (c *MetricsCollector) collectVolumeMetrics() {
 	volumes, err := c.manager.ListVolumes()
 	if err != nil {
 		return
 	}
 
-	VolumesTotal.Set(float64(len(volumes)))
+	metrics.VolumesTotal.Set(float64(len(volumes)))
 }
 
-func (c *Collector) collectRaftMetrics() {
+func (c *MetricsCollector) collectRaftMetrics() {
 	// Check if leader
 	if c.manager.IsLeader() {
-		RaftLeader.Set(1)
+		metrics.RaftLeader.Set(1)
 	} else {
-		RaftLeader.Set(0)
+		metrics.RaftLeader.Set(0)
 	}
 
 	// Get Raft stats
 	stats := c.manager.GetRaftStats()
 	if stats != nil {
 		if lastIndex, ok := stats["last_log_index"].(uint64); ok {
-			RaftLogIndex.Set(float64(lastIndex))
+			metrics.RaftLogIndex.Set(float64(lastIndex))
 		}
 		if appliedIndex, ok := stats["applied_index"].(uint64); ok {
-			RaftAppliedIndex.Set(float64(appliedIndex))
+			metrics.RaftAppliedIndex.Set(float64(appliedIndex))
 		}
-		// Peers count is harder to get, would need to expose from manager
-		// For now, set to 1 (this node)
-		RaftPeers.Set(1)
+		if peers, ok := stats["peers"].(uint64); ok {
+			metrics.RaftPeers.Set(float64(peers))
+		}
 	}
 }

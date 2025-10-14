@@ -166,7 +166,7 @@ automatically form a Raft quorum once additional managers join.`,
 		fmt.Println("✓ Reconciler started")
 
 		// Start metrics collector
-		metricsCollector := metrics.NewCollector(mgr)
+		metricsCollector := manager.NewMetricsCollector(mgr)
 		metricsCollector.Start()
 		fmt.Println("✓ Metrics collector started")
 
@@ -613,7 +613,7 @@ var managerJoinCmd = &cobra.Command{
 		fmt.Println("✓ Reconciler started")
 
 		// Start metrics collector
-		metricsCollector := metrics.NewCollector(mgr)
+		metricsCollector := manager.NewMetricsCollector(mgr)
 		metricsCollector.Start()
 		fmt.Println("✓ Metrics collector started")
 

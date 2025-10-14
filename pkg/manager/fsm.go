@@ -6,6 +6,7 @@ import (
 	"io"
 	"sync"
 
+	"github.com/cuemby/warren/pkg/metrics"
 	"github.com/cuemby/warren/pkg/storage"
 	"github.com/cuemby/warren/pkg/types"
 	"github.com/hashicorp/raft"
@@ -34,6 +35,9 @@ type Command struct {
 // Apply applies a Raft log entry to the FSM
 // This is called by Raft when a log entry is committed
 func (f *WarrenFSM) Apply(log *raft.Log) interface{} {
+	timer := metrics.NewTimer()
+	defer timer.ObserveDuration(metrics.RaftApplyDuration)
+
 	var cmd Command
 	if err := json.Unmarshal(log.Data, &cmd); err != nil {
 		return fmt.Errorf("failed to unmarshal command: %w", err)

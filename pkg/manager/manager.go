@@ -18,6 +18,7 @@ import (
 	"github.com/cuemby/warren/pkg/events"
 	"github.com/cuemby/warren/pkg/ingress"
 	"github.com/cuemby/warren/pkg/log"
+	"github.com/cuemby/warren/pkg/metrics"
 	"github.com/cuemby/warren/pkg/security"
 	"github.com/cuemby/warren/pkg/storage"
 	"github.com/cuemby/warren/pkg/types"
@@ -377,6 +378,15 @@ func (m *Manager) GetRaftStats() map[string]interface{} {
 	stats["applied_index"] = m.raft.AppliedIndex()
 	stats["leader"] = string(m.raft.Leader())
 
+	// Get peer count from Raft configuration
+	configFuture := m.raft.GetConfiguration()
+	if err := configFuture.Error(); err == nil {
+		config := configFuture.Configuration()
+		stats["peers"] = uint64(len(config.Servers))
+	} else {
+		stats["peers"] = uint64(0)
+	}
+
 	return stats
 }
 
@@ -394,6 +404,9 @@ func (m *Manager) PublishEvent(event *events.Event) {
 
 // Apply submits a command to the Raft cluster
 func (m *Manager) Apply(cmd Command) error {
+	timer := metrics.NewTimer()
+	defer timer.ObserveDuration(metrics.RaftCommitDuration)
+
 	if m.raft == nil {
 		return fmt.Errorf("raft not initialized")
 	}
