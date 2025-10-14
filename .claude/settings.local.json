@@ -106,7 +106,9 @@
       "Bash(cloc:*)",
       "Bash(go tool cover:*)",
       "Bash(git config:*)",
-      "Bash(tree:*)"
+      "Bash(tree:*)",
+      "Bash(do echo \"Run $i:\")",
+      "Bash(do echo \"=== Run $i ===\")"
     ],
     "deny": [],
     "ask": []
