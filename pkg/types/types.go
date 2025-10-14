@@ -5,6 +5,18 @@ import (
 	"time"
 )
 
+// ServiceManager defines the interface for service management operations
+// This interface is used to break the import cycle between deploy and manager packages
+type ServiceManager interface {
+	GetService(id string) (*Service, error)
+	ListServices() ([]*Service, error)
+	CreateService(service *Service) error
+	UpdateService(service *Service) error
+	DeleteService(id string) error
+	ListContainersByService(serviceID string) ([]*Container, error)
+	UpdateContainer(container *Container) error
+}
+
 // Cluster represents the entire Warren cluster
 type Cluster struct {
 	ID            string

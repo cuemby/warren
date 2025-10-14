@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/cuemby/warren/pkg/client"
+	"github.com/cuemby/warren/pkg/deploy"
 	"github.com/cuemby/warren/pkg/dns"
 	"github.com/cuemby/warren/pkg/events"
 	"github.com/cuemby/warren/pkg/ingress"
@@ -49,6 +50,7 @@ type Manager struct {
 	ingressCancel  context.CancelFunc
 	acmeClient     *ingress.ACMEClient
 	acmeEmail      string
+	deployer       *deploy.Deployer
 }
 
 // Config holds configuration for creating a Manager
@@ -113,6 +115,9 @@ func NewManager(cfg *Config) (*Manager, error) {
 		dnsCtx:         dnsCtx,
 		dnsCancel:      dnsCancel,
 	}
+
+	// Create deployer (needs manager reference, so create after manager)
+	m.deployer = deploy.NewDeployer(m)
 
 	return m, nil
 }
@@ -1123,4 +1128,11 @@ func (m *Manager) IssueACMECertificate(domains []string) error {
 
 	log.Info(fmt.Sprintf("ACME certificate issued and stored for domains: %v", domains))
 	return nil
+}
+
+// --- Deployment Operations ---
+
+// GetDeployer returns the deployment manager
+func (m *Manager) GetDeployer() *deploy.Deployer {
+	return m.deployer
 }

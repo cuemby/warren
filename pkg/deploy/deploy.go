@@ -5,18 +5,17 @@ import (
 	"time"
 
 	"github.com/cuemby/warren/pkg/log"
-	"github.com/cuemby/warren/pkg/manager"
 	"github.com/cuemby/warren/pkg/types"
 	"github.com/google/uuid"
 )
 
 // Deployer handles service deployment strategies
 type Deployer struct {
-	manager *manager.Manager
+	manager types.ServiceManager
 }
 
 // NewDeployer creates a new deployer
-func NewDeployer(mgr *manager.Manager) *Deployer {
+func NewDeployer(mgr types.ServiceManager) *Deployer {
 	return &Deployer{
 		manager: mgr,
 	}

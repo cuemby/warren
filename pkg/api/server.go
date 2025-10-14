@@ -391,6 +391,107 @@ func (s *Server) DeleteService(ctx context.Context, req *proto.DeleteServiceRequ
 	}, nil
 }
 
+// UpdateServiceImage updates a service with a new image using specified deployment strategy
+func (s *Server) UpdateServiceImage(ctx context.Context, req *proto.UpdateServiceImageRequest) (*proto.UpdateServiceImageResponse, error) {
+	// Start timing deployment
+	timer := metrics.NewTimer()
+	defer timer.ObserveDuration(metrics.ServiceUpdateDuration)
+
+	// Ensure we're the leader for write operations
+	if err := s.ensureLeader(); err != nil {
+		return nil, err
+	}
+
+	// Validate request
+	if req.Id == "" {
+		return nil, fmt.Errorf("service id is required")
+	}
+	if req.Image == "" {
+		return nil, fmt.Errorf("image is required")
+	}
+
+	// Get deployer from manager
+	deployer := s.manager.GetDeployer()
+	if deployer == nil {
+		return nil, fmt.Errorf("deployer not available")
+	}
+
+	// Convert strategy string to DeployStrategy type
+	strategy := types.DeployStrategy(req.Strategy)
+	if strategy == "" {
+		strategy = types.DeployStrategyRolling
+	}
+
+	// Validate strategy
+	switch strategy {
+	case types.DeployStrategyRolling, types.DeployStrategyBlueGreen, types.DeployStrategyCanary:
+		// Valid strategies
+	default:
+		return nil, fmt.Errorf("invalid deployment strategy: %s", strategy)
+	}
+
+	log.Logger.Info().
+		Str("service_id", req.Id).
+		Str("image", req.Image).
+		Str("strategy", string(strategy)).
+		Msg("Starting service update via API")
+
+	// Perform the update (this will be async in a real deployment)
+	// For now, we'll call it directly
+	go func() {
+		if err := deployer.UpdateService(req.Id, req.Image, strategy); err != nil {
+			log.Logger.Error().
+				Err(err).
+				Str("service_id", req.Id).
+				Msg("Deployment failed")
+		} else {
+			log.Logger.Info().
+				Str("service_id", req.Id).
+				Msg("Deployment completed successfully")
+		}
+	}()
+
+	return &proto.UpdateServiceImageResponse{
+		Status: "deployment initiated",
+	}, nil
+}
+
+// RollbackService rolls back a service to the previous version
+func (s *Server) RollbackService(ctx context.Context, req *proto.RollbackServiceRequest) (*proto.RollbackServiceResponse, error) {
+	// Start timing rollback
+	timer := metrics.NewTimer()
+	defer timer.ObserveDuration(metrics.ServiceUpdateDuration)
+
+	// Ensure we're the leader for write operations
+	if err := s.ensureLeader(); err != nil {
+		return nil, err
+	}
+
+	// Validate request
+	if req.Id == "" {
+		return nil, fmt.Errorf("service id is required")
+	}
+
+	// Get deployer from manager
+	deployer := s.manager.GetDeployer()
+	if deployer == nil {
+		return nil, fmt.Errorf("deployer not available")
+	}
+
+	log.Logger.Info().
+		Str("service_id", req.Id).
+		Msg("Starting service rollback via API")
+
+	// Perform the rollback
+	if err := deployer.RollbackDeployment(req.Id); err != nil {
+		return nil, fmt.Errorf("rollback failed: %w", err)
+	}
+
+	return &proto.RollbackServiceResponse{
+		Status: "rollback completed",
+	}, nil
+}
+
 // GetService returns a specific service
 func (s *Server) GetService(ctx context.Context, req *proto.GetServiceRequest) (*proto.GetServiceResponse, error) {
 	var service *types.Service
