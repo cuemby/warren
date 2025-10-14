@@ -266,8 +266,8 @@ lima_exec_root() {
 lima_get_ip() {
   local vm_name="$1"
 
-  # Get IP from Lima
-  limactl shell "${vm_name}" ip -4 addr show lima0 | grep inet | awk '{print $2}' | cut -d/ -f1 | head -1
+  # Get IP from Lima (eth0 is the main network interface in Lima VMs)
+  limactl shell "${vm_name}" ip -4 addr show eth0 2>/dev/null | grep inet | awk '{print $2}' | cut -d/ -f1 | head -1
 }
 
 # Wait for VM to be ready
