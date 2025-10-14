@@ -204,20 +204,32 @@ automatically form a Raft quorum once additional managers join.`,
 			fmt.Printf("  - Goroutines: http://%s/debug/pprof/goroutine\n", metricsAddr)
 		}
 
-		// Start API server in background
+		// Start API server in background (both TCP and Unix socket)
 		apiServer, err := api.NewServer(mgr)
 		if err != nil {
 			return fmt.Errorf("failed to create API server: %v", err)
 		}
-		errCh := make(chan error, 1)
+		errCh := make(chan error, 2) // Buffered for both servers
+
+		// Start TCP listener (mTLS)
 		go func() {
 			if err := apiServer.Start(apiAddr); err != nil {
-				errCh <- fmt.Errorf("API server error: %v", err)
+				errCh <- fmt.Errorf("TCP API server error: %v", err)
 			}
 		}()
 
-		// Wait for API server to start
+		// Start Unix socket listener (read-only, no mTLS)
+		go func() {
+			if err := apiServer.StartUnix(); err != nil {
+				errCh <- fmt.Errorf("Unix socket API server error: %v", err)
+			}
+		}()
+
+		// Wait for API servers to start
 		time.Sleep(500 * time.Millisecond)
+
+		fmt.Printf("✓ API server listening on TCP: %s (mTLS)\n", apiAddr)
+		fmt.Printf("✓ API server listening on Unix socket: /var/run/warren.sock (local, read-only)\n")
 
 		// Update health status - API is now ready
 		metrics.RegisterComponent("api", true, "ready")
@@ -651,20 +663,32 @@ var managerJoinCmd = &cobra.Command{
 			fmt.Printf("  - Goroutines: http://%s/debug/pprof/goroutine\n", metricsAddr)
 		}
 
-		// Start API server in background
+		// Start API server in background (both TCP and Unix socket)
 		apiServer, err := api.NewServer(mgr)
 		if err != nil {
 			return fmt.Errorf("failed to create API server: %v", err)
 		}
-		errCh := make(chan error, 1)
+		errCh := make(chan error, 2) // Buffered for both servers
+
+		// Start TCP listener (mTLS)
 		go func() {
 			if err := apiServer.Start(apiAddr); err != nil {
-				errCh <- fmt.Errorf("API server error: %v", err)
+				errCh <- fmt.Errorf("TCP API server error: %v", err)
 			}
 		}()
 
-		// Wait for API server to start
+		// Start Unix socket listener (read-only, no mTLS)
+		go func() {
+			if err := apiServer.StartUnix(); err != nil {
+				errCh <- fmt.Errorf("Unix socket API server error: %v", err)
+			}
+		}()
+
+		// Wait for API servers to start
 		time.Sleep(500 * time.Millisecond)
+
+		fmt.Printf("✓ API server listening on TCP: %s (mTLS)\n", apiAddr)
+		fmt.Printf("✓ API server listening on Unix socket: /var/run/warren.sock (local, read-only)\n")
 
 		// Update health status - API is now ready
 		metrics.RegisterComponent("api", true, "ready")
