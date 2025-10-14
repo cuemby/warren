@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/cuemby/warren/api/proto"
+	"github.com/cuemby/warren/pkg/log"
 	"github.com/cuemby/warren/pkg/manager"
 	"github.com/cuemby/warren/pkg/metrics"
 	"github.com/cuemby/warren/pkg/security"
@@ -99,7 +100,7 @@ func (s *Server) Start(addr string) error {
 
 	proto.RegisterWarrenAPIServer(s.grpc, s)
 
-	fmt.Printf("gRPC API listening on %s\n", addr)
+	log.Logger.Info().Str("addr", addr).Msg("gRPC API listening")
 	return s.grpc.Serve(lis)
 }
 
@@ -1084,14 +1085,14 @@ func (s *Server) CreateIngress(ctx context.Context, req *proto.CreateIngressRequ
 	// Reload ingress proxy to pick up the new ingress
 	if err := s.manager.ReloadIngress(); err != nil {
 		// Log but don't fail the request
-		fmt.Printf("Warning: Failed to reload ingress proxy: %v\n", err)
+		log.Logger.Warn().Err(err).Msg("Failed to reload ingress proxy")
 	}
 
 	// If AutoTLS is enabled, request Let's Encrypt certificate
 	if ingress.TLS != nil && ingress.TLS.AutoTLS && ingress.TLS.Email != "" {
 		// Enable ACME if not already enabled
 		if err := s.manager.EnableACME(ingress.TLS.Email); err != nil {
-			fmt.Printf("Warning: Failed to enable ACME: %v\n", err)
+			log.Logger.Warn().Err(err).Msg("Failed to enable ACME")
 		} else {
 			// Issue certificate for all hosts in the ingress
 			var domains []string
@@ -1104,7 +1105,7 @@ func (s *Server) CreateIngress(ctx context.Context, req *proto.CreateIngressRequ
 				// Issue certificate asynchronously to avoid blocking ingress creation
 				go func() {
 					if err := s.manager.IssueACMECertificate(domains); err != nil {
-						fmt.Printf("Warning: Failed to issue ACME certificate: %v\n", err)
+						log.Logger.Warn().Err(err).Strs("domains", domains).Msg("Failed to issue ACME certificate")
 					}
 				}()
 			}
@@ -1166,7 +1167,7 @@ func (s *Server) UpdateIngress(ctx context.Context, req *proto.UpdateIngressRequ
 	// Reload ingress proxy to pick up the changes
 	if err := s.manager.ReloadIngress(); err != nil {
 		// Log but don't fail the request
-		fmt.Printf("Warning: Failed to reload ingress proxy: %v\n", err)
+		log.Logger.Warn().Err(err).Msg("Failed to reload ingress proxy")
 	}
 
 	// Convert back to proto
@@ -1209,7 +1210,7 @@ func (s *Server) DeleteIngress(ctx context.Context, req *proto.DeleteIngressRequ
 	// Reload ingress proxy to remove the deleted ingress
 	if err := s.manager.ReloadIngress(); err != nil {
 		// Log but don't fail the request
-		fmt.Printf("Warning: Failed to reload ingress proxy: %v\n", err)
+		log.Logger.Warn().Err(err).Msg("Failed to reload ingress proxy")
 	}
 
 	return &proto.DeleteIngressResponse{

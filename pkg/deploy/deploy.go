@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/cuemby/warren/pkg/log"
 	"github.com/cuemby/warren/pkg/manager"
 	"github.com/cuemby/warren/pkg/types"
 )
@@ -64,12 +65,15 @@ func (d *Deployer) rollingUpdate(service *types.Service, newImage string) error 
 		delay = service.UpdateConfig.Delay
 	}
 
-	fmt.Printf("Starting rolling update for service %s:\n", service.Name)
-	fmt.Printf("  Current image: %s\n", service.Image)
-	fmt.Printf("  New image: %s\n", newImage)
-	fmt.Printf("  Containers to update: %d\n", len(runningContainers))
-	fmt.Printf("  Parallelism: %d\n", parallelism)
-	fmt.Printf("  Delay: %v\n", delay)
+	log.Logger.Info().
+		Str("service", service.Name).
+		Str("service_id", service.ID).
+		Str("current_image", service.Image).
+		Str("new_image", newImage).
+		Int("containers_to_update", len(runningContainers)).
+		Int("parallelism", parallelism).
+		Dur("delay", delay).
+		Msg("Starting rolling update")
 
 	// Update service image
 	service.Image = newImage
@@ -86,30 +90,42 @@ func (d *Deployer) rollingUpdate(service *types.Service, newImage string) error 
 		}
 
 		batch := runningContainers[i:end]
-		fmt.Printf("\nUpdating batch %d/%d (%d containers)...\n",
-			(i/parallelism)+1,
-			(len(runningContainers)+parallelism-1)/parallelism,
-			len(batch))
+		batchNum := (i / parallelism) + 1
+		totalBatches := (len(runningContainers) + parallelism - 1) / parallelism
+		log.Logger.Info().
+			Int("batch", batchNum).
+			Int("total_batches", totalBatches).
+			Int("containers", len(batch)).
+			Msg("Updating batch")
 
 		// Shutdown old containers
 		for _, container := range batch {
 			container.DesiredState = types.ContainerStateShutdown
 			if err := d.manager.UpdateContainer(container); err != nil {
-				fmt.Printf("  Warning: failed to shutdown container %s: %v\n", container.ID, err)
+				log.Logger.Warn().
+					Err(err).
+					Str("container_id", container.ID).
+					Msg("Failed to shutdown container")
 				continue
 			}
-			fmt.Printf("  Shutting down container %s on node %s\n", container.ID[:8], container.NodeID)
+			log.Logger.Info().
+				Str("container_id", container.ID[:8]).
+				Str("node_id", container.NodeID).
+				Msg("Shutting down container")
 		}
 
 		// The scheduler will automatically create new containers with the updated image
 		// Wait for the delay before processing next batch
 		if delay > 0 && end < len(runningContainers) {
-			fmt.Printf("  Waiting %v before next batch...\n", delay)
+			log.Logger.Info().Dur("delay", delay).Msg("Waiting before next batch")
 			time.Sleep(delay)
 		}
 	}
 
-	fmt.Printf("\nRolling update complete for service %s\n", service.Name)
+	log.Logger.Info().
+		Str("service", service.Name).
+		Str("service_id", service.ID).
+		Msg("Rolling update complete")
 	return nil
 }
 
