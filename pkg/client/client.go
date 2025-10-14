@@ -14,6 +14,11 @@ import (
 	"google.golang.org/grpc/credentials"
 )
 
+const (
+	// DefaultUnixSocket is the default path for the Unix socket
+	DefaultUnixSocket = "/var/run/warren.sock"
+)
+
 // Client wraps the Warren gRPC client for easy CLI usage
 type Client struct {
 	conn   *grpc.ClientConn
@@ -69,6 +74,45 @@ func NewClientWithToken(addr, token string) (*Client, error) {
 	conn, err := connectWithMTLS(addr, certDir)
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to manager: %w", err)
+	}
+
+	return &Client{
+		conn:   conn,
+		client: proto.NewWarrenAPIClient(conn),
+	}, nil
+}
+
+// NewClientAuto creates a new Warren client with automatic connection detection.
+// It tries Unix socket first (local, no mTLS), then falls back to TCP with mTLS if needed.
+// This is the recommended way to create a client for CLI commands.
+func NewClientAuto(addr string) (*Client, error) {
+	// First, try Unix socket (local access, no certificates required)
+	if _, err := os.Stat(DefaultUnixSocket); err == nil {
+		conn, err := connectUnix(DefaultUnixSocket)
+		if err == nil {
+			return &Client{
+				conn:   conn,
+				client: proto.NewWarrenAPIClient(conn),
+			}, nil
+		}
+		// Unix socket exists but connection failed - fall through to TCP
+	}
+
+	// Fall back to TCP with mTLS
+	// Check for CLI certificate
+	certDir, err := security.GetCLICertDir()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get cert directory: %w", err)
+	}
+
+	if !security.CertExists(certDir) {
+		return nil, fmt.Errorf("CLI certificate not found at %s. Please run 'warren init --manager %s --token <token>' to request a certificate from the manager", certDir, addr)
+	}
+
+	// Use mTLS with existing certificate
+	conn, err := connectWithMTLS(addr, certDir)
+	if err != nil {
+		return nil, fmt.Errorf("failed to connect with mTLS: %w", err)
 	}
 
 	return &Client{
@@ -458,6 +502,20 @@ func requestCertificate(addr, token, certDir string) error {
 }
 
 // connectWithMTLS establishes a gRPC connection with mTLS
+// connectUnix connects to Warren via Unix socket (no TLS)
+func connectUnix(socketPath string) (*grpc.ClientConn, error) {
+	// Connect to Unix socket without TLS
+	conn, err := grpc.NewClient(
+		"unix://"+socketPath,
+		grpc.WithInsecure(), // Unix socket, local only, no TLS needed
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to dial Unix socket: %w", err)
+	}
+
+	return conn, nil
+}
+
 func connectWithMTLS(addr, certDir string) (*grpc.ClientConn, error) {
 	// Load CLI certificate
 	cert, err := security.LoadCertFromFile(certDir)
