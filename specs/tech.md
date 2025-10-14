@@ -221,13 +221,55 @@ func (s *APIServer) StartHTTPGateway() {
 ```
 
 **Endpoints**:
-- gRPC: `manager:2377` (binary protocol, CLI default)
-- HTTP/REST: `manager:2378` (JSON, for web UIs/scripts)
-- Metrics: `manager:9090/metrics` (Prometheus)
+- Unix Socket: `/var/run/warren.sock` (local CLI, no mTLS)
+- gRPC TCP: `manager:2377` (remote access, mTLS required)
+- HTTP/REST: `manager:2378` (JSON, for web UIs/scripts, mTLS required)
+- Metrics: `manager:9090/metrics` (Prometheus, localhost only)
+- Ingress HTTP: `0.0.0.0:8000` (public web traffic)
+- Ingress HTTPS: `0.0.0.0:8443` (public web traffic with TLS)
 
-**Authentication**:
-- mTLS required (client cert validation)
-- Token-based for CLI (stored in `~/.warren/config`)
+**Authentication - Tiered Security Model** (v1.4.0+):
+
+Warren uses a three-tier security model that balances simplicity with security:
+
+**Tier 1: Local Unix Socket** (Docker-like simplicity)
+- **Path**: `/var/run/warren.sock`
+- **Auth**: OS-level file permissions (0660, warren group)
+- **Use Case**: Local CLI operations on manager node
+- **Operations**: Read-only commands (`list`, `inspect`, `info`)
+- **Security**: File system ACLs (root or warren group members only)
+- **Example**: `warren node list` works immediately after `warren cluster init`
+
+**Tier 2: Local TCP with Auto-Bootstrap**
+- **Port**: `localhost:2377`
+- **Auth**: Automatic certificate request on first write operation
+- **Use Case**: Write operations from local manager node
+- **Operations**: All commands (read + write)
+- **Security**: mTLS after auto-bootstrap, bootstrap token in `/var/lib/warren/bootstrap-token` (root-only)
+- **Example**: `warren service create` auto-requests cert, then creates service
+
+**Tier 3: Remote TCP with mTLS**
+- **Port**: `<manager-ip>:2377`
+- **Auth**: Explicit certificate request with join token
+- **Use Case**: Remote CLI access from other machines
+- **Operations**: All commands (after `warren init`)
+- **Security**: Full mTLS (X.509 certificates, 90-day expiry)
+- **Example**:
+  ```bash
+  # Get token from manager
+  ssh manager 'warren cluster join-token manager'
+
+  # Initialize remote CLI
+  warren init --manager manager.example.com:2377 --token <token>
+
+  # Now remote commands work
+  warren node list --manager manager.example.com:2377
+  ```
+
+**Cluster Communication** (unchanged):
+- Manager ↔ Manager: mTLS over TCP port 2377 (Raft replication)
+- Manager ↔ Worker: mTLS over TCP port 2377 (task assignment, heartbeat)
+- All cluster traffic encrypted with X.509 certificates
 
 #### 1.3 Scheduler
 
