@@ -70,10 +70,8 @@ vmType: "qemu"
 images:
   - location: "https://cloud-images.ubuntu.com/releases/22.04/release/ubuntu-22.04-server-cloudimg-amd64.img"
     arch: "x86_64"
-    digest: "sha256:de5e632e17b8965f2baf4ea6d2b824788e154d9a65df4fd419ec4019898e15cd"
   - location: "https://cloud-images.ubuntu.com/releases/22.04/release/ubuntu-22.04-server-cloudimg-arm64.img"
     arch: "aarch64"
-    digest: "sha256:66224c7fed99ff5a5539eda406c87bbfefe8af6ff6b47d92c2d469ed2b82b0b4"
 
 cpus: ${cpus}
 memory: "${memory}GiB"

@@ -108,7 +108,8 @@
       "Bash(git config:*)",
       "Bash(tree:*)",
       "Bash(do echo \"Run $i:\")",
-      "Bash(do echo \"=== Run $i ===\")"
+      "Bash(do echo \"=== Run $i ===\")",
+      "Bash(./scripts/deploy-production.sh:*)"
     ],
     "deny": [],
     "ask": []

@@ -495,9 +495,13 @@ main() {
     cleanup_vms
   fi
 
-  local os=$(get_os)
-  local arch=$(get_arch)
-  local warren_binary="${WARREN_ROOT}/bin/warren-${os}-${arch}"
+  local host_os=$(get_os)
+  local host_arch=$(get_arch)
+
+  # VMs run Linux, so we need the Linux binary regardless of host OS
+  local vm_os="linux"
+  local vm_arch="$host_arch"  # VMs use same architecture as host
+  local warren_binary="${WARREN_ROOT}/bin/warren-${vm_os}-${vm_arch}"
 
   # ============================================================================
   # Phase 1: VM Creation
@@ -519,12 +523,14 @@ main() {
   # Download or use local Warren binary
   if [[ ! -f "$warren_binary" ]]; then
     log_info "Warren binary not found locally, downloading from GitHub..."
-    if ! warren_download_binary "$WARREN_VERSION" "$os" "$arch" "${WARREN_ROOT}/bin"; then
+    if ! warren_download_binary "$WARREN_VERSION" "$vm_os" "$vm_arch" "${WARREN_ROOT}/bin"; then
       log_error "Failed to download Warren binary"
       exit 1
     fi
-    warren_binary="${WARREN_ROOT}/bin/warren-${os}-${arch}"
+    warren_binary="${WARREN_ROOT}/bin/warren-${vm_os}-${vm_arch}"
   fi
+
+  log_info "Using Warren binary: ${warren_binary}"
 
   # Install Warren on all VMs
   log_info "Installing Warren on manager VMs..."
@@ -659,6 +665,7 @@ EOF
   log_success "Cluster information saved to ${cluster_info_file}"
 
   log_success "Deployment completed successfully!"
+}
 
 # Run main function
 main "$@"
