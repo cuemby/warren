@@ -233,6 +233,32 @@ var (
 		},
 		[]string{"host", "backend"},
 	)
+
+	// Deployment metrics
+	DeploymentsTotal = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "warren_deployments_total",
+			Help: "Total number of deployments by strategy and status",
+		},
+		[]string{"strategy", "status"},
+	)
+
+	DeploymentDuration = prometheus.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Name:    "warren_deployment_duration_seconds",
+			Help:    "Deployment duration in seconds by strategy",
+			Buckets: []float64{1, 5, 10, 30, 60, 120, 300, 600, 1800}, // 1s to 30min
+		},
+		[]string{"strategy"},
+	)
+
+	RolledBackDeploymentsTotal = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "warren_deployments_rolled_back_total",
+			Help: "Total number of deployments that were rolled back",
+		},
+		[]string{"strategy", "reason"},
+	)
 )
 
 func init() {
@@ -267,6 +293,11 @@ func init() {
 	prometheus.MustRegister(IngressUpdateDuration)
 	prometheus.MustRegister(IngressRequestsTotal)
 	prometheus.MustRegister(IngressRequestDuration)
+
+	// Register deployment metrics
+	prometheus.MustRegister(DeploymentsTotal)
+	prometheus.MustRegister(DeploymentDuration)
+	prometheus.MustRegister(RolledBackDeploymentsTotal)
 }
 
 // Handler returns the Prometheus HTTP handler

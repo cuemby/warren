@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/cuemby/warren/pkg/log"
+	"github.com/cuemby/warren/pkg/metrics"
 	"github.com/cuemby/warren/pkg/types"
 	"github.com/google/uuid"
 )
@@ -23,6 +24,9 @@ func NewDeployer(mgr types.ServiceManager) *Deployer {
 
 // UpdateService updates a service with the specified strategy
 func (d *Deployer) UpdateService(serviceID string, newImage string, strategy types.DeployStrategy) error {
+	// Start deployment timer
+	startTime := time.Now()
+
 	service, err := d.manager.GetService(serviceID)
 	if err != nil {
 		return fmt.Errorf("failed to get service: %w", err)
@@ -43,16 +47,29 @@ func (d *Deployer) UpdateService(serviceID string, newImage string, strategy typ
 		Str("new_image", newImage).
 		Msg("Starting service update")
 
+	var deployErr error
 	switch strategy {
 	case types.DeployStrategyBlueGreen:
-		return d.blueGreenUpdate(service, newImage)
+		deployErr = d.blueGreenUpdate(service, newImage)
 	case types.DeployStrategyCanary:
-		return d.canaryUpdate(service, newImage)
+		deployErr = d.canaryUpdate(service, newImage)
 	case types.DeployStrategyRolling:
-		return d.rollingUpdate(service, newImage)
+		deployErr = d.rollingUpdate(service, newImage)
 	default:
-		return fmt.Errorf("unknown deployment strategy: %s", strategy)
+		deployErr = fmt.Errorf("unknown deployment strategy: %s", strategy)
 	}
+
+	// Record deployment metrics
+	duration := time.Since(startTime).Seconds()
+	status := "success"
+	if deployErr != nil {
+		status = "failed"
+	}
+
+	metrics.DeploymentsTotal.WithLabelValues(string(strategy), status).Inc()
+	metrics.DeploymentDuration.WithLabelValues(string(strategy)).Observe(duration)
+
+	return deployErr
 }
 
 // rollingUpdate performs a rolling update of the service
@@ -452,6 +469,9 @@ func (d *Deployer) rollbackCanary(stableService, canaryService *types.Service, o
 		Str("canary_service_id", canaryService.ID).
 		Msg("Rolling back canary deployment")
 
+	// Track rollback metric
+	metrics.RolledBackDeploymentsTotal.WithLabelValues("canary", "health_check_failed").Inc()
+
 	// Restore stable service to full replicas
 	stableService.Replicas = originalReplicas
 	if err := d.manager.UpdateService(stableService); err != nil {
@@ -522,6 +542,13 @@ func (d *Deployer) RollbackDeployment(serviceID string) error {
 	if err := d.manager.UpdateService(service); err != nil {
 		log.Logger.Warn().Err(err).Msg("Failed to mark current service as rolled back")
 	}
+
+	// Track manual rollback metric
+	strategy := standbyService.Labels[types.LabelDeploymentStrategy]
+	if strategy == "" {
+		strategy = "unknown"
+	}
+	metrics.RolledBackDeploymentsTotal.WithLabelValues(strategy, "manual").Inc()
 
 	log.Logger.Info().
 		Str("service", service.Name).
