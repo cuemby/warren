@@ -1,7 +1,9 @@
-# Warren v1.3.1 Production Deployment Checklist
+# Warren v1.4.0 Production Deployment Checklist
 
 **Quick Reference** for deploying Warren to production.
 **Full Guide**: [docs/production-deployment-guide.md](docs/production-deployment-guide.md)
+
+**New in v1.4.0**: Unix socket support for zero-config local CLI access! Read operations (`node list`, `service list`, `cluster info`) work immediately without `warren init`. See [docs/concepts/security.md](docs/concepts/security.md) for details.
 
 ---
 
@@ -22,7 +24,7 @@
 
 ### Software
 - [ ] containerd v1.7+ installed on all nodes
-- [ ] Warren v1.3.1 binary installed on all nodes: `/usr/local/bin/warren`
+- [ ] Warren v1.4.0 binary installed on all nodes: `/usr/local/bin/warren`
 - [ ] curl and jq installed for testing
 
 ### Documentation
@@ -45,12 +47,12 @@
 ### Manager-2 & Manager-3
 - [ ] Copy tokens to nodes: `scp /etc/warren/tokens manager-{2,3}:/etc/warren/`
 - [ ] Run: `warren cluster join --node-id manager-{2,3} --role manager --leader <manager-1-ip>:8080 --token $MANAGER_TOKEN ...`
-- [ ] Verify: `warren node ls` (should show 3 managers)
+- [ ] Verify: `warren node list` (works via Unix socket! should show 3 managers)
 - [ ] Check quorum: `curl http://localhost:9090/metrics | grep warren_raft_peers_total` (should be 3)
 
 ### Workers (All)
 - [ ] Run: `warren cluster join --node-id worker-{1,2,3} --role worker --leader <manager-1-ip>:8080 --token $WORKER_TOKEN ...`
-- [ ] Verify: `warren node ls` (should show 3 managers + 3 workers, all "ready")
+- [ ] Verify: `warren node list` (works via Unix socket! should show 3 managers + 3 workers, all "ready")
 
 ---
 
@@ -83,7 +85,7 @@
 ## Validation (30 minutes)
 
 ### Quick Smoke Test
-- [ ] Cluster: `warren node ls` → 3 managers + 3 workers, all ready ✅
+- [ ] Cluster: `warren node list` (Unix socket - no setup needed!) → 3 managers + 3 workers, all ready ✅
 - [ ] Health: `curl http://manager-1:9090/health` → 200 OK ✅
 - [ ] Ready: `curl http://manager-1:9090/ready` → 200 OK ✅
 - [ ] Metrics: `curl http://manager-1:9090/metrics | head -20` → Valid Prometheus format ✅
@@ -187,14 +189,17 @@ If ANY issue occurs:
 ## Quick Commands
 
 ```bash
-# Check cluster
-warren node ls
+# Check cluster (✨ works via Unix socket - no setup needed!)
+warren node list
 
-# Check services
-warren service ls
+# Check services (✨ works via Unix socket!)
+warren service list
 
-# Check tasks
-warren task ls
+# Check tasks (✨ works via Unix socket!)
+warren task list
+
+# Cluster info (✨ works via Unix socket!)
+warren cluster info
 
 # View logs
 warren logs <node-id>
@@ -209,6 +214,8 @@ curl http://<manager>:9090/ready | jq .
 curl http://<manager>:9090/metrics | head -50
 ```
 
+**Note**: Read operations (list, inspect, info) work immediately via Unix socket in v1.4.0! Write operations (create, update, delete) require `warren init` with mTLS. See [docs/concepts/security.md](docs/concepts/security.md).
+
 ---
 
 ## References
@@ -221,8 +228,8 @@ curl http://<manager>:9090/metrics | head -50
 
 ---
 
-**Version**: v1.3.1
-**Last Updated**: 2025-10-14
+**Version**: v1.4.0
+**Last Updated**: 2025-10-15
 **Status**: ✅ Production Ready
 
 ---
