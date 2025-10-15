@@ -739,6 +739,65 @@ Warren v1.4.0 successfully delivers on the simplicity promise with Phase 1 alone
 
 ---
 
+## v1.4.0 Validation Results (2025-10-15)
+
+### Priority 2: Validation Testing
+
+**✅ Unix Socket Feature - VALIDATED**
+
+Manual testing in Lima VM confirmed Warren v1.4.0 Unix socket support works perfectly:
+
+**Test Results**:
+1. ✅ Warren starts successfully with Unix socket enabled
+   - Socket created at: `/var/run/warren.sock`
+   - Permissions: Read-only for CLI operations
+   - Output confirmed: "API server listening on Unix socket: /var/run/warren.sock (local, read-only)"
+
+2. ✅ Read operations work WITHOUT `warren init`:
+   ```bash
+   # All worked immediately via Unix socket:
+   $ warren node list          # ✓ Works
+   $ warren service list        # ✓ Works
+   $ warren cluster info        # ✓ Works
+   ```
+
+3. ✅ Write operations properly blocked with helpful error:
+   ```bash
+   $ warren apply -f service.yaml
+   # Error: write operations not allowed on Unix socket - use TCP connection with mTLS
+   # (warren init --manager <addr> --token <token>)
+   ```
+
+**Docker Swarm Parity Achievement**: ✓ VERIFIED
+- Warren CLI now works immediately after `cluster init`, just like `docker service ls` works immediately after `docker swarm init`
+- Zero-config local experience confirmed!
+
+**Deployment Automation Blocker Identified**:
+- ❌ `scripts/deploy-production.sh` (671 lines) is incompatible with v1.4.0
+- Script was written for v1.3.1 (mTLS-only approach)
+- Uses `warren node list --manager localhost:8080` which requires certificates
+- Needs refactoring to use Unix socket for read operations: `warren node list` (no --manager flag)
+- **Impact**: Full deployment automation test cannot run until script is updated
+- **Workaround**: Manual Lima testing validates v1.4.0 works correctly
+
+**Time to Validate**: ~15 minutes (manual testing)
+- PRD target was "< 5 minutes" for full deployment automation
+- Cannot measure with current broken script
+- Unix socket feature itself validated successfully
+
+**Performance**: No regression observed
+- Warren starts quickly (~2-3 seconds)
+- Read operations via Unix socket are instant
+- All components (scheduler, reconciler, DNS, ingress) start successfully
+
+**Recommendation**:
+1. ✅ v1.4.0 Unix socket feature is **production-ready**
+2. ⏸️ Deployment automation script needs v1.4.0 compatibility update (separate task)
+3. ✅ Documentation is complete ([docs/getting-started.md](docs/getting-started.md), [docs/concepts/security.md](docs/concepts/security.md))
+4. ⏸️ Load testing deferred (deployment script prerequisite)
+
+---
+
 **Owner**: Cuemby Engineering
-**Last Updated**: 2025-10-14
-**Status**: Phase 1 Complete, v1.4.0 Released, Documentation Pending
+**Last Updated**: 2025-10-15
+**Status**: Phase 1 Complete, v1.4.0 Released, Validated & Documented
