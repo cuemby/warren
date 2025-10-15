@@ -77,13 +77,17 @@ sudo warren cluster init
 # Output:
 # ✓ Raft consensus initialized
 # ✓ Manager started (Node ID: manager-abc123)
-# ✓ API server listening on 127.0.0.1:8080
+# ✓ API server listening on TCP: 127.0.0.1:8080 (mTLS)
+# ✓ API server listening on Unix socket: /var/run/warren.sock (local, read-only)
 # ✓ Metrics available at http://127.0.0.1:9090/metrics
 #
 # Cluster initialized successfully!
+# Local CLI is ready to use immediately!
 ```
 
 The manager node stores cluster state (using Raft) and provides the API for management operations.
+
+> **💡 Warren v1.4.0 Simplicity**: CLI commands now work immediately via Unix socket - no setup required! Just run `warren node list` to verify. Remote access still requires `warren init` for security.
 
 ### Step 2: Start Worker
 
@@ -104,8 +108,8 @@ The worker executes containers as assigned by the manager's scheduler.
 ### Step 3: Verify Cluster
 
 ```bash
-# List nodes in the cluster
-warren node list --manager 127.0.0.1:8080
+# List nodes in the cluster (works immediately via Unix socket!)
+warren node list
 
 # Output:
 # ID              ROLE      STATUS    ADDRESS         LABELS
@@ -115,8 +119,10 @@ warren node list --manager 127.0.0.1:8080
 
 ### Step 4: Deploy Service
 
+> **Note**: Service creation is a write operation. For local single-node clusters, you'll need to use `--manager` flag or set up mTLS certificates. See "[Remote CLI Setup](#remote-cli-setup)" section below for details.
+
 ```bash
-# Deploy nginx with 2 replicas
+# Deploy nginx with 2 replicas (requires --manager for write operations)
 warren service create nginx \
   --image nginx:latest \
   --replicas 2 \
@@ -131,15 +137,15 @@ warren service create nginx \
 ### Step 5: Check Service Status
 
 ```bash
-# List services
-warren service list --manager 127.0.0.1:8080
+# List services (read operation - works via Unix socket!)
+warren service list
 
 # Output:
 # NAME     IMAGE          REPLICAS  MODE        CREATED
 # nginx    nginx:latest   2/2       replicated  30s ago
 
-# Inspect service details
-warren service inspect nginx --manager 127.0.0.1:8080
+# Inspect service details (read operation - works via Unix socket!)
+warren service inspect nginx
 
 # Output:
 # Service: nginx
@@ -156,14 +162,14 @@ warren service inspect nginx --manager 127.0.0.1:8080
 ### Step 6: Scale Service
 
 ```bash
-# Scale to 4 replicas
+# Scale to 4 replicas (write operation - requires --manager)
 warren service scale nginx --replicas 4 --manager 127.0.0.1:8080
 
 # Output:
 # ✓ Service 'nginx' scaled to 4 replicas
 
-# Verify scaling
-warren service list --manager 127.0.0.1:8080
+# Verify scaling (read operation - works via Unix socket!)
+warren service list
 
 # Output:
 # NAME     IMAGE          REPLICAS  MODE        CREATED
@@ -173,7 +179,7 @@ warren service list --manager 127.0.0.1:8080
 ### Step 7: Update Service
 
 ```bash
-# Update to nginx:alpine
+# Update to nginx:alpine (write operation - requires --manager)
 warren service update nginx --image nginx:alpine --manager 127.0.0.1:8080
 
 # Output:
@@ -184,7 +190,7 @@ warren service update nginx --image nginx:alpine --manager 127.0.0.1:8080
 ### Step 8: Clean Up
 
 ```bash
-# Delete service
+# Delete service (write operation - requires --manager)
 warren service delete nginx --manager 127.0.0.1:8080
 
 # Output:
@@ -193,6 +199,91 @@ warren service delete nginx --manager 127.0.0.1:8080
 
 # Stop worker (Ctrl+C in worker terminal)
 # Stop manager (Ctrl+C in manager terminal)
+```
+
+---
+
+## Remote CLI Setup
+
+Warren v1.4.0+ provides zero-config local access via Unix socket for read operations. However, you'll need to set up mTLS certificates in these scenarios:
+
+1. **Write operations** on local manager (create, update, delete, scale)
+2. **Remote access** to managers from another machine
+3. **Automation scripts** that need write access
+
+### When Do You Need This?
+
+| Scenario | Unix Socket (No Setup) | mTLS Setup Required |
+|----------|------------------------|---------------------|
+| Local read operations (`warren node list`, `service list`) | ✅ Works | Not needed |
+| Local write operations (`service create`, `scale`) | ❌ Blocked | ✅ Required |
+| Remote access from another machine | ❌ N/A | ✅ Required |
+
+### Setup mTLS for Local Write Operations
+
+If you're on the manager node and need write access:
+
+```bash
+# Option 1: Use --manager flag (quick, per-command)
+warren service create nginx --image nginx:latest --manager 127.0.0.1:8080
+
+# Option 2: Initialize CLI with mTLS (permanent setup)
+# Get the manager token
+sudo cat /var/lib/warren/cluster/manager_token.txt
+
+# Initialize CLI
+warren init --manager 127.0.0.1:8080 --token <token-from-above>
+
+# Output:
+# ✓ CLI certificate requested and saved
+# ✓ Certificates stored in ~/.warren/certs/cli/
+# ✓ You can now use warren commands without --manager flag
+
+# Now write operations work without --manager flag:
+warren service create nginx --image nginx:latest
+```
+
+### Setup mTLS for Remote Access
+
+If you're accessing Warren from a different machine:
+
+**On the manager node:**
+```bash
+# Generate join token for CLI access
+warren cluster join-token manager --manager 127.0.0.1:8080
+
+# Output:
+# Join Token (expires in 24h):
+# SWMTKN-1-3x7h9f2k1p6v8w4q0n5m7j9l2b8d6f4g1h3k5m7n9p2r4t6
+```
+
+**On your local machine (remote):**
+```bash
+# Initialize CLI with manager address and token
+warren init --manager 192.168.1.10:8080 --token SWMTKN-1-3x7h9f2k1p6v8w4q0n5m7j9l2b8d6f4g1h3k5m7n9p2r4t6
+
+# Output:
+# ✓ Connected to manager at 192.168.1.10:8080
+# ✓ CLI certificate requested and saved
+# ✓ Certificates stored in ~/.warren/certs/cli/
+
+# Now all commands work:
+warren node list
+warren service list
+warren service create web --image nginx:latest
+```
+
+### Using Environment Variables
+
+Set the default manager to avoid repeating `--manager` flag:
+
+```bash
+# Add to ~/.bashrc or ~/.zshrc
+export WARREN_MANAGER=192.168.1.10:8080
+
+# Now commands work without --manager flag
+warren service list
+warren service create app --image myapp:latest
 ```
 
 ---
@@ -226,7 +317,7 @@ For production deployments, you'll want a multi-manager cluster (3 or 5 managers
 # Initialize first manager
 sudo warren cluster init --advertise-addr 192.168.1.10:8080
 
-# Generate join token for additional managers
+# Generate join token for additional managers (write operation - requires --manager)
 warren cluster join-token manager --manager 127.0.0.1:8080
 
 # Output:
@@ -283,9 +374,10 @@ sudo warren worker start \
 
 **Verify Multi-Manager Cluster:**
 
+From any manager node (using Unix socket):
 ```bash
-# Check cluster info (shows Raft quorum)
-warren cluster info --manager 192.168.1.10:8080
+# Check cluster info (read operation - works via Unix socket!)
+warren cluster info
 
 # Output:
 # Cluster ID: cluster-abc123
@@ -302,25 +394,36 @@ warren cluster info --manager 192.168.1.10:8080
 #   worker-2   ready  3 tasks
 ```
 
+From a remote machine (using mTLS):
+```bash
+# First, set up remote access (see "Remote CLI Setup" section above)
+warren init --manager 192.168.1.10:8080 --token <manager-token>
+
+# Then check cluster info
+warren cluster info
+```
+
 ---
 
 ## Working with Secrets
 
+> **Note**: `secret create` (write) requires `--manager` or mTLS setup. `secret list` (read) works via Unix socket.
+
 ```bash
-# Create secret from literal
+# Create secret from literal (write operation - requires --manager)
 warren secret create db-password \
   --from-literal password=mySecurePassword123 \
   --manager 127.0.0.1:8080
 
-# Create secret from file
+# Create secret from file (write operation - requires --manager)
 warren secret create tls-cert \
   --from-file /path/to/cert.pem \
   --manager 127.0.0.1:8080
 
-# List secrets
-warren secret list --manager 127.0.0.1:8080
+# List secrets (read operation - works via Unix socket!)
+warren secret list
 
-# Deploy service with secret
+# Deploy service with secret (write operation - requires --manager)
 warren service create webapp \
   --image myapp:latest \
   --secret db-password \
@@ -334,21 +437,23 @@ warren service create webapp \
 
 ## Working with Volumes
 
+> **Note**: `volume create` (write) requires `--manager` or mTLS setup. `volume list` (read) works via Unix socket.
+
 ```bash
-# Create volume
+# Create volume (write operation - requires --manager)
 warren volume create db-data \
   --driver local \
   --manager 127.0.0.1:8080
 
-# Deploy service with volume
+# Deploy service with volume (write operation - requires --manager)
 warren service create postgres \
   --image postgres:15 \
   --volume db-data:/var/lib/postgresql/data \
   --replicas 1 \
   --manager 127.0.0.1:8080
 
-# List volumes
-warren volume list --manager 127.0.0.1:8080
+# List volumes (read operation - works via Unix socket!)
+warren volume list
 ```
 
 ---
@@ -407,42 +512,54 @@ Now that you have Warren running, explore these topics:
 ```bash
 # Cluster management
 warren cluster init                          # Initialize cluster
-warren cluster info --manager <addr>         # Show cluster status
-warren cluster join-token [manager|worker]   # Generate join token
+warren cluster info                          # Show cluster status (read - Unix socket!)
+warren cluster join-token [manager|worker] \ # Generate join token (write)
+  --manager <addr>
 
 # Node management
-warren node list --manager <addr>            # List all nodes
+warren node list                             # List all nodes (read - Unix socket!)
 warren manager join --token <token> ...      # Join as manager
 warren worker start --manager <addr>         # Start worker
 
-# Service management
-warren service create <name> --image <img>   # Create service
-warren service list --manager <addr>         # List services
-warren service scale <name> --replicas <n>   # Scale service
-warren service update <name> --image <img>   # Update service
-warren service delete <name>                 # Delete service
+# Service management (read operations work via Unix socket!)
+warren service list                          # List services (read)
+warren service inspect <name>                # Inspect service (read)
+warren service create <name> --image <img> \ # Create service (write)
+  --manager <addr>
+warren service scale <name> --replicas <n> \ # Scale service (write)
+  --manager <addr>
+warren service update <name> --image <img> \ # Update service (write)
+  --manager <addr>
+warren service delete <name> \               # Delete service (write)
+  --manager <addr>
 
-# Secrets
-warren secret create <name> --from-literal key=value
-warren secret list --manager <addr>
+# Secrets (read operations work via Unix socket!)
+warren secret list                           # List secrets (read)
+warren secret create <name> \                # Create secret (write)
+  --from-literal key=value --manager <addr>
 
-# Volumes
-warren volume create <name> --driver local
-warren volume list --manager <addr>
+# Volumes (read operations work via Unix socket!)
+warren volume list                           # List volumes (read)
+warren volume create <name> \                # Create volume (write)
+  --driver local --manager <addr>
 
-# YAML
+# YAML (write operation)
 warren apply -f <file.yaml> --manager <addr>
 ```
+
+> **💡 Tip**: Read operations (list, inspect, info) work immediately via Unix socket. Write operations (create, update, delete) require `--manager` flag or `warren init` setup.
 
 ### Environment Variables
 
 ```bash
-# Set default manager address
+# Set default manager address (useful for write operations or remote access)
 export WARREN_MANAGER=127.0.0.1:8080
 
-# Now commands work without --manager flag
-warren service list
-warren node list
+# Now write commands work without --manager flag
+warren service create web --image nginx:latest
+warren service scale web --replicas 3
+
+# Note: Read commands already work via Unix socket (no ENV needed)
 ```
 
 ---
