@@ -60,8 +60,8 @@ func runApply(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to parse YAML: %v", err)
 	}
 
-	// Connect to manager
-	c, err := client.NewClient(managerAddr)
+	// Connect to manager (auto-detects Unix socket for local access)
+	c, err := client.NewClientAuto(managerAddr)
 	if err != nil {
 		return fmt.Errorf("failed to connect to manager: %v", err)
 	}

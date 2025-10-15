@@ -320,7 +320,7 @@ var clusterJoinTokenCmd = &cobra.Command{
 		manager, _ := cmd.Flags().GetString("manager")
 
 		// Connect to manager
-		c, err := client.NewClient(manager)
+		c, err := client.NewClientAuto(manager)
 		if err != nil {
 			return fmt.Errorf("failed to connect to manager: %v", err)
 		}
@@ -367,7 +367,7 @@ var clusterInfoCmd = &cobra.Command{
 		manager, _ := cmd.Flags().GetString("manager")
 
 		// Connect to manager
-		c, err := client.NewClient(manager)
+		c, err := client.NewClientAuto(manager)
 		if err != nil {
 			return fmt.Errorf("failed to connect to manager: %v", err)
 		}
@@ -833,7 +833,7 @@ var serviceCreateCmd = &cobra.Command{
 		}
 
 		// Connect to manager
-		c, err := client.NewClient(manager)
+		c, err := client.NewClientAuto(manager)
 		if err != nil {
 			return fmt.Errorf("failed to connect to manager: %v", err)
 		}
@@ -921,7 +921,7 @@ var serviceListCmd = &cobra.Command{
 		manager, _ := cmd.Flags().GetString("manager")
 
 		// Connect to manager
-		c, err := client.NewClient(manager)
+		c, err := client.NewClientAuto(manager)
 		if err != nil {
 			return fmt.Errorf("failed to connect to manager: %v", err)
 		}
@@ -959,7 +959,7 @@ var serviceInspectCmd = &cobra.Command{
 		manager, _ := cmd.Flags().GetString("manager")
 
 		// Connect to manager
-		c, err := client.NewClient(manager)
+		c, err := client.NewClientAuto(manager)
 		if err != nil {
 			return fmt.Errorf("failed to connect to manager: %v", err)
 		}
@@ -995,7 +995,7 @@ var serviceDeleteCmd = &cobra.Command{
 		manager, _ := cmd.Flags().GetString("manager")
 
 		// Connect to manager
-		c, err := client.NewClient(manager)
+		c, err := client.NewClientAuto(manager)
 		if err != nil {
 			return fmt.Errorf("failed to connect to manager: %v", err)
 		}
@@ -1027,7 +1027,7 @@ var serviceScaleCmd = &cobra.Command{
 		manager, _ := cmd.Flags().GetString("manager")
 
 		// Connect to manager
-		c, err := client.NewClient(manager)
+		c, err := client.NewClientAuto(manager)
 		if err != nil {
 			return fmt.Errorf("failed to connect to manager: %v", err)
 		}
@@ -1103,7 +1103,7 @@ Examples:
 		}
 
 		// Connect to manager
-		c, err := client.NewClient(manager)
+		c, err := client.NewClientAuto(manager)
 		if err != nil {
 			return fmt.Errorf("failed to connect to manager: %v", err)
 		}
@@ -1170,7 +1170,7 @@ blue-green or canary deployment.`,
 		manager, _ := cmd.Flags().GetString("manager")
 
 		// Connect to manager
-		c, err := client.NewClient(manager)
+		c, err := client.NewClientAuto(manager)
 		if err != nil {
 			return fmt.Errorf("failed to connect to manager: %v", err)
 		}
@@ -1258,7 +1258,7 @@ var nodeListCmd = &cobra.Command{
 		manager, _ := cmd.Flags().GetString("manager")
 
 		// Connect to manager
-		c, err := client.NewClient(manager)
+		c, err := client.NewClientAuto(manager)
 		if err != nil {
 			return fmt.Errorf("failed to connect to manager: %v", err)
 		}
@@ -1342,7 +1342,7 @@ Examples:
 		}
 
 		// Create client and secret
-		c, err := client.NewClient(managerAddr)
+		c, err := client.NewClientAuto(managerAddr)
 		if err != nil {
 			return fmt.Errorf("failed to connect to manager: %w", err)
 		}
@@ -1365,7 +1365,7 @@ var secretListCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		managerAddr, _ := cmd.Flags().GetString("manager")
 
-		c, err := client.NewClient(managerAddr)
+		c, err := client.NewClientAuto(managerAddr)
 		if err != nil {
 			return fmt.Errorf("failed to connect to manager: %w", err)
 		}
@@ -1404,7 +1404,7 @@ var secretInspectCmd = &cobra.Command{
 		name := args[0]
 		managerAddr, _ := cmd.Flags().GetString("manager")
 
-		c, err := client.NewClient(managerAddr)
+		c, err := client.NewClientAuto(managerAddr)
 		if err != nil {
 			return fmt.Errorf("failed to connect to manager: %w", err)
 		}
@@ -1432,7 +1432,7 @@ var secretDeleteCmd = &cobra.Command{
 		name := args[0]
 		managerAddr, _ := cmd.Flags().GetString("manager")
 
-		c, err := client.NewClient(managerAddr)
+		c, err := client.NewClientAuto(managerAddr)
 		if err != nil {
 			return fmt.Errorf("failed to connect to manager: %w", err)
 		}
@@ -1494,7 +1494,7 @@ Examples:
 		opts, _ := cmd.Flags().GetStringToString("opt")
 
 		// Create client and volume
-		c, err := client.NewClient(managerAddr)
+		c, err := client.NewClientAuto(managerAddr)
 		if err != nil {
 			return fmt.Errorf("failed to connect to manager: %w", err)
 		}
@@ -1518,7 +1518,7 @@ var volumeListCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		managerAddr, _ := cmd.Flags().GetString("manager")
 
-		c, err := client.NewClient(managerAddr)
+		c, err := client.NewClientAuto(managerAddr)
 		if err != nil {
 			return fmt.Errorf("failed to connect to manager: %w", err)
 		}
@@ -1563,7 +1563,7 @@ var volumeInspectCmd = &cobra.Command{
 		name := args[0]
 		managerAddr, _ := cmd.Flags().GetString("manager")
 
-		c, err := client.NewClient(managerAddr)
+		c, err := client.NewClientAuto(managerAddr)
 		if err != nil {
 			return fmt.Errorf("failed to connect to manager: %w", err)
 		}
@@ -1611,7 +1611,7 @@ var volumeDeleteCmd = &cobra.Command{
 		name := args[0]
 		managerAddr, _ := cmd.Flags().GetString("manager")
 
-		c, err := client.NewClient(managerAddr)
+		c, err := client.NewClientAuto(managerAddr)
 		if err != nil {
 			return fmt.Errorf("failed to connect to manager: %w", err)
 		}
@@ -1897,7 +1897,7 @@ var ingressCreateCmd = &cobra.Command{
 		}
 
 		// Connect to manager
-		c, err := client.NewClient(manager)
+		c, err := client.NewClientAuto(manager)
 		if err != nil {
 			return fmt.Errorf("failed to connect to manager: %v", err)
 		}
@@ -1964,7 +1964,7 @@ var ingressListCmd = &cobra.Command{
 		manager, _ := cmd.Flags().GetString("manager")
 
 		// Connect to manager
-		c, err := client.NewClient(manager)
+		c, err := client.NewClientAuto(manager)
 		if err != nil {
 			return fmt.Errorf("failed to connect to manager: %v", err)
 		}
@@ -2017,7 +2017,7 @@ var ingressInspectCmd = &cobra.Command{
 		manager, _ := cmd.Flags().GetString("manager")
 
 		// Connect to manager
-		c, err := client.NewClient(manager)
+		c, err := client.NewClientAuto(manager)
 		if err != nil {
 			return fmt.Errorf("failed to connect to manager: %v", err)
 		}
@@ -2069,7 +2069,7 @@ var ingressDeleteCmd = &cobra.Command{
 		manager, _ := cmd.Flags().GetString("manager")
 
 		// Connect to manager
-		c, err := client.NewClient(manager)
+		c, err := client.NewClientAuto(manager)
 		if err != nil {
 			return fmt.Errorf("failed to connect to manager: %v", err)
 		}
@@ -2127,7 +2127,7 @@ var certificateCreateCmd = &cobra.Command{
 		}
 
 		// Connect to manager
-		c, err := client.NewClient(managerAddr)
+		c, err := client.NewClientAuto(managerAddr)
 		if err != nil {
 			return fmt.Errorf("failed to connect to manager: %v", err)
 		}
@@ -2164,7 +2164,7 @@ var certificateListCmd = &cobra.Command{
 		managerAddr, _ := cmd.Flags().GetString("manager")
 
 		// Connect to manager
-		c, err := client.NewClient(managerAddr)
+		c, err := client.NewClientAuto(managerAddr)
 		if err != nil {
 			return fmt.Errorf("failed to connect to manager: %v", err)
 		}
@@ -2215,7 +2215,7 @@ var certificateInspectCmd = &cobra.Command{
 		managerAddr, _ := cmd.Flags().GetString("manager")
 
 		// Connect to manager
-		c, err := client.NewClient(managerAddr)
+		c, err := client.NewClientAuto(managerAddr)
 		if err != nil {
 			return fmt.Errorf("failed to connect to manager: %v", err)
 		}
@@ -2256,7 +2256,7 @@ var certificateDeleteCmd = &cobra.Command{
 		managerAddr, _ := cmd.Flags().GetString("manager")
 
 		// Connect to manager
-		c, err := client.NewClient(managerAddr)
+		c, err := client.NewClientAuto(managerAddr)
 		if err != nil {
 			return fmt.Errorf("failed to connect to manager: %v", err)
 		}
