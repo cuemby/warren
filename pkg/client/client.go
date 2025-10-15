@@ -84,10 +84,36 @@ func NewClientWithToken(addr, token string) (*Client, error) {
 }
 
 // NewClientAuto creates a new Warren client with automatic connection detection.
-// It tries Unix socket first (local, no mTLS), then falls back to TCP with mTLS if needed.
-// This is the recommended way to create a client for CLI commands.
+//
+// Connection priority:
+// 1. TCP with mTLS (if CLI certificate exists) - supports all operations
+// 2. Unix socket (if no cert) - read-only operations, local access only
+//
+// This ensures that once users run 'warren init', all subsequent commands use
+// mTLS over TCP (supporting write operations) instead of read-only Unix socket.
 func NewClientAuto(addr string) (*Client, error) {
-	// First, try Unix socket (local access, no certificates required)
+	// Check for CLI certificate first
+	certDir, err := security.GetCLICertDir()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get cert directory: %w", err)
+	}
+
+	// If CLI certificate exists, ALWAYS prefer TCP with mTLS
+	// This ensures write operations work and respects user's 'warren init' setup
+	if security.CertExists(certDir) {
+		conn, err := connectWithMTLS(addr, certDir)
+		if err != nil {
+			return nil, fmt.Errorf("failed to connect with mTLS: %w", err)
+		}
+
+		return &Client{
+			conn:   conn,
+			client: proto.NewWarrenAPIClient(conn),
+		}, nil
+	}
+
+	// No certificate - fall back to Unix socket for read-only operations
+	// Unix socket is useful for 'node list', 'service list', etc. without setup
 	if _, err := os.Stat(DefaultUnixSocket); err == nil {
 		conn, err := connectUnix(DefaultUnixSocket)
 		if err == nil {
@@ -96,30 +122,11 @@ func NewClientAuto(addr string) (*Client, error) {
 				client: proto.NewWarrenAPIClient(conn),
 			}, nil
 		}
-		// Unix socket exists but connection failed - fall through to TCP
+		// Unix socket exists but connection failed - fall through to error
 	}
 
-	// Fall back to TCP with mTLS
-	// Check for CLI certificate
-	certDir, err := security.GetCLICertDir()
-	if err != nil {
-		return nil, fmt.Errorf("failed to get cert directory: %w", err)
-	}
-
-	if !security.CertExists(certDir) {
-		return nil, fmt.Errorf("CLI certificate not found at %s. Please run 'warren init --manager %s --token <token>' to request a certificate from the manager", certDir, addr)
-	}
-
-	// Use mTLS with existing certificate
-	conn, err := connectWithMTLS(addr, certDir)
-	if err != nil {
-		return nil, fmt.Errorf("failed to connect with mTLS: %w", err)
-	}
-
-	return &Client{
-		conn:   conn,
-		client: proto.NewWarrenAPIClient(conn),
-	}, nil
+	// Neither certificate nor Unix socket available
+	return nil, fmt.Errorf("CLI certificate not found at %s. Please run 'warren init --manager %s --token <token>' to request a certificate from the manager", certDir, addr)
 }
 
 // Close closes the client connection
