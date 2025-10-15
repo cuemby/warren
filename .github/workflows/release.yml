@@ -22,12 +22,6 @@ jobs:
           - goos: linux
             goarch: arm64
             output: warren-linux-arm64
-          - goos: darwin
-            goarch: amd64
-            output: warren-darwin-amd64
-          - goos: darwin
-            goarch: arm64
-            output: warren-darwin-arm64
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
