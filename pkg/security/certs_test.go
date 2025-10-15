@@ -173,9 +173,9 @@ func TestCertExists(t *testing.T) {
 
 func TestCertNeedsRotation(t *testing.T) {
 	tests := []struct {
-		name       string
-		notAfter   time.Time
-		needsRot   bool
+		name     string
+		notAfter time.Time
+		needsRot bool
 	}{
 		{
 			name:     "Cert expiring in 1 day - needs rotation",

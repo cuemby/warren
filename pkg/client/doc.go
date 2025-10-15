@@ -459,11 +459,11 @@ Certificate Files:
 
 Certificate Request Flow:
 
-	1. NewClientWithToken("manager:8080", "token")
-	2. Check if certificate exists
-	3. If not, call RequestCertificate gRPC
-	4. Save certificate to disk
-	5. Load certificate and connect with mTLS
+ 1. NewClientWithToken("manager:8080", "token")
+ 2. Check if certificate exists
+ 3. If not, call RequestCertificate gRPC
+ 4. Save certificate to disk
+ 5. Load certificate and connect with mTLS
 
 # Thread Safety
 

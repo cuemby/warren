@@ -157,7 +157,7 @@ func (p *HostPortPublisher) removePortForwarding(containerIP string, port types.
 	forwardRule := []string{
 		"-D", "FORWARD",
 		"-p", protocol,
-"-d", containerIP,
+		"-d", containerIP,
 		"--dport", fmt.Sprintf("%d", port.ContainerPort),
 		"-j", "ACCEPT",
 	}

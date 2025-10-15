@@ -17,7 +17,7 @@ type TokenManager struct {
 // JoinToken represents a token for joining the cluster
 type JoinToken struct {
 	Token     string
-	Role      string    // "manager" or "worker"
+	Role      string // "manager" or "worker"
 	CreatedAt time.Time
 	ExpiresAt time.Time
 }

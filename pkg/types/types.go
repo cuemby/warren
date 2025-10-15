@@ -30,8 +30,8 @@ type Cluster struct {
 type Node struct {
 	ID            string
 	Role          NodeRole
-	Address       string    // Host IP address
-	OverlayIP     net.IP    // WireGuard overlay IP
+	Address       string // Host IP address
+	OverlayIP     net.IP // WireGuard overlay IP
 	Hostname      string
 	Labels        map[string]string
 	Resources     *NodeResources
@@ -116,11 +116,11 @@ const (
 type DeploymentState string
 
 const (
-	DeploymentStateActive   DeploymentState = "active"   // Currently serving traffic
-	DeploymentStateStandby  DeploymentState = "standby"  // Ready but not serving (blue in blue-green)
-	DeploymentStateCanary   DeploymentState = "canary"   // Canary version receiving partial traffic
-	DeploymentStateRolling  DeploymentState = "rolling"  // Rolling update in progress
-	DeploymentStateFailed   DeploymentState = "failed"   // Deployment failed
+	DeploymentStateActive     DeploymentState = "active"      // Currently serving traffic
+	DeploymentStateStandby    DeploymentState = "standby"     // Ready but not serving (blue in blue-green)
+	DeploymentStateCanary     DeploymentState = "canary"      // Canary version receiving partial traffic
+	DeploymentStateRolling    DeploymentState = "rolling"     // Rolling update in progress
+	DeploymentStateFailed     DeploymentState = "failed"      // Deployment failed
 	DeploymentStateRolledBack DeploymentState = "rolled-back" // Deployment was rolled back
 )
 
@@ -151,9 +151,9 @@ type UpdateConfig struct {
 // PortMapping defines port exposure
 type PortMapping struct {
 	Name          string
-	ContainerPort int      // Port inside container (target port)
-	HostPort      int      // Port on host/cluster (published port)
-	Protocol      string   // "tcp" or "udp"
+	ContainerPort int         // Port inside container (target port)
+	HostPort      int         // Port on host/cluster (published port)
+	Protocol      string      // "tcp" or "udp"
 	PublishMode   PublishMode // "host" or "ingress"
 }
 
@@ -232,28 +232,28 @@ type ResourceRequirements struct {
 
 // Container represents a single running container instance of a service
 type Container struct {
-	ID               string
-	ServiceID        string
-	ServiceName      string
-	NodeID           string
-	ContainerID      string // Runtime container ID (containerd)
-	DesiredState     ContainerState
-	ActualState      ContainerState
-	Image            string
-	Env              []string
-	Ports            []*PortMapping
-	Mounts           []*VolumeMount
-	Secrets          []string // Secret names to mount
-	HealthCheck      *HealthCheck
-	HealthStatus     *HealthStatus // Current health check status
-	RestartPolicy    *RestartPolicy
-	Resources        *ResourceRequirements
-	StopTimeout      int // Seconds to wait before force-killing (default: 10)
-	CreatedAt        time.Time
-	StartedAt        time.Time
-	FinishedAt       time.Time
-	ExitCode         int
-	Error            string
+	ID            string
+	ServiceID     string
+	ServiceName   string
+	NodeID        string
+	ContainerID   string // Runtime container ID (containerd)
+	DesiredState  ContainerState
+	ActualState   ContainerState
+	Image         string
+	Env           []string
+	Ports         []*PortMapping
+	Mounts        []*VolumeMount
+	Secrets       []string // Secret names to mount
+	HealthCheck   *HealthCheck
+	HealthStatus  *HealthStatus // Current health check status
+	RestartPolicy *RestartPolicy
+	Resources     *ResourceRequirements
+	StopTimeout   int // Seconds to wait before force-killing (default: 10)
+	CreatedAt     time.Time
+	StartedAt     time.Time
+	FinishedAt    time.Time
+	ExitCode      int
+	Error         string
 }
 
 // ContainerState represents the state of a container
@@ -333,12 +333,12 @@ type IngressRule struct {
 
 // IngressPath defines a path-based routing rule
 type IngressPath struct {
-	Path         string               // Path to match (e.g., "/api", "/web")
-	PathType     PathType             // "Prefix" or "Exact"
-	Backend      *IngressBackend      // Backend service to route to
-	Rewrite      *PathRewrite         // Path rewriting configuration (M7.3)
-	Headers      *HeaderManipulation  // Header manipulation (M7.3)
-	RateLimit    *RateLimit           // Rate limiting configuration (M7.3)
+	Path          string              // Path to match (e.g., "/api", "/web")
+	PathType      PathType            // "Prefix" or "Exact"
+	Backend       *IngressBackend     // Backend service to route to
+	Rewrite       *PathRewrite        // Path rewriting configuration (M7.3)
+	Headers       *HeaderManipulation // Header manipulation (M7.3)
+	RateLimit     *RateLimit          // Rate limiting configuration (M7.3)
 	AccessControl *AccessControl      // Access control rules (M7.3)
 }
 
@@ -392,16 +392,16 @@ type AccessControl struct {
 
 // TLSCertificate represents a TLS certificate for ingress
 type TLSCertificate struct {
-	ID          string            // Unique identifier
-	Name        string            // Certificate name (e.g., "example-com-cert")
-	Hosts       []string          // Hostnames covered by this cert (e.g., ["example.com", "*.example.com"])
-	CertPEM     []byte            // Certificate in PEM format
-	KeyPEM      []byte            // Private key in PEM format (encrypted in storage)
-	Issuer      string            // Certificate issuer (e.g., "Let's Encrypt", "self-signed", "manual")
-	NotBefore   time.Time         // Certificate valid from
-	NotAfter    time.Time         // Certificate valid until
-	AutoRenew   bool              // Enable automatic renewal (M7.3)
-	Labels      map[string]string // Labels for organization
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
+	ID        string            // Unique identifier
+	Name      string            // Certificate name (e.g., "example-com-cert")
+	Hosts     []string          // Hostnames covered by this cert (e.g., ["example.com", "*.example.com"])
+	CertPEM   []byte            // Certificate in PEM format
+	KeyPEM    []byte            // Private key in PEM format (encrypted in storage)
+	Issuer    string            // Certificate issuer (e.g., "Let's Encrypt", "self-signed", "manual")
+	NotBefore time.Time         // Certificate valid from
+	NotAfter  time.Time         // Certificate valid until
+	AutoRenew bool              // Enable automatic renewal (M7.3)
+	Labels    map[string]string // Labels for organization
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }

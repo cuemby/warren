@@ -23,12 +23,12 @@ import (
 
 // ACMEClient manages Let's Encrypt certificate issuance and renewal
 type ACMEClient struct {
-	store         storage.Store
-	proxy         *Proxy
-	client        *lego.Client
-	user          *ACMEUser
+	store             storage.Store
+	proxy             *Proxy
+	client            *lego.Client
+	user              *ACMEUser
 	challengeProvider *HTTP01Provider
-	mu            sync.RWMutex
+	mu                sync.RWMutex
 }
 
 // ACMEUser implements the required user interface for ACME registration

@@ -210,12 +210,12 @@ func (ca *CertAuthority) IssueNodeCertificate(nodeID, role string, dnsNames []st
 			Organization: []string{"Warren Cluster"},
 			CommonName:   fmt.Sprintf("%s-%s", role, nodeID),
 		},
-		NotBefore:    time.Now(),
-		NotAfter:     time.Now().Add(nodeCertValidity),
-		KeyUsage:     x509.KeyUsageDigitalSignature | x509.KeyUsageKeyEncipherment,
-		ExtKeyUsage:  []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth, x509.ExtKeyUsageServerAuth},
-		DNSNames:     dnsNames,
-		IPAddresses:  ipAddresses,
+		NotBefore:   time.Now(),
+		NotAfter:    time.Now().Add(nodeCertValidity),
+		KeyUsage:    x509.KeyUsageDigitalSignature | x509.KeyUsageKeyEncipherment,
+		ExtKeyUsage: []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth, x509.ExtKeyUsageServerAuth},
+		DNSNames:    dnsNames,
+		IPAddresses: ipAddresses,
 	}
 
 	// Create certificate signed by root CA

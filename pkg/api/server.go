@@ -34,9 +34,9 @@ const (
 type Server struct {
 	proto.UnimplementedWarrenAPIServer
 	manager    *manager.Manager
-	grpcTCP    *grpc.Server      // TCP listener with mTLS
-	grpcUnix   *grpc.Server      // Unix socket listener (no mTLS, read-only)
-	unixSocket string            // Path to Unix socket
+	grpcTCP    *grpc.Server // TCP listener with mTLS
+	grpcUnix   *grpc.Server // Unix socket listener (no mTLS, read-only)
+	unixSocket string       // Path to Unix socket
 }
 
 // NewServer creates a new API server with mTLS

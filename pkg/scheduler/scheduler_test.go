@@ -78,11 +78,11 @@ func TestGlobalServiceScheduling(t *testing.T) {
 
 	// Create global service
 	service := &types.Service{
-		ID:       "test-global-service",
-		Name:     "monitoring",
-		Image:    "prometheus/node-exporter:latest",
-		Mode:     types.ServiceModeGlobal,
-		Replicas: 0, // Not used for global services
+		ID:        "test-global-service",
+		Name:      "monitoring",
+		Image:     "prometheus/node-exporter:latest",
+		Mode:      types.ServiceModeGlobal,
+		Replicas:  0, // Not used for global services
 		CreatedAt: time.Now(),
 	}
 
@@ -242,11 +242,11 @@ func TestReplicatedServiceScheduling(t *testing.T) {
 
 	// Create replicated service with 3 replicas
 	service := &types.Service{
-		ID:       "test-replicated-service",
-		Name:     "web",
-		Image:    "nginx:latest",
-		Mode:     types.ServiceModeReplicated,
-		Replicas: 3,
+		ID:        "test-replicated-service",
+		Name:      "web",
+		Image:     "nginx:latest",
+		Mode:      types.ServiceModeReplicated,
+		Replicas:  3,
 		CreatedAt: time.Now(),
 	}
 

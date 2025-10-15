@@ -240,7 +240,6 @@ automatically form a Raft quorum once additional managers join.`,
 		metrics.RegisterComponent("api", true, "ready")
 		metrics.RegisterComponent("containerd", true, "ready")
 
-
 		// Start embedded worker NOW (AFTER API is ready) for hybrid mode
 		if !managerOnly {
 			fmt.Println()
@@ -1136,7 +1135,7 @@ Examples:
 
   # Canary deployment with custom steps
   warren service update web --image nginx:1.21 --strategy canary --canary-steps 10,50,100`,
-	Args:  cobra.ExactArgs(1),
+	Args: cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		name := args[0]
 		image, _ := cmd.Flags().GetString("image")
@@ -1230,7 +1229,7 @@ var serviceRollbackCmd = &cobra.Command{
 
 This command switches traffic back to the standby version from a previous
 blue-green or canary deployment.`,
-	Args:  cobra.ExactArgs(1),
+	Args: cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		name := args[0]
 		manager, _ := cmd.Flags().GetString("manager")
@@ -2023,8 +2022,8 @@ var ingressCreateCmd = &cobra.Command{
 }
 
 var ingressListCmd = &cobra.Command{
-	Use:   "list",
-	Short: "List all ingresses",
+	Use:     "list",
+	Short:   "List all ingresses",
 	Aliases: []string{"ls"},
 	RunE: func(cmd *cobra.Command, args []string) error {
 		manager, _ := cmd.Flags().GetString("manager")
@@ -2126,10 +2125,10 @@ var ingressInspectCmd = &cobra.Command{
 }
 
 var ingressDeleteCmd = &cobra.Command{
-	Use:   "delete NAME",
-	Short: "Delete an ingress",
+	Use:     "delete NAME",
+	Short:   "Delete an ingress",
 	Aliases: []string{"rm"},
-	Args:  cobra.ExactArgs(1),
+	Args:    cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		name := args[0]
 		manager, _ := cmd.Flags().GetString("manager")

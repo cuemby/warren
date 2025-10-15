@@ -1,3 +1,4 @@
+//go:build darwin
 // +build darwin
 
 package embedded
@@ -37,7 +38,7 @@ func EnsureContainerdMacOS(ctx context.Context, dataDir string) (*ContainerdMana
 	manager := &ContainerdManager{
 		dataDir:     dataDir,
 		socketPath:  socketPath,
-		useExternal: false, // We're managing the VM, so it's not "external"
+		useExternal: false,       // We're managing the VM, so it's not "external"
 		limaManager: limaManager, // Store reference for lifecycle management
 		logger:      logger,
 	}

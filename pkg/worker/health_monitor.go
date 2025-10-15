@@ -13,10 +13,10 @@ import (
 
 // HealthMonitor manages health checks for containers
 type HealthMonitor struct {
-	worker     *Worker
-	monitors   map[string]*containerHealthMonitor
-	cancelFns  map[string]context.CancelFunc
-	stopCh     chan struct{}
+	worker    *Worker
+	monitors  map[string]*containerHealthMonitor
+	cancelFns map[string]context.CancelFunc
+	stopCh    chan struct{}
 }
 
 // containerHealthMonitor tracks health check state for a single task

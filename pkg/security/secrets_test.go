@@ -239,10 +239,10 @@ func TestCreateSecret(t *testing.T) {
 	sm, _ := NewSecretsManager(key)
 
 	tests := []struct {
-		name      string
+		name       string
 		secretName string
-		plaintext []byte
-		wantErr   bool
+		plaintext  []byte
+		wantErr    bool
 	}{
 		{
 			name:       "valid secret",

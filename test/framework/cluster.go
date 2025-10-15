@@ -482,7 +482,7 @@ func (c *Cluster) hasQuorum() bool {
 	}
 
 	// Check if we have a leader and quorum
-	return info.LeaderId != "" && len(info.Servers) >= (c.Config.NumManagers/2 + 1)
+	return info.LeaderId != "" && len(info.Servers) >= (c.Config.NumManagers/2+1)
 }
 
 func (c *Cluster) waitForAPI(addr string, timeout time.Duration) error {

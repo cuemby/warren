@@ -339,6 +339,7 @@ File-Based Logging:
 Warren doesn't include built-in log rotation. Use external tools:
 
 Logrotate (Linux):
+
 	# /etc/logrotate.d/warren
 	/var/log/warren/*.log {
 	    daily
@@ -351,10 +352,12 @@ Logrotate (Linux):
 	}
 
 Systemd Journal:
+
 	# Automatic rotation by systemd
 	journalctl -u warren -f
 
 Docker/Kubernetes:
+
 	# Use container runtime log drivers
 	# JSON logs to stdout (already implemented)
 

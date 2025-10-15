@@ -35,19 +35,19 @@ type Manager struct {
 	bindAddr string
 	dataDir  string
 
-	raft           *raft.Raft
-	fsm            *WarrenFSM
-	store          storage.Store
-	tokenManager   *TokenManager
-	secretsManager *security.SecretsManager
-	ca             *security.CertAuthority
-	eventBroker    *events.Broker
-	dnsServer      *dns.Server
-	dnsCtx         context.Context
-	dnsCancel      context.CancelFunc
-	ingressProxy   *ingress.Proxy
-	ingressCtx     context.Context
-	ingressCancel  context.CancelFunc
+	raft                 *raft.Raft
+	fsm                  *WarrenFSM
+	store                storage.Store
+	tokenManager         *TokenManager
+	secretsManager       *security.SecretsManager
+	ca                   *security.CertAuthority
+	eventBroker          *events.Broker
+	dnsServer            *dns.Server
+	dnsCtx               context.Context
+	dnsCancel            context.CancelFunc
+	ingressProxy         *ingress.Proxy
+	ingressCtx           context.Context
+	ingressCancel        context.CancelFunc
 	acmeClient           *ingress.ACMEClient
 	acmeEmail            string
 	deployer             *deploy.Deployer
@@ -138,8 +138,8 @@ func (m *Manager) Bootstrap() error {
 	// For <10s failover, we need faster detection and election
 	config.HeartbeatTimeout = 500 * time.Millisecond   // Reduced from 1s - faster failure detection
 	config.ElectionTimeout = 500 * time.Millisecond    // Reduced from 1s - faster elections
-	config.CommitTimeout = 50 * time.Millisecond        // Keep default - not critical for failover
-	config.LeaderLeaseTimeout = 250 * time.Millisecond  // Reduced from 500ms - faster lease timeout
+	config.CommitTimeout = 50 * time.Millisecond       // Keep default - not critical for failover
+	config.LeaderLeaseTimeout = 250 * time.Millisecond // Reduced from 500ms - faster lease timeout
 
 	// These settings mean:
 	// - Leader sends heartbeats every ~250ms (HeartbeatTimeout/2)
@@ -227,8 +227,8 @@ func (m *Manager) Join(leaderAddr string, token string) error {
 	// Same configuration as Bootstrap for consistency across cluster
 	config.HeartbeatTimeout = 500 * time.Millisecond   // Reduced from 1s - faster failure detection
 	config.ElectionTimeout = 500 * time.Millisecond    // Reduced from 1s - faster elections
-	config.CommitTimeout = 50 * time.Millisecond        // Keep default - not critical for failover
-	config.LeaderLeaseTimeout = 250 * time.Millisecond  // Reduced from 500ms - faster lease timeout
+	config.CommitTimeout = 50 * time.Millisecond       // Keep default - not critical for failover
+	config.LeaderLeaseTimeout = 250 * time.Millisecond // Reduced from 500ms - faster lease timeout
 
 	// Setup Raft communication
 	addr, err := net.ResolveTCPAddr("tcp", m.bindAddr)

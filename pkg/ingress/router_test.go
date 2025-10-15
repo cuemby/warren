@@ -316,16 +316,16 @@ func TestRouterRoute(t *testing.T) {
 			wantNil:         false,
 		},
 		{
-			name:     "no match - wrong host",
-			host:     "other.com",
-			path:     "/",
-			wantNil:  true,
+			name:    "no match - wrong host",
+			host:    "other.com",
+			path:    "/",
+			wantNil: true,
 		},
 		{
-			name:     "no match - wrong path",
-			host:     "api.example.com",
-			path:     "/v3/data",
-			wantNil:  true,
+			name:    "no match - wrong path",
+			host:    "api.example.com",
+			path:    "/v3/data",
+			wantNil: true,
 		},
 	}
 

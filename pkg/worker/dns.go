@@ -41,11 +41,12 @@ func NewDNSHandler(w *Worker, managerAddr string) (*DNSHandler, error) {
 // This configures containers to use Warren DNS server on the manager
 //
 // Format:
-//   nameserver <manager-ip>    # Warren DNS server
-//   nameserver 8.8.8.8          # Google DNS fallback
-//   nameserver 1.1.1.1          # Cloudflare DNS fallback
-//   search warren               # Allow "nginx" instead of "nginx.warren"
-//   options ndots:0             # Try search domains immediately
+//
+//	nameserver <manager-ip>    # Warren DNS server
+//	nameserver 8.8.8.8          # Google DNS fallback
+//	nameserver 1.1.1.1          # Cloudflare DNS fallback
+//	search warren               # Allow "nginx" instead of "nginx.warren"
+//	options ndots:0             # Try search domains immediately
 func (h *DNSHandler) GenerateResolvConf() (string, error) {
 	resolvConfPath := filepath.Join(h.dnsDir, DefaultResolvConf)
 
@@ -96,9 +97,10 @@ func (h *DNSHandler) Cleanup() error {
 
 // ExtractManagerIP extracts the IP address from manager address
 // Examples:
-//   "192.168.1.100:8080" -> "192.168.1.100"
-//   "localhost:8080" -> "127.0.0.1"
-//   "manager-1:8080" -> "manager-1" (hostname, DNS will resolve)
+//
+//	"192.168.1.100:8080" -> "192.168.1.100"
+//	"localhost:8080" -> "127.0.0.1"
+//	"manager-1:8080" -> "manager-1" (hostname, DNS will resolve)
 func ExtractManagerIP(managerAddr string) string {
 	// Find the colon separating host from port
 	for i := len(managerAddr) - 1; i >= 0; i-- {

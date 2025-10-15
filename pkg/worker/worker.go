@@ -43,13 +43,13 @@ type Worker struct {
 
 // Config holds worker configuration
 type Config struct {
-	NodeID            string
-	ManagerAddr       string
-	DataDir           string
-	Resources         *types.NodeResources
-	EncryptionKey     []byte // Cluster-wide encryption key for secrets
-	ContainerdSocket  string // Containerd socket path (empty = auto-detect)
-	JoinToken         string // Join token for initial authentication
+	NodeID           string
+	ManagerAddr      string
+	DataDir          string
+	Resources        *types.NodeResources
+	EncryptionKey    []byte // Cluster-wide encryption key for secrets
+	ContainerdSocket string // Containerd socket path (empty = auto-detect)
+	JoinToken        string // Join token for initial authentication
 }
 
 // NewWorker creates a new worker instance

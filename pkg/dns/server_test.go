@@ -7,11 +7,11 @@ import (
 // TestParseInstanceName tests instance name parsing
 func TestParseInstanceName(t *testing.T) {
 	tests := []struct {
-		name          string
-		input         string
-		wantService   string
-		wantInstance  int
-		wantErr       bool
+		name         string
+		input        string
+		wantService  string
+		wantInstance int
+		wantErr      bool
 	}{
 		{
 			name:         "simple service instance 1",

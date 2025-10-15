@@ -90,10 +90,10 @@ Architecture:
   - Data: /var/lib/warren/containerd
 
 Binary Extraction:
-  1. Check if binary exists and is recent
-  2. Read from embedded FS (binaries/containerd-linux-amd64)
-  3. Write to /var/lib/warren/bin/containerd
-  4. Set executable permissions (0755)
+ 1. Check if binary exists and is recent
+ 2. Read from embedded FS (binaries/containerd-linux-amd64)
+ 3. Write to /var/lib/warren/bin/containerd
+ 4. Set executable permissions (0755)
 
 Process Management:
   - Start: exec.Command(containerd, --config, --address, --root, --state)
@@ -117,10 +117,10 @@ Lima Configuration:
   - Containerd: System package (containerd.io)
 
 VM Provisioning:
-  1. Create Lima YAML config
-  2. limactl create --name warren config.yaml
-  3. limactl start warren
-  4. Wait for containerd socket
+ 1. Create Lima YAML config
+ 2. limactl create --name warren config.yaml
+ 3. limactl start warren
+ 4. Wait for containerd socket
 
 Socket Forwarding:
   - Lima maps /run/containerd/containerd.sock (guest)

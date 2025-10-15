@@ -9,13 +9,13 @@ import (
 
 // HealthStatus represents the health status of a component
 type HealthStatus struct {
-	Status      string            `json:"status"` // "healthy", "degraded", "unhealthy"
-	Timestamp   time.Time         `json:"timestamp"`
-	Components  map[string]string `json:"components,omitempty"`
-	Message     string            `json:"message,omitempty"`
-	Version     string            `json:"version,omitempty"`
-	Uptime      string            `json:"uptime,omitempty"`
-	StartTime   time.Time         `json:"-"`
+	Status     string            `json:"status"` // "healthy", "degraded", "unhealthy"
+	Timestamp  time.Time         `json:"timestamp"`
+	Components map[string]string `json:"components,omitempty"`
+	Message    string            `json:"message,omitempty"`
+	Version    string            `json:"version,omitempty"`
+	Uptime     string            `json:"uptime,omitempty"`
+	StartTime  time.Time         `json:"-"`
 }
 
 var (
@@ -74,7 +74,7 @@ func GetHealth() HealthStatus {
 	status := "healthy"
 	components := make(map[string]string)
 
-	for name, comp := range healthChecker.components{
+	for name, comp := range healthChecker.components {
 		if !comp.Healthy {
 			status = "unhealthy"
 			components[name] = "unhealthy: " + comp.Message

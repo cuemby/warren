@@ -94,26 +94,26 @@ Event Types:
 # Event Flow
 
 Publish Flow:
-  1. Publisher calls broker.Publish(event)
-  2. Event added to main event channel (non-blocking)
-  3. Broadcast loop receives event
-  4. Event sent to all subscriber channels
-  5. Subscribers receive event asynchronously
-  6. Full subscriber buffers skip (no blocking)
+ 1. Publisher calls broker.Publish(event)
+ 2. Event added to main event channel (non-blocking)
+ 3. Broadcast loop receives event
+ 4. Event sent to all subscriber channels
+ 5. Subscribers receive event asynchronously
+ 6. Full subscriber buffers skip (no blocking)
 
 Subscribe Flow:
-  1. Subscriber calls broker.Subscribe()
-  2. New buffered channel created
-  3. Channel registered in subscriber map
-  4. Subscriber channel returned
-  5. Subscriber receives events via channel
-  6. Subscriber processes events in own goroutine
+ 1. Subscriber calls broker.Subscribe()
+ 2. New buffered channel created
+ 3. Channel registered in subscriber map
+ 4. Subscriber channel returned
+ 5. Subscriber receives events via channel
+ 6. Subscriber processes events in own goroutine
 
 Unsubscribe Flow:
-  1. Subscriber calls broker.Unsubscribe(channel)
-  2. Channel removed from subscriber map
-  3. Channel closed
-  4. Subscriber stops receiving events
+ 1. Subscriber calls broker.Unsubscribe(channel)
+ 2. Channel removed from subscriber map
+ 3. Channel closed
+ 4. Subscriber stops receiving events
 
 # Usage
 

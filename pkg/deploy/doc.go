@@ -93,13 +93,13 @@ Strategy:
   - Configurable parallelism and delay
 
 Flow:
-  1. Get all running tasks for service
-  2. Determine batch size (parallelism)
-  3. For each batch:
-     a. Shutdown old tasks (set DesiredState=Shutdown)
-     b. Scheduler automatically creates replacements
-     c. Wait for configured delay
-  4. Monitor until all tasks updated
+ 1. Get all running tasks for service
+ 2. Determine batch size (parallelism)
+ 3. For each batch:
+    a. Shutdown old tasks (set DesiredState=Shutdown)
+    b. Scheduler automatically creates replacements
+    c. Wait for configured delay
+ 4. Monitor until all tasks updated
 
 Configuration:
   - Parallelism: 1 (serial), 2-N (parallel batches)
@@ -125,11 +125,11 @@ Strategy:
   - Keep Blue for instant rollback
 
 Flow:
-  1. Deploy Green version (same replica count as Blue)
-  2. Wait for all Green tasks healthy
-  3. Update service VIP to point to Green
-  4. Monitor for issues
-  5. Remove Blue tasks after soak period
+ 1. Deploy Green version (same replica count as Blue)
+ 2. Wait for all Green tasks healthy
+ 3. Update service VIP to point to Green
+ 4. Monitor for issues
+ 5. Remove Blue tasks after soak period
 
 Configuration:
   - SoakTime: How long to monitor before cleanup
@@ -155,11 +155,11 @@ Strategy:
   - Final step removes old version
 
 Flow:
-  1. Deploy canary tasks (e.g., 10% of replicas)
-  2. Route 10% of traffic to canary
-  3. Monitor error rates, latency, etc.
-  4. If healthy, increase to 50%, then 100%
-  5. Remove old version tasks
+ 1. Deploy canary tasks (e.g., 10% of replicas)
+ 2. Route 10% of traffic to canary
+ 3. Monitor error rates, latency, etc.
+ 4. If healthy, increase to 50%, then 100%
+ 5. Remove old version tasks
 
 Configuration:
   - CanaryWeight: 10, 25, 50, 100 (progression)

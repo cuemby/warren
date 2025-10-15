@@ -69,42 +69,42 @@ func (m *mockStore) ListContainersByService(id string) ([]*types.Container, erro
 func (m *mockStore) ListContainersByNode(id string) ([]*types.Container, error) {
 	return nil, nil
 }
-func (m *mockStore) GetNode(id string) (*types.Node, error) { return nil, nil }
-func (m *mockStore) ListNodes() ([]*types.Node, error)                     { return nil, nil }
-func (m *mockStore) CreateNode(n *types.Node) error                        { return nil }
-func (m *mockStore) UpdateNode(n *types.Node) error                        { return nil }
-func (m *mockStore) DeleteNode(id string) error                            { return nil }
-func (m *mockStore) CreateSecret(s *types.Secret) error                    { return nil }
-func (m *mockStore) GetSecret(id string) (*types.Secret, error)            { return nil, nil }
-func (m *mockStore) GetSecretByName(name string) (*types.Secret, error)    { return nil, nil }
-func (m *mockStore) ListSecrets() ([]*types.Secret, error)                 { return nil, nil }
-func (m *mockStore) DeleteSecret(id string) error                          { return nil }
-func (m *mockStore) CreateVolume(v *types.Volume) error                    { return nil }
-func (m *mockStore) GetVolume(id string) (*types.Volume, error)            { return nil, nil }
-func (m *mockStore) GetVolumeByName(name string) (*types.Volume, error)    { return nil, nil }
-func (m *mockStore) ListVolumes() ([]*types.Volume, error)                 { return nil, nil }
-func (m *mockStore) DeleteVolume(id string) error                          { return nil }
-func (m *mockStore) CreateNetwork(n *types.Network) error                  { return nil }
-func (m *mockStore) GetNetwork(id string) (*types.Network, error)          { return nil, nil }
-func (m *mockStore) GetNetworkByName(name string) (*types.Network, error)  { return nil, nil }
-func (m *mockStore) ListNetworks() ([]*types.Network, error)               { return nil, nil }
-func (m *mockStore) DeleteNetwork(id string) error                         { return nil }
-func (m *mockStore) CreateIngress(i *types.Ingress) error                  { return nil }
-func (m *mockStore) GetIngress(id string) (*types.Ingress, error)          { return nil, nil }
-func (m *mockStore) GetIngressByName(name string) (*types.Ingress, error)  { return nil, nil }
-func (m *mockStore) ListIngresses() ([]*types.Ingress, error)              { return nil, nil }
-func (m *mockStore) UpdateIngress(i *types.Ingress) error                  { return nil }
-func (m *mockStore) DeleteIngress(id string) error                         { return nil }
-func (m *mockStore) CreateTLSCertificate(c *types.TLSCertificate) error    { return nil }
+func (m *mockStore) GetNode(id string) (*types.Node, error)               { return nil, nil }
+func (m *mockStore) ListNodes() ([]*types.Node, error)                    { return nil, nil }
+func (m *mockStore) CreateNode(n *types.Node) error                       { return nil }
+func (m *mockStore) UpdateNode(n *types.Node) error                       { return nil }
+func (m *mockStore) DeleteNode(id string) error                           { return nil }
+func (m *mockStore) CreateSecret(s *types.Secret) error                   { return nil }
+func (m *mockStore) GetSecret(id string) (*types.Secret, error)           { return nil, nil }
+func (m *mockStore) GetSecretByName(name string) (*types.Secret, error)   { return nil, nil }
+func (m *mockStore) ListSecrets() ([]*types.Secret, error)                { return nil, nil }
+func (m *mockStore) DeleteSecret(id string) error                         { return nil }
+func (m *mockStore) CreateVolume(v *types.Volume) error                   { return nil }
+func (m *mockStore) GetVolume(id string) (*types.Volume, error)           { return nil, nil }
+func (m *mockStore) GetVolumeByName(name string) (*types.Volume, error)   { return nil, nil }
+func (m *mockStore) ListVolumes() ([]*types.Volume, error)                { return nil, nil }
+func (m *mockStore) DeleteVolume(id string) error                         { return nil }
+func (m *mockStore) CreateNetwork(n *types.Network) error                 { return nil }
+func (m *mockStore) GetNetwork(id string) (*types.Network, error)         { return nil, nil }
+func (m *mockStore) GetNetworkByName(name string) (*types.Network, error) { return nil, nil }
+func (m *mockStore) ListNetworks() ([]*types.Network, error)              { return nil, nil }
+func (m *mockStore) DeleteNetwork(id string) error                        { return nil }
+func (m *mockStore) CreateIngress(i *types.Ingress) error                 { return nil }
+func (m *mockStore) GetIngress(id string) (*types.Ingress, error)         { return nil, nil }
+func (m *mockStore) GetIngressByName(name string) (*types.Ingress, error) { return nil, nil }
+func (m *mockStore) ListIngresses() ([]*types.Ingress, error)             { return nil, nil }
+func (m *mockStore) UpdateIngress(i *types.Ingress) error                 { return nil }
+func (m *mockStore) DeleteIngress(id string) error                        { return nil }
+func (m *mockStore) CreateTLSCertificate(c *types.TLSCertificate) error   { return nil }
 func (m *mockStore) GetTLSCertificate(id string) (*types.TLSCertificate, error) {
 	return nil, nil
 }
 func (m *mockStore) GetTLSCertificateByName(name string) (*types.TLSCertificate, error) {
 	return nil, nil
 }
-func (m *mockStore) ListTLSCertificates() ([]*types.TLSCertificate, error)   { return nil, nil }
-func (m *mockStore) UpdateTLSCertificate(c *types.TLSCertificate) error      { return nil }
-func (m *mockStore) DeleteTLSCertificate(id string) error                    { return nil }
+func (m *mockStore) ListTLSCertificates() ([]*types.TLSCertificate, error) { return nil, nil }
+func (m *mockStore) UpdateTLSCertificate(c *types.TLSCertificate) error    { return nil }
+func (m *mockStore) DeleteTLSCertificate(id string) error                  { return nil }
 func (m *mockStore) ListTLSCertificatesByHost(host string) ([]*types.TLSCertificate, error) {
 	return nil, nil
 }
@@ -155,10 +155,10 @@ func TestResolverServiceResolutionWithMockStore(t *testing.T) {
 	}
 
 	tests := []struct {
-		name          string
-		queryName     string
-		wantRecords   int
-		wantErr       bool
+		name        string
+		queryName   string
+		wantRecords int
+		wantErr     bool
 	}{
 		{
 			name:        "service name without domain",

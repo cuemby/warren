@@ -60,7 +60,7 @@ func (t *TCPChecker) Type() CheckType {
 }
 
 // WithTimeout sets the connection timeout
-func (t *TCPChecker) WithTimeout(timeout time.Duration) *TCPChecker{
+func (t *TCPChecker) WithTimeout(timeout time.Duration) *TCPChecker {
 	t.Timeout = timeout
 	return t
 }

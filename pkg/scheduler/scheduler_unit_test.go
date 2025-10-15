@@ -77,10 +77,10 @@ func TestFilterReadyWorkers(t *testing.T) {
 // TestSelectNode tests the node selection logic using the scheduler's selectNode method
 func TestSelectNode(t *testing.T) {
 	tests := []struct {
-		name                string
-		nodes               []*types.Node
-		existingContainers  []*types.Container
-		expectNode          bool
+		name               string
+		nodes              []*types.Node
+		existingContainers []*types.Container
+		expectNode         bool
 	}{
 		{
 			name: "single node available",

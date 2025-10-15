@@ -30,14 +30,14 @@ const (
 
 // ContainerdManager manages the embedded containerd daemon
 type ContainerdManager struct {
-	dataDir      string
-	socketPath   string
-	configPath   string
-	binaryPath   string
-	cmd          *exec.Cmd
-	useExternal  bool
-	limaManager  interface{ Stop(context.Context) error } // For macOS Lima VM lifecycle
-	logger       zerolog.Logger
+	dataDir     string
+	socketPath  string
+	configPath  string
+	binaryPath  string
+	cmd         *exec.Cmd
+	useExternal bool
+	limaManager interface{ Stop(context.Context) error } // For macOS Lima VM lifecycle
+	logger      zerolog.Logger
 }
 
 // NewContainerdManager creates a new containerd manager

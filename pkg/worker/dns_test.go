@@ -97,10 +97,10 @@ func TestGenerateResolvConf(t *testing.T) {
 	// Verify content contains required elements
 	requiredElements := []string{
 		"nameserver 192.168.1.100", // Manager DNS
-		"nameserver 8.8.8.8",        // Google DNS
-		"nameserver 1.1.1.1",        // Cloudflare DNS
-		"search warren",             // Search domain
-		"options ndots:0",           // Options
+		"nameserver 8.8.8.8",       // Google DNS
+		"nameserver 1.1.1.1",       // Cloudflare DNS
+		"search warren",            // Search domain
+		"options ndots:0",          // Options
 	}
 
 	for _, element := range requiredElements {

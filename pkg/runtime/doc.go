@@ -79,32 +79,32 @@ Resource Limits:
 # Container Lifecycle
 
 Create Container:
-  1. Validate image exists (pull if needed)
-  2. Generate OCI runtime spec from task definition
-  3. Apply resource limits (CPU/memory)
-  4. Configure mounts (secrets, volumes, resolv.conf)
-  5. Create container with snapshot
-  6. Return container ID
+ 1. Validate image exists (pull if needed)
+ 2. Generate OCI runtime spec from task definition
+ 3. Apply resource limits (CPU/memory)
+ 4. Configure mounts (secrets, volumes, resolv.conf)
+ 5. Create container with snapshot
+ 6. Return container ID
 
 Start Container:
-  1. Load container by ID
-  2. Create containerd task (running instance)
-  3. Start task (execute entry point)
-  4. Monitor for startup errors
-  5. Return immediately (async)
+ 1. Load container by ID
+ 2. Create containerd task (running instance)
+ 3. Start task (execute entry point)
+ 4. Monitor for startup errors
+ 5. Return immediately (async)
 
 Stop Container:
-  1. Load container and get task
-  2. Send SIGTERM for graceful shutdown
-  3. Wait for exit with timeout (configurable)
-  4. Send SIGKILL if timeout exceeded
-  5. Delete task to free resources
+ 1. Load container and get task
+ 2. Send SIGTERM for graceful shutdown
+ 3. Wait for exit with timeout (configurable)
+ 4. Send SIGKILL if timeout exceeded
+ 5. Delete task to free resources
 
 Delete Container:
-  1. Stop container if running
-  2. Delete container object
-  3. Cleanup snapshot layers
-  4. Remove from containerd namespace
+ 1. Stop container if running
+ 2. Delete container object
+ 3. Cleanup snapshot layers
+ 4. Remove from containerd namespace
 
 # Usage
 

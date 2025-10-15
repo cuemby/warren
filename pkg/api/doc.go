@@ -187,18 +187,18 @@ Certificate Types:
 
 Certificate Request Flow:
 
-	1. Client connects without certificate
-	2. Calls RequestCertificate with join token
-	3. Manager validates token
-	4. CA issues certificate (signed by cluster CA)
-	5. Client saves certificate to disk
-	6. Client reconnects with mTLS
+ 1. Client connects without certificate
+ 2. Calls RequestCertificate with join token
+ 3. Manager validates token
+ 4. CA issues certificate (signed by cluster CA)
+ 5. Client saves certificate to disk
+ 6. Client reconnects with mTLS
 
 Authentication Modes:
 
-	- RequireAndVerifyClientCert: For established workers (not used)
-	- RequestClientCert: For initial connections (current)
-	- Per-RPC verification: Some RPCs check certificates explicitly
+  - RequireAndVerifyClientCert: For established workers (not used)
+  - RequestClientCert: For initial connections (current)
+  - Per-RPC verification: Some RPCs check certificates explicitly
 
 # Leader Forwarding
 
@@ -216,16 +216,16 @@ Leader Check:
 
 Client Behavior:
 
-	- Client receives "not the leader" error
-	- Error includes leader address
-	- Client can retry on leader
-	- CLI handles automatically
+  - Client receives "not the leader" error
+  - Error includes leader address
+  - Client can retry on leader
+  - CLI handles automatically
 
 Read Operations:
 
-	- Can be served by any manager
-	- Leader serves linearizable reads
-	- Followers serve eventually consistent reads
+  - Can be served by any manager
+  - Leader serves linearizable reads
+  - Followers serve eventually consistent reads
 
 # Request Validation
 
