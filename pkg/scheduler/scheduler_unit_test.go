@@ -8,8 +8,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// TestFilterReadyWorkers tests the worker node filtering logic
-func TestFilterReadyWorkers(t *testing.T) {
+// TestFilterSchedulableNodes tests the schedulable node filtering logic (workers and hybrid nodes)
+func TestFilterSchedulableNodes(t *testing.T) {
 	tests := []struct {
 		name     string
 		nodes    []*types.Node
@@ -20,6 +20,22 @@ func TestFilterReadyWorkers(t *testing.T) {
 			nodes: []*types.Node{
 				{ID: "worker-1", Role: types.NodeRoleWorker, Status: types.NodeStatusReady},
 				{ID: "worker-2", Role: types.NodeRoleWorker, Status: types.NodeStatusReady},
+			},
+			expected: 2,
+		},
+		{
+			name: "hybrid nodes are schedulable",
+			nodes: []*types.Node{
+				{ID: "hybrid-1", Role: types.NodeRoleHybrid, Status: types.NodeStatusReady},
+				{ID: "hybrid-2", Role: types.NodeRoleHybrid, Status: types.NodeStatusReady},
+			},
+			expected: 2,
+		},
+		{
+			name: "mixed workers and hybrid nodes",
+			nodes: []*types.Node{
+				{ID: "worker-1", Role: types.NodeRoleWorker, Status: types.NodeStatusReady},
+				{ID: "hybrid-1", Role: types.NodeRoleHybrid, Status: types.NodeStatusReady},
 			},
 			expected: 2,
 		},
@@ -62,12 +78,13 @@ func TestFilterReadyWorkers(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := filterReadyWorkers(tt.nodes)
+			result := filterSchedulableNodes(tt.nodes)
 			assert.Len(t, result, tt.expected)
 
-			// Verify all returned nodes are ready workers
+			// Verify all returned nodes are ready and schedulable (workers or hybrid)
 			for _, node := range result {
-				assert.Equal(t, types.NodeRoleWorker, node.Role)
+				assert.True(t, node.Role == types.NodeRoleWorker || node.Role == types.NodeRoleHybrid,
+					"node %s should be worker or hybrid, got %s", node.ID, node.Role)
 				assert.Equal(t, types.NodeStatusReady, node.Status)
 			}
 		})

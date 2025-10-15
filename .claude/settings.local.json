@@ -139,7 +139,9 @@
       "Bash(/usr/bin/grep -E \"Deleted|Sending SIGKILL\")",
       "Bash(/usr/bin/grep -E \"NAME|warren\")",
       "Bash(python3:*)",
-      "Bash(/tmp/test-hybrid-quickstart.sh:*)"
+      "Bash(/tmp/test-hybrid-quickstart.sh:*)",
+      "Bash(command -v:*)",
+      "Bash(/usr/bin/grep \"^ok\\|^FAIL\")"
     ],
     "deny": [],
     "ask": []

@@ -47,12 +47,12 @@ type Manager struct {
 	dnsCancel            context.CancelFunc
 	ingressProxy         *ingress.Proxy
 	ingressCtx           context.Context
-	ingressCancel        context.CancelFunc
-	acmeClient           *ingress.ACMEClient
-	acmeEmail            string
-	deployer             *deploy.Deployer
+	ingressCancel context.CancelFunc
+	acmeClient    *ingress.ACMEClient
+	acmeEmail     string
+	deployer      *deploy.Deployer
+	// embeddedWorker tracking (lifecycle managed at cmd level)
 	embeddedWorker       interface{} // *worker.Worker (avoid import cycle)
-	embeddedWorkerCtx    context.Context
 	embeddedWorkerCancel context.CancelFunc
 }
 
