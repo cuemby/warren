@@ -90,39 +90,56 @@ sudo warren cluster init --data-dir /tmp/warren-data
 
 **Why Linux-only?** Warren requires containerd, which only runs on Linux. macOS binaries were removed in v1.5.0 to avoid confusion. See [development-macos.md](docs/development-macos.md) for full setup and troubleshooting.
 
-### Deploy Your First Service (with HTTPS!)
+### Quick Start (2 Commands!)
+
+```bash
+# 1. Initialize cluster (hybrid mode: manager + worker in one process)
+sudo warren cluster init
+
+# 2. Deploy service - works immediately!
+warren service create nginx \
+  --image nginx:latest \
+  --replicas 2 \
+  --port 80
+```
+
+**That's it!** Warren starts in **hybrid mode** by default (v1.6.0+), so you can deploy services immediately without starting a separate worker.
+
+### Full Example with HTTPS Ingress
 
 ```bash
 # 1. Initialize cluster
 sudo warren cluster init
 
-# 2. Start worker (in another terminal)
-sudo warren worker start --manager 127.0.0.1:8080
-
-# 3. Deploy nginx with health checks
+# 2. Deploy nginx with health checks
 warren service create nginx \
   --image nginx:latest \
   --replicas 3 \
   --port 80 \
   --health-http / \
-  --health-interval 30 \
-  --manager 127.0.0.1:8080
+  --health-interval 30
 
-# 4. Create HTTPS ingress with automatic Let's Encrypt
+# 3. Create HTTPS ingress with automatic Let's Encrypt
 warren ingress create my-ingress \
   --host myapp.example.com \
   --service nginx \
   --port 80 \
   --tls \
-  --tls-email admin@example.com \
-  --manager 127.0.0.1:8080
+  --tls-email admin@example.com
 
-# 5. Check status
-warren service list --manager 127.0.0.1:8080
-warren ingress list --manager 127.0.0.1:8080
+# 4. Check status
+warren service list
+warren ingress list
 ```
 
-**That's it!** You have a production-ready orchestrator with HTTPS routing and automatic certificate management.
+**Production clusters:** For dedicated control plane, use `--manager-only` flag:
+```bash
+# Manager nodes (no workloads)
+sudo warren cluster init --manager-only
+
+# Worker nodes (on other machines)
+sudo warren worker start --manager <manager-ip>:8080 --token <token>
+```
 
 ## 📚 Documentation
 

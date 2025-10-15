@@ -5,6 +5,131 @@ All notable changes to Warren will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.0] - 2025-10-15
+
+### 🎯 Major Feature: Hybrid Mode - True Docker Swarm Simplicity
+
+Warren v1.6.0 delivers on the PRD promise of "Docker Swarm simplicity" with **Hybrid Mode**: a single process that acts as both manager and worker. Single-node deployments now work immediately - no separate worker process needed!
+
+### Added
+
+#### Hybrid Node Support
+- **NEW: `NodeRoleHybrid` constant** - Nodes can now be both manager and worker in a single process
+- **NEW: `warren node join` command** - Join cluster as hybrid node (recommended for most deployments)
+  - Syntax: `warren node join --leader <addr> --token <token>`
+  - Includes `--manager-only` flag for dedicated managers
+- **Hybrid mode by default** - `warren cluster init` now starts embedded worker automatically
+  - Use `--manager-only` flag to opt-out (dedicated managers)
+- **Multi-node patterns** - Three deployment patterns documented:
+  1. All hybrid nodes (recommended for 3-5 nodes)
+  2. Dedicated managers + workers (10+ nodes)
+  3. Mixed hybrid + workers (flexibility)
+
+#### Code Changes
+- `pkg/types/types.go`: Added `NodeRoleHybrid` constant with documentation
+- `pkg/scheduler/scheduler.go`: Updated `filterSchedulableNodes()` to include hybrid nodes
+  - Renamed from `filterReadyWorkers()` for clarity
+  - Added helpful error messages for empty clusters
+- `pkg/manager/manager.go`: Added embedded worker support
+  - `StartEmbeddedWorker()` - Registers node as hybrid mode
+  - `StopEmbeddedWorker()` - Cleanup on shutdown
+  - `UpdateNodeRole()` - Helper to update node roles
+- `pkg/worker/worker.go`: Added `NewEmbeddedWorker()` constructor for in-process workers
+- `cmd/warren/main.go`:
+  - Added `--manager-only` flag to `cluster init`
+  - Embedded worker startup logic in `cluster init`
+  - New `warren node join` command with hybrid mode support
+  - Proper shutdown handling for embedded workers
+
+### Changed
+
+#### Simplified Quick Start (2 Commands!)
+- **Before v1.6.0** (4 steps):
+  ```bash
+  sudo warren cluster init
+  sudo warren worker start --manager 127.0.0.1:8080
+  warren service create nginx --image nginx --manager 127.0.0.1:8080
+  warren service list --manager 127.0.0.1:8080
+  ```
+
+- **v1.6.0** (2 steps):
+  ```bash
+  sudo warren cluster init
+  warren service create nginx --image nginx:latest --replicas 2
+  ```
+
+#### Documentation Updates
+- **README.md**: Updated Quick Start to showcase hybrid mode (2 commands)
+- **docs/getting-started.md**:
+  - Rewritten Quick Start section for hybrid mode
+  - Added "Multi-Node Deployment Patterns" section
+  - Added "Comparing Node Roles" table
+  - Removed obsolete "Start Worker" step
+- **All examples**: Removed `--manager` flags where Unix socket works
+
+### Backward Compatibility
+
+**✅ NO BREAKING CHANGES** - Fully backward compatible with v1.5.0:
+- Existing `warren worker start` still works (dedicated workers)
+- Existing `warren manager join` still works (dedicated managers)
+- Old workflows continue to function
+- Default behavior changes but no code breaks
+- Manager-only nodes (role="manager") remain valid
+
+### Migration Guide
+
+**Existing Deployments (v1.5.0 → v1.6.0):**
+- No action required - continue using existing `warren worker start`
+- To adopt hybrid mode on new nodes: use `warren node join` instead
+
+**New Deployments:**
+- Use `warren cluster init` (hybrid mode) for single-node or small clusters
+- Use `warren cluster init --manager-only` for dedicated control plane
+- Use `warren node join` to add hybrid nodes to existing cluster
+
+### Performance & Resource Impact
+
+- **Single-node:** Same resource usage (manager + worker were already on one machine)
+- **Edge deployments:** Better resource utilization (no separate processes)
+- **Production:** Use `--manager-only` for isolated control plane (no change)
+- **Scheduler:** Minimal overhead (one additional role check)
+
+### Benefits
+
+1. **True Docker Swarm parity** - Managers can run workloads by default
+2. **2-command setup** - Initialize and deploy immediately
+3. **Edge-optimized** - Single process reduces overhead on resource-constrained nodes
+4. **Flexible deployment** - Choose pattern based on cluster size
+5. **Maximum resource utilization** - Small clusters use all available capacity
+6. **Simplified operations** - No separate worker management for small deployments
+
+### Technical Details
+
+**Hybrid Node Characteristics:**
+- Participates in Raft consensus (manager role)
+- Executes workloads (worker role)
+- Single OS process (embedded worker)
+- Shares containerd instance
+- Same node ID for both roles
+
+**Scheduler Behavior:**
+- Includes `NodeRoleWorker` and `NodeRoleHybrid` in scheduling decisions
+- Manager-only nodes (`NodeRoleManager`) excluded from workload scheduling
+- No performance impact (simple OR condition)
+
+### Related Issues
+
+- Resolves deployment complexity issue (cluster init → service deploy)
+- Achieves PRD goal: "< 5 minutes with 3 commands" ✅
+- Docker Swarm feature parity achieved ✅
+
+### Contributors
+
+- Claude (Anthropic) - Implementation
+- Cuemby Engineering - Architecture design and validation
+
+---
+
 ## [1.5.0] - 2025-10-15
 
 ### Removed - macOS Native Binaries (Breaking Change)

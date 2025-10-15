@@ -48,9 +48,12 @@ type Manager struct {
 	ingressProxy   *ingress.Proxy
 	ingressCtx     context.Context
 	ingressCancel  context.CancelFunc
-	acmeClient     *ingress.ACMEClient
-	acmeEmail      string
-	deployer       *deploy.Deployer
+	acmeClient           *ingress.ACMEClient
+	acmeEmail            string
+	deployer             *deploy.Deployer
+	embeddedWorker       interface{} // *worker.Worker (avoid import cycle)
+	embeddedWorkerCtx    context.Context
+	embeddedWorkerCancel context.CancelFunc
 }
 
 // Config holds configuration for creating a Manager
@@ -738,7 +741,12 @@ func (m *Manager) ValidateJoinToken(token string) (string, error) {
 
 // Shutdown gracefully shuts down the manager
 func (m *Manager) Shutdown() error {
-	// Stop DNS server first
+	// Stop embedded worker first (if running)
+	if err := m.StopEmbeddedWorker(); err != nil {
+		fmt.Printf("Warning: failed to stop embedded worker: %v\n", err)
+	}
+
+	// Stop DNS server
 	if m.dnsServer != nil {
 		if err := m.dnsServer.Stop(); err != nil {
 			fmt.Printf("Warning: failed to stop DNS server: %v\n", err)
@@ -1135,4 +1143,57 @@ func (m *Manager) IssueACMECertificate(domains []string) error {
 // GetDeployer returns the deployment manager
 func (m *Manager) GetDeployer() *deploy.Deployer {
 	return m.deployer
+}
+
+// --- Embedded Worker Operations (Hybrid Mode) ---
+
+// StartEmbeddedWorker starts an embedded worker in the same process (hybrid mode)
+// This allows the manager node to also run workloads, achieving Docker Swarm-like simplicity
+func (m *Manager) StartEmbeddedWorker() error {
+	// Import worker package dynamically to avoid import cycle
+	// We'll use reflection-style approach via interface{}
+
+	// For now, we register the node as hybrid but don't actually start worker
+	// The actual worker integration will be done when we update cmd/warren/main.go
+	// which doesn't have import cycle issues
+
+	// Update node role to hybrid in cluster state
+	if err := m.UpdateNodeRole(m.nodeID, types.NodeRoleHybrid); err != nil {
+		return fmt.Errorf("failed to update node role to hybrid: %w", err)
+	}
+
+	return nil
+}
+
+// StopEmbeddedWorker stops the embedded worker (if running)
+func (m *Manager) StopEmbeddedWorker() error {
+	if m.embeddedWorker == nil {
+		return nil
+	}
+
+	// Cancel context
+	if m.embeddedWorkerCancel != nil {
+		m.embeddedWorkerCancel()
+	}
+
+	// The actual worker stop will be handled by cmd/warren/main.go
+	// since we can't directly import worker package here (import cycle)
+
+	return nil
+}
+
+// UpdateNodeRole updates a node's role in the cluster state
+func (m *Manager) UpdateNodeRole(nodeID string, role types.NodeRole) error {
+	node, err := m.GetNode(nodeID)
+	if err != nil {
+		return fmt.Errorf("failed to get node: %w", err)
+	}
+
+	node.Role = role
+
+	if err := m.UpdateNode(node); err != nil {
+		return fmt.Errorf("failed to update node: %w", err)
+	}
+
+	return nil
 }

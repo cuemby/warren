@@ -75,10 +75,11 @@ func (s *Scheduler) schedule() error {
 		return fmt.Errorf("failed to list nodes: %w", err)
 	}
 
-	// Filter ready worker nodes
-	readyNodes := filterReadyWorkers(nodes)
+	// Filter schedulable nodes (workers and hybrid nodes)
+	readyNodes := filterSchedulableNodes(nodes)
 	if len(readyNodes) == 0 {
-		// No workers available, skip scheduling
+		// No schedulable nodes available
+		s.logger.Warn().Msg("No schedulable nodes available. If this is a new cluster, ensure 'warren cluster init' completed (hybrid mode enabled by default)")
 		return nil
 	}
 
@@ -339,11 +340,13 @@ func (s *Scheduler) selectNode(nodes []*types.Node, existingContainers []*types.
 	return selectedNode
 }
 
-// filterReadyWorkers returns only worker nodes that are ready
-func filterReadyWorkers(nodes []*types.Node) []*types.Node {
+// filterSchedulableNodes returns nodes that can run workloads (workers and hybrid nodes)
+func filterSchedulableNodes(nodes []*types.Node) []*types.Node {
 	var ready []*types.Node
 	for _, node := range nodes {
-		if node.Role == types.NodeRoleWorker && node.Status == types.NodeStatusReady {
+		// Include workers AND hybrid nodes (managers that can run workloads)
+		if (node.Role == types.NodeRoleWorker || node.Role == types.NodeRoleHybrid) &&
+			node.Status == types.NodeStatusReady {
 			ready = append(ready, node)
 		}
 	}

@@ -44,8 +44,9 @@ type Node struct {
 type NodeRole string
 
 const (
-	NodeRoleManager NodeRole = "manager"
-	NodeRoleWorker  NodeRole = "worker"
+	NodeRoleManager NodeRole = "manager" // Manager-only (control plane)
+	NodeRoleWorker  NodeRole = "worker"  // Worker-only (workloads)
+	NodeRoleHybrid  NodeRole = "hybrid"  // Manager + Worker combined
 )
 
 // NodeStatus represents the current state of a node

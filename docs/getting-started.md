@@ -64,142 +64,192 @@ warren --version
 
 ---
 
-## Quick Start: Single-Node Cluster
+## Quick Start: Single-Node Cluster (2 Commands!)
 
-This quick start guide will create a single-node cluster (manager + worker on same machine) and deploy an nginx service.
+Warren v1.6.0 introduces **hybrid mode** - a single process that acts as both manager and worker. Perfect for development, edge deployments, and single-node clusters!
 
 ### Step 1: Initialize Cluster
 
 ```bash
-# Initialize Warren cluster
+# Initialize Warren cluster (hybrid mode by default)
 sudo warren cluster init
 
 # Output:
-# ✓ Raft consensus initialized
-# ✓ Manager started (Node ID: manager-abc123)
+# ✓ Cluster initialized successfully
+#
+# Starting embedded worker (hybrid mode)...
+# ✓ Embedded containerd started (socket: /run/warren-containerd/containerd.sock)
+# ✓ Worker certificate obtained
+# ✓ Worker registered with manager
+#
+# ✓ Node running in HYBRID mode (manager + worker)
+#   - Control plane: Ready
+#   - Workload execution: Ready
+#
+# ✓ Scheduler started
+# ✓ Reconciler started
 # ✓ API server listening on TCP: 127.0.0.1:8080 (mTLS)
 # ✓ API server listening on Unix socket: /var/run/warren.sock (local, read-only)
-# ✓ Metrics available at http://127.0.0.1:9090/metrics
-#
-# Cluster initialized successfully!
-# Local CLI is ready to use immediately!
 ```
 
-The manager node stores cluster state (using Raft) and provides the API for management operations.
+**What just happened?**
+- ✅ Manager started (stores cluster state, schedules tasks)
+- ✅ Worker started **in the same process** (runs containers)
+- ✅ Node registered as **hybrid** (can do both management and workloads)
 
-> **💡 Warren v1.4.0 Simplicity**: CLI commands now work immediately via Unix socket - no setup required! Just run `warren node list` to verify. Remote access still requires `warren init` for security.
-
-### Step 2: Start Worker
+### Step 2: Deploy Service
 
 ```bash
-# In another terminal, start a worker on the same machine
-sudo warren worker start --manager 127.0.0.1:8080
+# Deploy nginx - works immediately!
+warren service create nginx \
+  --image nginx:latest \
+  --replicas 2 \
+  --port 80
 
 # Output:
-# ✓ Worker started (Node ID: worker-xyz789)
-# ✓ Connected to manager at 127.0.0.1:8080
+# ✓ Service created: nginx
+# ✓ 2 tasks scheduled on node: manager-1
 # ✓ Heartbeat: 30s interval
 #
 # Worker ready to accept tasks!
 ```
 
-The worker executes containers as assigned by the manager's scheduler.
-
-### Step 3: Verify Cluster
+### Step 3: Verify Cluster and Service
 
 ```bash
-# List nodes in the cluster (works immediately via Unix socket!)
+# List nodes - should show 1 hybrid node
 warren node list
 
 # Output:
-# ID              ROLE      STATUS    ADDRESS         LABELS
-# manager-abc123  manager   ready     127.0.0.1:8080
-# worker-xyz789   worker    ready     127.0.0.1:0
-```
+# ID          ROLE     STATUS    CPU
+# manager-1   hybrid   ready     8
 
-### Step 4: Deploy Service
-
-> **Note**: Service creation is a write operation. For local single-node clusters, you'll need to use `--manager` flag or set up mTLS certificates. See "[Remote CLI Setup](#remote-cli-setup)" section below for details.
-
-```bash
-# Deploy nginx with 2 replicas (requires --manager for write operations)
-warren service create nginx \
-  --image nginx:latest \
-  --replicas 2 \
-  --manager 127.0.0.1:8080
-
-# Output:
-# ✓ Service 'nginx' created
-# ✓ 2 tasks scheduled
-# Service ID: svc-nginx-123
-```
-
-### Step 5: Check Service Status
-
-```bash
-# List services (read operation - works via Unix socket!)
+# List services
 warren service list
 
 # Output:
 # NAME     IMAGE          REPLICAS  MODE        CREATED
-# nginx    nginx:latest   2/2       replicated  30s ago
+# nginx    nginx:latest   2/2       replicated  10s ago
 
-# Inspect service details (read operation - works via Unix socket!)
+# Inspect service details
 warren service inspect nginx
 
-# Output:
-# Service: nginx
-# ID: svc-nginx-123
-# Mode: replicated
-# Replicas: 2/2
-# Image: nginx:latest
-#
-# Tasks:
-#   task-nginx-1  worker-xyz789  running  nginx:latest  10.0.1.5  1m ago
-#   task-nginx-2  worker-xyz789  running  nginx:latest  10.0.1.6  1m ago
+# Output shows 2 tasks running on the hybrid node (manager-1)
 ```
 
-### Step 6: Scale Service
+**That's it!** You have a working Warren cluster in 2 commands. No separate worker needed!
+
+### Optional: Scale and Update
 
 ```bash
-# Scale to 4 replicas (write operation - requires --manager)
-warren service scale nginx --replicas 4 --manager 127.0.0.1:8080
+# Scale to 4 replicas
+warren service scale nginx --replicas 4
 
-# Output:
-# ✓ Service 'nginx' scaled to 4 replicas
+# Update image
+warren service update nginx --image nginx:alpine
 
-# Verify scaling (read operation - works via Unix socket!)
-warren service list
-
-# Output:
-# NAME     IMAGE          REPLICAS  MODE        CREATED
-# nginx    nginx:latest   4/4       replicated  2m ago
+# Clean up
+warren service delete nginx
 ```
 
-### Step 7: Update Service
+---
+
+## Multi-Node Deployment Patterns
+
+Warren v1.6.0 supports three deployment patterns. Choose based on your needs:
+
+### Pattern 1: All Hybrid Nodes (Recommended for Small Clusters)
+
+**Best for:** 3-5 node clusters, edge deployments, development
+
+Every node participates in consensus AND runs workloads.
 
 ```bash
-# Update to nginx:alpine (write operation - requires --manager)
-warren service update nginx --image nginx:alpine --manager 127.0.0.1:8080
+# Node 1 - Bootstrap
+sudo warren cluster init
 
-# Output:
-# ✓ Service 'nginx' updated
-# ✓ Rolling update in progress (1 task at a time)
+# Copy the worker token shown in output, then on Node 2 & 3:
+sudo warren node join --leader <node1-ip>:8080 --token <token>
+
+# Verify
+warren node list
+# ID          ROLE     STATUS    CPU
+# manager-1   hybrid   ready     8
+# node-2      hybrid   ready     8
+# node-3      hybrid   ready     8
 ```
 
-### Step 8: Clean Up
+**Benefits:**
+- ✅ Every node can run workloads (maximum resource utilization)
+- ✅ All nodes participate in Raft consensus (high availability)
+- ✅ Simple to understand and operate
+
+### Pattern 2: Dedicated Managers + Workers (Production Large Clusters)
+
+**Best for:** 10+ node clusters, dedicated control plane
 
 ```bash
-# Delete service (write operation - requires --manager)
-warren service delete nginx --manager 127.0.0.1:8080
+# Node 1-3: Managers only (no workloads)
+sudo warren cluster init --manager-only  # Node 1
+sudo warren node join --leader <node1-ip>:8080 --token <manager-token> --manager-only  # Node 2-3
 
-# Output:
-# ✓ Service 'nginx' deleted
-# ✓ All tasks stopped and removed
+# Node 4-10: Workers only
+sudo warren worker start --manager <node1-ip>:8080 --token <worker-token>
 
-# Stop worker (Ctrl+C in worker terminal)
-# Stop manager (Ctrl+C in manager terminal)
+# Verify
+warren node list
+# ID          ROLE      STATUS    CPU
+# manager-1   manager   ready     8   (no workloads)
+# manager-2   manager   ready     8   (no workloads)
+# manager-3   manager   ready     8   (no workloads)
+# worker-1    worker    ready     16
+# worker-2    worker    ready     16
+# ...
 ```
+
+**Benefits:**
+- ✅ Isolated control plane (predictable manager performance)
+- ✅ Scale workers independently of managers
+- ✅ Traditional Kubernetes/Swarm pattern
+
+### Pattern 3: Mixed Hybrid + Workers
+
+**Best for:** Growing clusters, flexibility
+
+```bash
+# Node 1-3: Hybrid (managers that can run workloads)
+sudo warren cluster init  # Node 1
+sudo warren node join --leader <node1-ip>:8080 --token <token>  # Node 2-3
+
+# Node 4+: Workers only (scale out workload capacity)
+sudo warren worker start --manager <node1-ip>:8080 --token <worker-token>
+
+# Verify
+warren node list
+# ID          ROLE      STATUS    CPU
+# manager-1   hybrid    ready     8
+# node-2      hybrid    ready     8
+# node-3      hybrid    ready     8
+# worker-1    worker    ready     16
+# worker-2    worker    ready     16
+```
+
+**Benefits:**
+- ✅ Managers can run critical/system services
+- ✅ Workers handle bulk workloads
+- ✅ Best of both worlds
+
+---
+
+## Comparing Node Roles
+
+| Role | Participates in Raft? | Runs Workloads? | When to Use |
+|------|----------------------|-----------------|-------------|
+| **hybrid** | ✅ Yes | ✅ Yes | Default, small clusters, edge |
+| **manager** | ✅ Yes | ❌ No | Large production (dedicated control plane) |
+| **worker** | ❌ No | ✅ Yes | Scale out workload capacity |
+
+---
 
 ---
 

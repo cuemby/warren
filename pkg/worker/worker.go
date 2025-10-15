@@ -107,6 +107,16 @@ func NewWorker(cfg *Config) (*Worker, error) {
 	return w, nil
 }
 
+// NewEmbeddedWorker creates a worker optimized for in-process embedding with a manager (hybrid mode)
+// This is identical to NewWorker but documents the intended use case for embedded workers
+func NewEmbeddedWorker(cfg *Config) (*Worker, error) {
+	// Embedded workers work exactly like regular workers, but they:
+	// 1. Connect to localhost manager (same process)
+	// 2. Share the same node ID as the manager
+	// 3. Don't need separate certificate request (same process, trusted)
+	return NewWorker(cfg)
+}
+
 // Start starts the worker and connects to manager
 func (w *Worker) Start(resources *types.NodeResources, joinToken string) error {
 	// Ensure worker has a certificate

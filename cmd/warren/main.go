@@ -7,6 +7,7 @@ import (
 	_ "net/http/pprof" // Import pprof for profiling endpoints
 	"os"
 	"os/signal"
+	"path/filepath"
 	"runtime"
 	"strings"
 	"syscall"
@@ -155,6 +156,10 @@ automatically form a Raft quorum once additional managers join.`,
 
 		fmt.Println("✓ Cluster initialized successfully")
 
+		// Get manager-only flag (will use after API server starts)
+		managerOnly, _ := cmd.Flags().GetBool("manager-only")
+		var embeddedWorker *worker.Worker
+
 		// Start scheduler
 		sched := scheduler.NewScheduler(mgr)
 		sched.Start()
@@ -234,6 +239,66 @@ automatically form a Raft quorum once additional managers join.`,
 		// Update health status - API is now ready
 		metrics.RegisterComponent("api", true, "ready")
 		metrics.RegisterComponent("containerd", true, "ready")
+
+
+		// Start embedded worker NOW (AFTER API is ready) for hybrid mode
+		if !managerOnly {
+			fmt.Println()
+			fmt.Println("Starting embedded worker (hybrid mode)...")
+
+			// Generate worker join token for embedded worker (secure authentication)
+			workerToken, err := mgr.GenerateJoinToken("worker")
+			if err != nil {
+				return fmt.Errorf("failed to generate worker token for embedded worker: %w", err)
+			}
+
+			// Embedded worker connects to localhost (not the bind address)
+			// Extract port from apiAddr and use 127.0.0.1
+			localManagerAddr := apiAddr
+			if strings.Contains(apiAddr, ":") {
+				parts := strings.Split(apiAddr, ":")
+				localManagerAddr = "127.0.0.1:" + parts[1]
+			}
+
+			// Create embedded worker
+			embeddedWorker, err = worker.NewEmbeddedWorker(&worker.Config{
+				NodeID:           nodeID,
+				ManagerAddr:      localManagerAddr,
+				DataDir:          filepath.Join(dataDir, "worker"),
+				ContainerdSocket: containerdMgr.GetSocketPath(),
+			})
+			if err != nil {
+				return fmt.Errorf("failed to create embedded worker: %w", err)
+			}
+
+			// Auto-detect resources
+			resources := &types.NodeResources{
+				CPUCores:    runtime.NumCPU(),
+				MemoryBytes: 8 * 1024 * 1024 * 1024,
+				DiskBytes:   100 * 1024 * 1024 * 1024,
+			}
+
+			// Start worker with generated token (maintains mTLS security)
+			if err := embeddedWorker.Start(resources, workerToken.Token); err != nil {
+				return fmt.Errorf("failed to start embedded worker: %w", err)
+			}
+
+			// Update node role to hybrid
+			if err := mgr.StartEmbeddedWorker(); err != nil {
+				return fmt.Errorf("failed to register hybrid mode: %w", err)
+			}
+
+			fmt.Printf("✓ Node running in HYBRID mode (manager + worker)\n")
+			fmt.Println("  - Control plane: Ready")
+			fmt.Println("  - Workload execution: Ready")
+			fmt.Println()
+		} else {
+			fmt.Println()
+			fmt.Printf("✓ Node running in MANAGER-ONLY mode\n")
+			fmt.Println("  - Control plane: Ready")
+			fmt.Println("  - Workload execution: Disabled")
+			fmt.Println()
+		}
 
 		// Start ingress proxy
 		if err := mgr.StartIngress(); err != nil {
@@ -441,6 +506,7 @@ func init() {
 	clusterInitCmd.Flags().String("bind-addr", "127.0.0.1:7946", "Address for Raft communication")
 	clusterInitCmd.Flags().String("api-addr", "127.0.0.1:8080", "Address for gRPC API")
 	clusterInitCmd.Flags().String("data-dir", "./warren-data", "Data directory for cluster state")
+	clusterInitCmd.Flags().Bool("manager-only", false, "Start as manager-only (no workloads). Default is hybrid mode (manager+worker)")
 	clusterInitCmd.Flags().Bool("enable-pprof", false, "Enable pprof profiling endpoints on metrics server")
 
 	// Flags for join-token and info commands
