@@ -12,6 +12,7 @@ import (
 	"github.com/cuemby/warren/pkg/security"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 const (
@@ -507,7 +508,7 @@ func connectUnix(socketPath string) (*grpc.ClientConn, error) {
 	// Connect to Unix socket without TLS
 	conn, err := grpc.NewClient(
 		"unix://"+socketPath,
-		grpc.WithInsecure(), // Unix socket, local only, no TLS needed
+		grpc.WithTransportCredentials(insecure.NewCredentials()), // Unix socket, local only, no TLS needed
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to dial Unix socket: %w", err)
