@@ -338,7 +338,7 @@ func TestSchedulerConcurrency(t *testing.T) {
 		}
 
 		// Verify the mutex field exists (compile-time check)
-		_ = sched.mu
+		_ = &sched.mu
 
 		// Test Stop is safe to call
 		sched.Stop()
