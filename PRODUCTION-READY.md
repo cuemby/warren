@@ -1,7 +1,7 @@
-# Warren v1.4.0 - Production Ready ✅
+# Warren v1.6.0 - Production Ready ✅
 
 **Status**: **READY FOR PRODUCTION DEPLOYMENT**
-**Version**: v1.4.0
+**Version**: v1.6.0
 **Date**: 2025-10-15
 **Confidence Level**: ⭐⭐⭐⭐⭐ (5/5) VERY HIGH
 
@@ -9,17 +9,19 @@
 
 ## Executive Summary
 
-Warren v1.4.0 adds Unix socket support for zero-config local CLI access while maintaining all v1.3.1 production readiness features. The system is production-ready with excellent code quality, complete observability, comprehensive operational documentation, and Docker Swarm-level simplicity for local operations.
+Warren v1.6.0 introduces **Hybrid Mode**, enabling single-node deployments where manager and worker run in one process. This delivers Docker Swarm-level simplicity while maintaining enterprise-grade security and all v1.4.0 production features. The system is production-ready with excellent code quality, complete observability, and comprehensive operational documentation.
 
 ### Quick Facts
 
 - ✅ **Phase 1 Complete**: All stabilization objectives met
-- ✅ **Test Coverage**: Critical components well-tested
+- ✅ **Test Coverage**: Critical components well-tested (all pkg/ tests pass)
 - ✅ **Observability**: 40+ metrics, health endpoints, structured logging
 - ✅ **Documentation**: 5,500+ lines of production documentation
-- ✅ **Validation**: E2E tested, performance benchmarked, Unix socket validated
+- ✅ **Validation**: E2E tested, performance benchmarked, hybrid mode validated
 - ✅ **Operations**: Complete runbooks and procedures
-- ✨ **NEW**: Unix socket for zero-config local CLI (Docker Swarm parity!)
+- ✨ **NEW in v1.6.0**: Hybrid Mode (manager + worker in single process)
+- ✨ **NEW**: 3-command Quick Start (cluster init → CLI init → deploy)
+- ✨ **Security**: mTLS maintained with token-based auth for embedded workers
 
 ---
 
@@ -139,9 +141,26 @@ All targets defined and validated in benchmarking guide.
 
 ## Deployment Options
 
-### Quick Start (2-3 hours)
+### Quick Start - Single Node (Hybrid Mode) (5 minutes)
 
-For immediate production deployment:
+**New in v1.6.0!** Perfect for edge deployments, development, or testing:
+
+```bash
+# 1. Initialize cluster (hybrid mode: manager + worker in one process)
+sudo warren cluster init
+
+# 2. Initialize CLI for write operations
+warren init --manager 127.0.0.1:8080 --token <CLI_TOKEN>
+
+# 3. Deploy service
+warren service create nginx --image nginx:latest --replicas 2
+```
+
+✅ **Done!** Single node running both control plane and workloads.
+
+### Production Deployment (2-3 hours)
+
+For multi-node HA cluster:
 
 1. **Review** [DEPLOYMENT-CHECKLIST.md](DEPLOYMENT-CHECKLIST.md)
 2. **Deploy** following [docs/production-deployment-guide.md](docs/production-deployment-guide.md)
@@ -151,15 +170,20 @@ For immediate production deployment:
 ### Recommended Architecture
 
 **High Availability** (Production):
-- 3 manager nodes (2 CPU, 2GB RAM, 10GB disk)
+- 3 manager nodes (2 CPU, 2GB RAM, 10GB disk) - use `--manager-only` flag
 - 3+ worker nodes (4 CPU, 4GB RAM, 20GB disk)
+- **OR** 3+ hybrid nodes (manager + worker combined)
 - Load balancer for API endpoints
 - Prometheus + Grafana for monitoring
 - AlertManager for alerts
 
+**Edge Deployment** (v1.6.0+):
+- 1-3 hybrid nodes (manager + worker combined)
+- Automatic workload execution
+- Basic monitoring
+
 **Minimal** (Development/Staging):
-- 1 manager node
-- 2+ worker nodes
+- 1 hybrid node (all-in-one)
 - Basic monitoring
 
 ---
@@ -260,14 +284,15 @@ Deployment successful when:
 
 ### Low Risk ✅
 
-Warren v1.3.1 is low-risk for production deployment because:
+Warren v1.6.0 is low-risk for production deployment because:
 
-1. **Comprehensive Testing**: All critical paths tested
+1. **Comprehensive Testing**: All critical paths tested (all pkg/ tests pass)
 2. **Production-Grade Code**: Zero panic/fatal in production paths
 3. **Complete Observability**: Full metrics and logging coverage
 4. **Validated Procedures**: E2E validation tested
 5. **Rollback Plan**: Clear rollback procedures documented
 6. **Operational Support**: Complete runbooks and troubleshooting
+7. **Backward Compatible**: Existing deployments work with `--manager-only`
 
 ### Mitigations in Place
 
@@ -279,25 +304,27 @@ Warren v1.3.1 is low-risk for production deployment because:
 | Operational error | Detailed runbooks, validation checklists |
 | Data loss | Raft replication (3 copies) |
 | Performance degradation | Performance targets, benchmarking procedures |
+| Hybrid mode issues | Opt-out with --manager-only, tested in Lima VM |
 
 ---
 
 ## Confidence Statement
 
-**Warren v1.4.0 is production-ready and recommended for deployment.**
+**Warren v1.6.0 is production-ready and recommended for deployment.**
 
 This assessment is based on:
 - ✅ Complete Phase 1 stabilization (23 hours of work)
-- ✅ Comprehensive testing and validation
+- ✅ Comprehensive testing and validation (all pkg/ tests pass, linter clean)
 - ✅ Excellent observability implementation
 - ✅ Complete operational documentation
 - ✅ Industry-standard best practices
 - ✅ Clear rollback and recovery procedures
-- ✨ Unix socket feature validated and documented
+- ✨ Hybrid mode feature fully implemented and validated
+- ✨ Zero breaking changes (backward compatible)
 
 **Confidence Level**: **VERY HIGH** (5/5 stars)
 
-Warren exceeds typical industry standards for production readiness at this stage. The v1.4.0 Unix socket feature achieves Docker Swarm-level simplicity while maintaining enterprise-grade security.
+Warren exceeds typical industry standards for production readiness at this stage. The v1.6.0 Hybrid Mode achieves Docker Swarm-level simplicity (3-command deployment) while maintaining enterprise-grade security (mTLS, token-based auth).
 
 ---
 
@@ -306,10 +333,10 @@ Warren exceeds typical industry standards for production readiness at this stage
 ### Immediate (This Week)
 1. ✅ Review deployment documentation with team
 2. ✅ Provision infrastructure
-3. ✅ Deploy Warren v1.4.0
+3. ✅ Deploy Warren v1.6.0 (hybrid mode or traditional multi-node)
 4. ✅ Run E2E validation
 5. ✅ Set up monitoring
-6. ✨ Enjoy zero-config local CLI via Unix socket!
+6. ✨ Enjoy 3-command deployment with hybrid mode!
 
 ### Short Term (First Month)
 1. Monitor performance and establish baselines
@@ -331,7 +358,7 @@ Warren exceeds typical industry standards for production readiness at this stage
 
 ## Sign-Off
 
-This document certifies that Warren v1.4.0 has met all production readiness criteria and is approved for production deployment.
+This document certifies that Warren v1.6.0 has met all production readiness criteria and is approved for production deployment.
 
 **Technical Lead**: _______________  Date: _______________
 
@@ -348,11 +375,11 @@ This document certifies that Warren v1.4.0 has met all production readiness crit
 **Deployed**: _______________
 **Deployed By**: _______________
 **Environment**: _______________
-**Cluster Size**: ___ managers + ___ workers
+**Cluster Size**: ___ managers + ___ workers (or ___ hybrid nodes)
 **Notes**: _______________________________________________
 
 ---
 
-🎉 **Warren v1.4.0 is PRODUCTION READY!**
+🎉 **Warren v1.6.0 is PRODUCTION READY!**
 
-**Docker Swarm simplicity + Enterprise security = Warren!** 🚀
+**Docker Swarm simplicity + Hybrid Mode + Enterprise security = Warren!** 🚀

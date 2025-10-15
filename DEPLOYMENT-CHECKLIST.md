@@ -1,17 +1,47 @@
-# Warren v1.4.0 Production Deployment Checklist
+# Warren v1.6.0 Production Deployment Checklist
 
 **Quick Reference** for deploying Warren to production.
 **Full Guide**: [docs/production-deployment-guide.md](docs/production-deployment-guide.md)
 
-**New in v1.4.0**: Unix socket support for zero-config local CLI access! Read operations (`node list`, `service list`, `cluster info`) work immediately without `warren init`. See [docs/concepts/security.md](docs/concepts/security.md) for details.
+**New in v1.6.0**: **Hybrid Mode** - Manager + worker in single process! Single-node deployments work out-of-the-box without separate worker process. Perfect for edge deployments and development.
+
+**Features**:
+- ✨ Hybrid mode by default (manager + worker combined)
+- 🔒 CLI with mTLS after `warren init` (write operations enabled)
+- 📡 Unix socket for read-only local access
+- ⚙️  Opt-out with `--manager-only` for dedicated control plane
 
 ---
 
-## Pre-Deployment (30 minutes)
+## Quick Start (Single Node - Hybrid Mode)
+
+**For edge deployments or testing** (5 minutes):
+
+```bash
+# 1. Initialize cluster (hybrid mode: manager + worker in one process)
+sudo warren cluster init
+
+# 2. Initialize CLI for write operations
+warren init --manager 127.0.0.1:8080 --token <CLI_TOKEN>
+
+# 3. Deploy service
+warren service create test --image nginx:latest --replicas 2
+
+# 4. Verify
+warren node list  # Shows "hybrid" role
+warren service list
+```
+
+✅ **Done!** Your node is running both control plane and workloads.
+
+---
+
+## Pre-Deployment (Production HA Cluster - 30 minutes)
 
 ### Infrastructure
 - [ ] 3 manager nodes ready (2 CPU, 2GB RAM, 10GB disk each)
 - [ ] 3+ worker nodes ready (4 CPU, 4GB RAM, 20GB disk each)
+  - **OR** use hybrid nodes (manager + worker combined)
 - [ ] Network connectivity verified between all nodes
 - [ ] DNS configured (optional)
 
@@ -24,7 +54,7 @@
 
 ### Software
 - [ ] containerd v1.7+ installed on all nodes
-- [ ] Warren v1.4.0 binary installed on all nodes: `/usr/local/bin/warren`
+- [ ] Warren v1.6.0 binary installed on all nodes: `/usr/local/bin/warren`
 - [ ] curl and jq installed for testing
 
 ### Documentation
@@ -37,12 +67,32 @@
 ## Deployment (1-2 hours)
 
 ### Manager-1 (Leader)
-- [ ] Run: `warren cluster init --node-id manager-1 --bind-addr <IP>:7946 --api-addr 0.0.0.0:8080 --metrics-addr 0.0.0.0:9090`
+
+**Option A: Manager-Only (Dedicated Control Plane)**
+```bash
+# For dedicated control plane (no workloads on managers)
+warren cluster init --node-id manager-1 \
+  --bind-addr <IP>:7946 \
+  --api-addr 0.0.0.0:8080 \
+  --manager-only
+```
+
+**Option B: Hybrid Mode (Manager + Worker)**
+```bash
+# Manager can also run workloads (v1.6.0+ default)
+warren cluster init --node-id manager-1 \
+  --bind-addr <IP>:7946 \
+  --api-addr 0.0.0.0:8080
+```
+
+**Post-Init Steps:**
 - [ ] Save manager token: `echo "MANAGER_TOKEN=<token>" >> /etc/warren/tokens`
 - [ ] Save worker token: `echo "WORKER_TOKEN=<token>" >> /etc/warren/tokens`
+- [ ] Save CLI token: `echo "CLI_TOKEN=<token>" >> /etc/warren/tokens`
 - [ ] Verify health: `curl http://localhost:9090/health | jq .`
 - [ ] Verify ready: `curl http://localhost:9090/ready | jq .`
 - [ ] Check leadership: `curl http://localhost:9090/metrics | grep warren_raft_is_leader`
+- [ ] Check role: `warren node list` (should show "manager" or "hybrid")
 
 ### Manager-2 & Manager-3
 - [ ] Copy tokens to nodes: `scp /etc/warren/tokens manager-{2,3}:/etc/warren/`
@@ -214,12 +264,17 @@ curl http://<manager>:9090/ready | jq .
 curl http://<manager>:9090/metrics | head -50
 ```
 
-**Note**: Read operations (list, inspect, info) work immediately via Unix socket in v1.4.0! Write operations (create, update, delete) require `warren init` with mTLS. See [docs/concepts/security.md](docs/concepts/security.md).
+**Note**:
+- **v1.6.0+**: Hybrid mode by default (manager + worker in one process)
+- **Read operations** (list, inspect, info) work via Unix socket without setup
+- **Write operations** (create, update, delete) require `warren init` with mTLS
+- See [docs/concepts/security.md](docs/concepts/security.md) and [README.md](README.md) Quick Start
 
 ---
 
 ## References
 
+- **Getting Started**: [docs/getting-started.md](docs/getting-started.md) - Hybrid mode guide
 - **Full Deployment Guide**: [docs/production-deployment-guide.md](docs/production-deployment-guide.md)
 - **E2E Validation**: [docs/e2e-validation.md](docs/e2e-validation.md)
 - **Monitoring**: [docs/monitoring.md](docs/monitoring.md)
@@ -228,7 +283,7 @@ curl http://<manager>:9090/metrics | head -50
 
 ---
 
-**Version**: v1.4.0
+**Version**: v1.6.0
 **Last Updated**: 2025-10-15
 **Status**: ✅ Production Ready
 
