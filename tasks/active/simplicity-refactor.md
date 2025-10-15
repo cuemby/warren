@@ -798,6 +798,119 @@ Manual testing in Lima VM confirmed Warren v1.4.0 Unix socket support works perf
 
 ---
 
+## v1.5.0 - macOS Platform Support Removal (2025-10-15)
+
+### Context
+
+After successfully releasing v1.4.0 with Unix socket support, we identified an issue: Warren ships macOS binaries (`warren-darwin-amd64`, `warren-darwin-arm64`) that **cannot actually run Warren** because containerd is Linux-only. This created user confusion and wasted 50MB+ of binary space.
+
+### Decision
+
+**Remove macOS binaries entirely** (v1.5.0 breaking change):
+- ✅ **Honesty**: Be clear that Warren is a Linux container orchestrator
+- ✅ **Simplicity**: Fewer builds, clearer documentation, no confusion
+- ✅ **Precedent**: Many orchestrators are Linux-only (k3s, microk8s)
+- ✅ **Developer Experience**: macOS developers use Lima VMs (documented)
+
+### Implementation (v1.5.0)
+
+**Files Changed**:
+1. ✅ `Makefile` - Removed `build-darwin-amd64` and `build-darwin-arm64` targets
+2. ✅ `README.md` - Added Platform Requirements, Lima VM instructions
+3. ✅ `VERSION` - Bumped to 1.5.0
+4. ✅ `CHANGELOG.md` - Comprehensive v1.5.0 breaking change entry
+5. ✅ `.github/workflows/release.yml` - Removed darwin from build matrix
+
+**Release Process**:
+1. ✅ Local validation (golangci-lint, go test, make build-all)
+2. ✅ Created v1.5.0 tag
+3. ❌ **First attempt failed**: Workflow still had darwin builds (tag before workflow update)
+4. ✅ **Fix**: Deleted release/tag, updated workflow, recreated v1.5.0
+5. ✅ **Success**: v1.5.0 released with Linux binaries only
+
+**Release**: https://github.com/cuemby/warren/releases/tag/v1.5.0
+
+### Lima VM Debugging & Documentation (2025-10-15)
+
+**User Issue**: Lima VM setup failed with two errors when running `warren cluster init`
+
+**Error 1: Read-Only Filesystem**
+```bash
+# In: /Users/ar4mirez/Developer/Work/cuemby/warren (Lima mount)
+warren cluster init
+# Error: mkdir warren-data: read-only file system
+```
+
+**Root Cause**: Lima mounts macOS `/Users/` as read-only in the VM
+
+**Solution**: Use writable directory or specify data dir:
+```bash
+cd /tmp && warren cluster init --data-dir /tmp/warren-data
+```
+
+**Error 2: Permission Denied**
+```bash
+# After fixing read-only issue:
+warren cluster init --data-dir /tmp/warren-data
+# Error: mkdir /etc/warren-containerd: permission denied
+```
+
+**Root Cause**: Warren needs sudo to create system directories (`/etc/warren-containerd`, `/var/run/warren.sock`)
+
+**Solution**: Run with sudo:
+```bash
+sudo warren cluster init --data-dir /tmp/warren-data
+```
+
+**Validation**: ✅ Warren successfully started in Lima VM
+```bash
+✓ Embedded containerd started (socket: /run/warren-containerd/containerd.sock)
+✓ Certificate Authority initialized
+✓ Cluster initialized successfully
+✓ Scheduler started
+✓ Reconciler started
+✓ Metrics collector started
+✓ DNS server started successfully (address=127.0.0.11:53)
+✓ API server listening on Unix socket: /var/run/warren.sock
+```
+
+**Documentation Created**:
+1. ✅ [docs/development-macos.md](../../docs/development-macos.md) (400+ lines)
+   - Complete Lima VM setup guide
+   - Troubleshooting for both errors
+   - Development workflow (edit-build-test)
+   - Multi-node cluster setup
+   - Persistent vs temporary data options
+2. ✅ README.md updated with Lima instructions and link to guide
+
+**Impact**: macOS developers now have comprehensive, tested guide for Warren development
+
+### Summary
+
+**v1.5.0 Achievements**:
+- ✅ Removed non-functional macOS binaries (breaking change)
+- ✅ Comprehensive Lima VM development guide
+- ✅ Real-world Lima debugging completed
+- ✅ Warren v1.5.0 validated in Lima VM
+- ✅ Clear platform requirements documented
+
+**Files Created/Updated**:
+- NEW: [docs/development-macos.md](../../docs/development-macos.md)
+- UPDATED: [README.md](../../README.md)
+- UPDATED: [CHANGELOG.md](../../CHANGELOG.md)
+- UPDATED: [Makefile](../../Makefile)
+- UPDATED: [VERSION](../../VERSION)
+- UPDATED: [.github/workflows/release.yml](../../.github/workflows/release.yml)
+
+**Git Commits**:
+1. `ed83ec7` - feat: remove macOS binaries and clarify Linux-only support (v1.5.0)
+2. `46e4835` - chore: remove darwin builds from release workflow
+3. `a957755` - docs: add comprehensive macOS development guide for Lima VM
+
+**Result**: Warren now has honest platform support, clear documentation, and tested macOS developer workflow
+
+---
+
 **Owner**: Cuemby Engineering
 **Last Updated**: 2025-10-15
-**Status**: Phase 1 Complete, v1.4.0 Released, Validated & Documented
+**Status**: Phase 1 Complete, v1.4.0 Released & Validated | v1.5.0 Released with macOS Binary Removal
