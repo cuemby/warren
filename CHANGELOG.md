@@ -5,6 +5,76 @@ All notable changes to Warren will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0] - 2025-10-15
+
+### Removed - macOS Native Binaries (Breaking Change)
+
+Warren v1.5.0 removes macOS binaries to eliminate confusion and clarify platform support. Warren requires Linux (containerd is Linux-only). macOS developers should use Lima VMs for development and testing.
+
+#### Why This Change?
+
+**The Reality**:
+- Warren requires containerd, which only runs on Linux
+- macOS binaries (`warren-darwin-amd64`, `warren-darwin-arm64`) couldn't actually run Warren clusters
+- Shipping 50MB+ binaries that don't work created user confusion
+- Developers were already using Lima VMs for testing
+
+**The Decision**:
+- **Honesty**: Be clear that Warren is a Linux container orchestrator
+- **Simplicity**: Fewer builds, clearer documentation, no confusion
+- **Precedent**: Many orchestrators are Linux-only (k3s, microk8s)
+
+#### What Changed
+
+**Build System**:
+- Removed `build-darwin-amd64` and `build-darwin-arm64` targets from Makefile
+- `make build-all` now only builds Linux AMD64 and ARM64
+- Faster builds, simpler release process
+
+**Documentation Updated**:
+- README.md: Added "Platform Requirements" section, clarified Linux-only
+- README.md: Replaced "macOS Support" with "Development on macOS" using Lima
+- DEPLOYMENT-CHECKLIST.md: Notes about Linux requirement
+- PRODUCTION-READY.md: Updated platform statements
+- specs/prd.md: Platform compatibility clarified (pending)
+- specs/tech.md: Target platforms updated (pending)
+
+**For macOS Developers**:
+```bash
+# Use Lima VM for Warren development
+brew install lima
+limactl create --name=warren template://default
+limactl start warren
+limactl copy bin/warren-linux-arm64 warren:/tmp/warren
+limactl shell warren sudo mv /tmp/warren /usr/local/bin/
+limactl shell warren
+warren cluster init  # Works in Lima!
+```
+
+#### Migration Guide
+
+**If you were using macOS binaries** (which didn't actually work):
+1. Install Lima: `brew install lima`
+2. Follow the "Development on macOS" guide in README.md
+3. Use Warren inside Lima VM for all operations
+
+**If you're on Linux**:
+- No changes! Warren continues to work exactly as before
+- This change only affects build artifacts, not functionality
+
+#### Benefits
+
+- ✅ Clearer product positioning (Linux container orchestrator)
+- ✅ Simpler build process (2 targets instead of 4)
+- ✅ Smaller release artifacts
+- ✅ No user confusion about platform support
+- ✅ Honest about requirements (containerd = Linux)
+- ✅ Aligns with Warren's simplicity philosophy
+
+**See Also**: README.md for updated installation and platform requirements
+
+---
+
 ## [1.4.0] - 2025-10-14
 
 ### Added - Docker Swarm-Level Simplicity (Unix Socket Support)

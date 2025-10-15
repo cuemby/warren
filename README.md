@@ -27,12 +27,14 @@ Warren is a container orchestration platform built for edge computing with telco
 
 ## 🚀 Quick Start
 
-### Installation
+### Platform Requirements
 
-**Homebrew (macOS):**
-```bash
-brew install cuemby/tap/warren
-```
+**Warren requires Linux** (containerd is Linux-only):
+- ✅ **Linux**: AMD64 or ARM64
+- ⚠️ **macOS**: Use Lima VM for development/testing (see below)
+- ❌ **Windows**: WSL2 support coming soon
+
+### Installation
 
 **APT (Debian/Ubuntu):**
 ```bash
@@ -41,11 +43,16 @@ echo "deb https://packagecloud.io/cuemby/warren/ubuntu/ focal main" | sudo tee /
 sudo apt update && sudo apt install warren
 ```
 
-**Binary Download:**
+**Binary Download (Linux):**
 ```bash
 # Linux AMD64
 curl -LO https://github.com/cuemby/warren/releases/latest/download/warren-linux-amd64.tar.gz
 tar xzf warren-linux-amd64.tar.gz
+sudo mv warren /usr/local/bin/
+
+# Linux ARM64
+curl -LO https://github.com/cuemby/warren/releases/latest/download/warren-linux-arm64.tar.gz
+tar xzf warren-linux-arm64.tar.gz
 sudo mv warren /usr/local/bin/
 ```
 
@@ -53,25 +60,32 @@ sudo mv warren /usr/local/bin/
 ```bash
 git clone https://github.com/cuemby/warren.git
 cd warren
-make build
-sudo make install
+make build-all  # Builds Linux AMD64 and ARM64
+sudo cp bin/warren-linux-$(uname -m) /usr/local/bin/warren
 ```
 
-### macOS Support
+### Development on macOS
 
-Warren uses [Lima VM](https://lima-vm.io) to provide seamless container orchestration on macOS:
+Warren **only runs on Linux** (containerd requirement). For macOS developers, use [Lima VM](https://lima-vm.io):
 
 ```bash
-# Install Lima (if not already installed)
+# 1. Install Lima
 brew install lima
 
-# Warren will automatically manage Lima VM
-sudo warren cluster init
+# 2. Create Warren VM
+limactl create --name=warren template://default
+limactl start warren
 
-# Lima VM starts automatically, no manual setup needed!
+# 3. Install Warren in VM
+limactl copy bin/warren-linux-arm64 warren:/tmp/warren
+limactl shell warren sudo mv /tmp/warren /usr/local/bin/
+
+# 4. Use Warren in Lima
+limactl shell warren
+warren cluster init
 ```
 
-Warren automatically creates and manages a lightweight Linux VM (Alpine-based) with containerd. The Lima VM is stopped gracefully when Warren shuts down.
+**Why Linux-only?** Warren requires containerd, which only runs on Linux. macOS binaries were removed in v1.5.0 to avoid confusion.
 
 ### Deploy Your First Service (with HTTPS!)
 

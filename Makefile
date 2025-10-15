@@ -99,8 +99,8 @@ build-release:
 	@echo "✓ Built: $(BUILD_DIR)/$(BINARY)"
 	@ls -lh $(BUILD_DIR)/$(BINARY)
 
-## build-all: Build for all supported platforms
-build-all: build-linux-amd64 build-linux-arm64 build-darwin-amd64 build-darwin-arm64
+## build-all: Build for all supported platforms (Linux only)
+build-all: build-linux-amd64 build-linux-arm64
 	@echo "✓ Built all platforms"
 	@ls -lh $(BUILD_DIR)/
 
@@ -119,22 +119,6 @@ build-linux-arm64:
 	CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -ldflags="$(RELEASE_LDFLAGS)" \
 		-o $(BUILD_DIR)/$(BINARY)-linux-arm64 ./cmd/warren
 	@echo "✓ Built: $(BUILD_DIR)/$(BINARY)-linux-arm64"
-
-## build-darwin-amd64: Build for macOS AMD64
-build-darwin-amd64:
-	@echo "Building for macOS AMD64..."
-	@mkdir -p $(BUILD_DIR)
-	CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -ldflags="$(RELEASE_LDFLAGS)" \
-		-o $(BUILD_DIR)/$(BINARY)-darwin-amd64 ./cmd/warren
-	@echo "✓ Built: $(BUILD_DIR)/$(BINARY)-darwin-amd64"
-
-## build-darwin-arm64: Build for macOS ARM64 (Apple Silicon)
-build-darwin-arm64:
-	@echo "Building for macOS ARM64..."
-	@mkdir -p $(BUILD_DIR)
-	CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build -ldflags="$(RELEASE_LDFLAGS)" \
-		-o $(BUILD_DIR)/$(BINARY)-darwin-arm64 ./cmd/warren
-	@echo "✓ Built: $(BUILD_DIR)/$(BINARY)-darwin-arm64"
 
 ## install: Install Warren binary to /usr/local/bin
 install: build
