@@ -90,20 +90,24 @@ sudo warren cluster init --data-dir /tmp/warren-data
 
 **Why Linux-only?** Warren requires containerd, which only runs on Linux. macOS binaries were removed in v1.5.0 to avoid confusion. See [development-macos.md](docs/development-macos.md) for full setup and troubleshooting.
 
-### Quick Start (2 Commands!)
+### Quick Start (3 Commands!)
 
 ```bash
 # 1. Initialize cluster (hybrid mode: manager + worker in one process)
 sudo warren cluster init
 
-# 2. Deploy service - works immediately!
+# 2. Initialize CLI (secure communication with manager)
+# Copy the CLI token from cluster init output, then:
+warren init --manager 127.0.0.1:8080 --token <CLI_TOKEN>
+
+# 3. Deploy service - works immediately!
 warren service create nginx \
   --image nginx:latest \
   --replicas 2 \
-  --port 80
+  --publish 8080:80
 ```
 
-**That's it!** Warren starts in **hybrid mode** by default (v1.6.0+), so you can deploy services immediately without starting a separate worker.
+**That's it!** Warren starts in **hybrid mode** by default (v1.6.0+), combining manager and worker in one process. You can deploy services immediately without starting a separate worker.
 
 ### Full Example with HTTPS Ingress
 
@@ -111,15 +115,18 @@ warren service create nginx \
 # 1. Initialize cluster
 sudo warren cluster init
 
-# 2. Deploy nginx with health checks
+# 2. Initialize CLI with token from step 1
+warren init --manager 127.0.0.1:8080 --token <CLI_TOKEN>
+
+# 3. Deploy nginx with health checks
 warren service create nginx \
   --image nginx:latest \
   --replicas 3 \
-  --port 80 \
+  --publish 80:80 \
   --health-http / \
   --health-interval 30
 
-# 3. Create HTTPS ingress with automatic Let's Encrypt
+# 4. Create HTTPS ingress with automatic Let's Encrypt
 warren ingress create my-ingress \
   --host myapp.example.com \
   --service nginx \
@@ -127,7 +134,7 @@ warren ingress create my-ingress \
   --tls \
   --tls-email admin@example.com
 
-# 4. Check status
+# 5. Check status
 warren service list
 warren ingress list
 ```
