@@ -5,6 +5,101 @@ All notable changes to Warren will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] - 2025-10-14
+
+### Added - Docker Swarm-Level Simplicity (Unix Socket Support)
+
+Warren v1.4.0 achieves **true Docker Swarm simplicity** by implementing Unix socket support for zero-configuration local access. CLI commands now work immediately after cluster initialization without requiring certificate setup.
+
+#### The Problem We Solved
+
+**Before v1.4.0** - Tedious multi-step setup:
+```bash
+$ warren cluster init
+$ warren node list
+Error: CLI certificate not found. Please run 'warren init --manager localhost:8080 --token <token>'
+# User frustration: Why do I need certificates for local commands?
+```
+
+**After v1.4.0** - Docker Swarm simplicity:
+```bash
+$ warren cluster init
+$ warren node list
+# Works immediately! 🎉
+```
+
+#### Implementation (Phase 1: Unix Socket Support)
+
+**Core Features**:
+- Unix socket server at `/var/run/warren.sock` for local access
+- Automatic client detection (Unix socket → TCP with mTLS fallback)
+- Read-only security enforcement via gRPC interceptor
+- Dual listener architecture (TCP + Unix socket)
+- Zero breaking changes to existing functionality
+
+**Files Added**:
+- `pkg/api/interceptor.go` (NEW, 40 lines) - Read-only security enforcement
+- `test/manual/test-unix-socket-lima.sh` (NEW, 85 lines) - E2E test script
+
+**Files Modified**:
+- `pkg/api/server.go` - Added Unix socket listener support
+- `cmd/warren/main.go` - Dual server startup, updated all 27 CLI commands
+- `cmd/warren/apply.go` - Updated to use auto-detection
+- `pkg/client/client.go` - Added `NewClientAuto()` with fallback logic
+- `specs/tech.md` - Documented tiered security model
+
+**Tiered Security Model**:
+1. **Tier 1: Unix Socket** (local, instant access)
+   - Path: `/var/run/warren.sock`
+   - Auth: OS file permissions (0660)
+   - Operations: Read-only (list, inspect, info)
+   - Zero configuration required
+
+2. **Tier 2: Auto-Bootstrap** (future - Phase 2)
+   - Port: `localhost:2377`
+   - Auth: Automatic cert request on first write
+   - Operations: All commands
+
+3. **Tier 3: Remote mTLS** (existing, unchanged)
+   - Port: `<manager-ip>:2377`
+   - Auth: Explicit `warren init` with token
+   - Operations: All commands
+
+**Test Results**:
+- ✅ Unix socket created automatically at `/var/run/warren.sock`
+- ✅ CLI commands work immediately without `warren init`
+- ✅ Read-only operations accessible via Unix socket
+- ✅ Write operations correctly blocked with helpful error message
+- ✅ Dual server startup (TCP + Unix socket) working
+- ✅ Zero breaking changes to existing functionality
+
+**Commands Updated** (27 total):
+- Cluster: `info`
+- Service: `create`, `list`, `inspect`, `delete`, `scale`, `update`, `rollback`
+- Node: `list`
+- Secret: `create`, `list`, `inspect`, `delete`
+- Volume: `create`, `list`, `inspect`, `delete`
+- Ingress: `create`, `list`, `inspect`, `delete`
+- Certificate: `create`, `list`, `inspect`, `delete`
+- Apply: Resource management
+
+**Benefits**:
+- **Zero-config local access**: No more `warren init` for local commands
+- **Docker Swarm parity**: Matches the "just works" UX promise
+- **Security maintained**: Read-only enforcement + mTLS for writes
+- **Helpful errors**: Clear guidance when mTLS required
+- **Production ready**: Tested in Lima VMs with real cluster
+
+**Architecture Documentation**:
+- Updated `specs/tech.md` with tiered security model
+- Created `tasks/active/simplicity-refactor.md` (600+ lines) - Complete v1.4.0 roadmap
+
+**Breaking Changes**: None
+
+**Migration Guide**: No action required - existing workflows continue to work
+
+---
+
 ## [1.3.1] - 2025-10-14
 
 ### Added - Production Stabilization & Readiness (Phase 1)
