@@ -66,8 +66,9 @@ sudo cp bin/warren-linux-$(uname -m) /usr/local/bin/warren
 
 ### Development on macOS
 
-Warren **only runs on Linux** (containerd requirement). For macOS developers, use [Lima VM](https://lima-vm.io):
+Warren **only runs on Linux** (containerd requirement). For macOS developers, see the [**macOS Development Guide**](docs/development-macos.md) for detailed Lima VM setup.
 
+**Quick Start:**
 ```bash
 # 1. Install Lima
 brew install lima
@@ -76,16 +77,18 @@ brew install lima
 limactl create --name=warren template://default
 limactl start warren
 
-# 3. Install Warren in VM
+# 3. Build and install Warren
+make build-linux-arm64  # or build-linux-amd64 for Intel Macs
 limactl copy bin/warren-linux-arm64 warren:/tmp/warren
 limactl shell warren sudo mv /tmp/warren /usr/local/bin/
 
-# 4. Use Warren in Lima
+# 4. Run Warren in Lima
 limactl shell warren
-warren cluster init
+cd /tmp
+sudo warren cluster init --data-dir /tmp/warren-data
 ```
 
-**Why Linux-only?** Warren requires containerd, which only runs on Linux. macOS binaries were removed in v1.5.0 to avoid confusion.
+**Why Linux-only?** Warren requires containerd, which only runs on Linux. macOS binaries were removed in v1.5.0 to avoid confusion. See [development-macos.md](docs/development-macos.md) for full setup and troubleshooting.
 
 ### Deploy Your First Service (with HTTPS!)
 
@@ -134,6 +137,7 @@ warren ingress list --manager 127.0.0.1:8080
 
 **Essential Guides:**
 - [**Getting Started**](docs/getting-started.md) - 5-minute tutorial ⭐
+- [**macOS Development**](docs/development-macos.md) - Lima VM setup & troubleshooting 🍎
 - [**Ingress Controller**](docs/ingress.md) - HTTP/HTTPS routing & Let's Encrypt
 - [**Architecture**](docs/concepts/architecture.md) - How Warren works
 - [**CLI Reference**](docs/cli-reference.md) - Complete command docs
